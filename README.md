@@ -48,9 +48,14 @@ Your task management web app has been successfully enhanced with **3 major new f
 
 ## 🔧 Configuration Required
 
-### Resend API Setup
+### Resend API Setup (Optional)
 
-Before using email features, update these placeholder values in the JavaScript section:
+The app includes a demo mode that works without email configuration. If you want to enable email features:
+
+1. Sign up at [resend.com](https://resend.com)
+2. Create an API key in your dashboard
+3. Verify your sender domain/email
+4. Update these constants in the JavaScript section:
 
 ```javascript
 // Replace with your actual Resend API key
@@ -60,12 +65,14 @@ const RESEND_API_KEY = "re_your_actual_api_key_here";
 const RESEND_FROM_EMAIL = "noreply@your_verified_domain.com";
 ```
 
-### Getting Resend API Key
+### Demo Mode
 
-1. Sign up at [resend.com](https://resend.com)
-2. Create an API key in your dashboard
-3. Verify your sender domain/email
-4. Update the constants in the code
+If email is not configured, the app will:
+
+-    Show a warning message for password reset
+-    Use demo code "123456" for password reset testing
+-    Skip email reminders and deadline notifications
+-    Still show browser notifications for reminders
 
 ## 🎯 How to Use New Features
 
@@ -112,8 +119,9 @@ The app will request notification permission on load. Users can:
 1. Create account or login with existing account
 2. Logout and click "Forgot your password?"
 3. Enter email and submit
-4. Check console for email sending (if API configured)
-5. Test code validation and password reset
+4. **Demo mode**: Use code "123456" when prompted
+5. **With API configured**: Check email for actual reset code
+6. Test code validation and password reset
 
 ### Test Countdown Timer
 
@@ -188,8 +196,9 @@ Task-Management/
 Your enhanced TaskFlow app is now ready for:
 
 -    ✅ **Immediate use** - open index.html in any modern browser
+-    ✅ **Demo mode** - works without email configuration
 -    ✅ **Local development** - no server setup required
--    ✅ **Email integration** - configure Resend API for email features
+-    ✅ **Email integration** - optional Resend API configuration
 -    ✅ **Mobile deployment** - fully responsive design
 -    ✅ **Production use** - professional code quality
 
