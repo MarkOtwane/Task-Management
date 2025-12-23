@@ -1415,12 +1415,12 @@
 					<div class="reflection-hint">💡 Reflecting on your tasks helps you grow and learn from each experience!</div>
 					<form id="reflectionForm">
 						<div class="form-group">
-							<label for="reflectionLearning">What did you learn from this task? *</label>
+							<label for="reflectionLearning">1. What did you learn from this task? *</label>
 							<textarea id="reflectionLearning" placeholder="Share your insights and key takeaways..." required minlength="10"></textarea>
 							<div class="char-counter" id="learningCounter">0 / 10 characters minimum</div>
 						</div>
 						<div class="form-group">
-							<label for="reflectionExperience">Describe your experience completing it *</label>
+							<label for="reflectionExperience">2. Describe your experience completing it *</label>
 							<textarea id="reflectionExperience" placeholder="How was the journey? Any challenges or wins?" required minlength="10"></textarea>
 							<div class="char-counter" id="experienceCounter">0 / 10 characters minimum</div>
 						</div>
@@ -2124,9 +2124,9 @@
 						if (task.completed && task.reflection) {
 							reflectionHTML = `
             <div class="task-reflection">
-              <strong>💡 What I learned:</strong>
+              <strong>1. 💡 What I learned:</strong>
               <p>${task.reflection.learning}</p>
-              <strong>📖 My experience:</strong>
+              <strong>2. 📖 My experience:</strong>
               <p>${task.reflection.experience}</p>
             </div>
           `;
