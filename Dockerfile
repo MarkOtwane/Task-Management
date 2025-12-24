@@ -1,6 +1,12 @@
 # Use PHP 8.1 with built-in web server
 FROM php:8.1-cli
 
+# Install system dependencies for PostgreSQL
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install required PHP extensions
 RUN docker-php-ext-install pdo pdo_pgsql
 
