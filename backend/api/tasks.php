@@ -29,12 +29,7 @@ if ($method === 'GET') {
  */
 function getTasks($pdo, $userId) {
     try {
-        $stmt = $pdo->prepare(""
-            SELECT * FROM tasks 
-            WHERE user_id = ? 
-            ORDER BY created_at DESC
-        ""
-        );
+        $stmt = $pdo->prepare("SELECT * FROM tasks WHERE user_id = ? ORDER BY created_at DESC");
         $stmt->execute([$userId]);
         $tasks = $stmt->fetchAll();
         
@@ -58,11 +53,7 @@ function createTask($pdo, $userId) {
     }
     
     try {
-        $stmt = $pdo->prepare(""
-            INSERT INTO tasks (user_id, title, description, category, priority, status, due_date)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ""
-        );
+        $stmt = $pdo->prepare("INSERT INTO tasks (user_id, title, description, category, priority, status, due_date) VALUES (?, ?, ?, ?, ?, ?, ?)");
         
         // Normalize due_date to SQL datetime string if provided
         $due_date = null;
