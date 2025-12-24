@@ -1,30 +1,19 @@
 <?php
-        $stmt = $pdo->prepare(""
-            INSERT INTO tasks (user_id, title, description, category, priority, status, due_date)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ""
-        );
+/**
+ * Tasks API
+ * Endpoints: GET, POST, PUT, DELETE for tasks
+ */
 
-        // Normalize due_date to SQL datetime string if provided
-        $due_date = null;
-        if (isset($input['due_date']) && !empty($input['due_date'])) {
-            try {
-                $dt = new DateTime($input['due_date']);
-                $due_date = $dt->format('Y-m-d H:i:s');
-            } catch (Exception $e) {
-                $due_date = null;
-            }
-        }
+require_once '../config/cors.php';
+require_once '../config/database.php';
+require_once '../middleware/auth.php';
 
-        $stmt->execute([
-            $userId,
-            $input['title'],
-            $input['description'] ?? null,
-            $input['category'] ?? null,
-            $input['priority'] ?? 'medium',
-            $input['status'] ?? 'pending',
-            $due_date
-        ]);
+$method = $_SERVER['REQUEST_METHOD'];
+$userId = requireAuth();
+
+if ($method === 'GET') {
+    getTasks($pdo, $userId);
+} elseif ($method === 'POST') {
     createTask($pdo, $userId);
 } elseif ($method === 'PUT') {
     updateTask($pdo, $userId);
@@ -40,11 +29,12 @@
  */
 function getTasks($pdo, $userId) {
     try {
-        $stmt = $pdo->prepare("
+        $stmt = $pdo->prepare(""
             SELECT * FROM tasks 
             WHERE user_id = ? 
             ORDER BY created_at DESC
-        ");
+        ""
+        );
         $stmt->execute([$userId]);
         $tasks = $stmt->fetchAll();
         
@@ -68,11 +58,23 @@ function createTask($pdo, $userId) {
     }
     
     try {
-        $stmt = $pdo->prepare("
+        $stmt = $pdo->prepare(""
             INSERT INTO tasks (user_id, title, description, category, priority, status, due_date)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-        ");
+        ""
+        );
         
+        // Normalize due_date to SQL datetime string if provided
+        $due_date = null;
+        if (isset($input['due_date']) && !empty($input['due_date'])) {
+            try {
+                $dt = new DateTime($input['due_date']);
+                $due_date = $dt->format('Y-m-d H:i:s');
+            } catch (Exception $e) {
+                $due_date = null;
+            }
+        }
+
         $stmt->execute([
             $userId,
             $input['title'],
@@ -80,7 +82,7 @@ function createTask($pdo, $userId) {
             $input['category'] ?? null,
             $input['priority'] ?? 'medium',
             $input['status'] ?? 'pending',
-            isset($input['due_date']) ? new DateTime($input['due_date']) : null
+            $due_date
         ]);
         
         $taskId = $pdo->lastInsertId();
@@ -124,8 +126,18 @@ function updateTask($pdo, $userId) {
         $allowedFields = ['title', 'description', 'category', 'priority', 'status', 'due_date'];
         foreach ($allowedFields as $field) {
             if (isset($input[$field])) {
+                // Normalize due_date if present
+                if ($field === 'due_date' && !empty($input[$field])) {
+                    try {
+                        $dt = new DateTime($input[$field]);
+                        $values[] = $dt->format('Y-m-d H:i:s');
+                    } catch (Exception $e) {
+                        $values[] = null;
+                    }
+                } else {
+                    $values[] = $input[$field];
+                }
                 $updates[] = "$field = ?";
-                $values[] = $input[$field];
             }
         }
         
@@ -180,3 +192,4 @@ function deleteTask($pdo, $userId) {
         echo json_encode(['error' => 'Failed to delete task: ' . $e->getMessage()]);
     }
 }
+
