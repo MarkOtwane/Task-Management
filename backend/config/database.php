@@ -119,8 +119,5 @@ function initializeDatabase($pdo) {
     }
 }
 
-// Initialize tables on first load
-if (!isset($_SESSION['db_initialized'])) {
-    initializeDatabase($pdo);
-    $_SESSION['db_initialized'] = true;
-}
+// Ensure tables exist (idempotent). Call on every request — CREATE TABLE IF NOT EXISTS is safe.
+initializeDatabase($pdo);
