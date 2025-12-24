@@ -3,6 +3,24 @@
  * Authentication Middleware
  */
 
+// Ensure session cookie allows cross-site requests from the frontend
+// when using credentialed fetch requests. Set SameSite=None and Secure
+// for HTTPS deployments. These options require PHP 7.3+.
+if (PHP_VERSION_ID >= 70300) {
+    $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || ($_SERVER['SERVER_PORT'] ?? '') == 443;
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/',
+        'domain' => '',
+        'secure' => $secure,
+        'httponly' => true,
+        'samesite' => 'None'
+    ]);
+} else {
+    // Fallback for older PHP versions: set cookie params without samesite
+    session_set_cookie_params(0, '/', '', true, true);
+}
+
 session_start();
 
 /**
