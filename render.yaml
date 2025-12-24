@@ -1,0 +1,51 @@
+services:
+     - type: web
+       name: task-management-backend
+       runtime: docker
+       region: oregon
+       plan: free
+
+       # Docker settings
+       dockerfilePath: ./Dockerfile
+
+       # Health check
+       healthCheckPath: /backend/
+
+       # Environment variables
+       envVars:
+            - key: DB_HOST
+              value: ep-square-art-a8zobyl9-pooler.eastus2.azure.neon.tech
+            - key: DB_PORT
+              value: "5432"
+            - key: DB_NAME
+              value: neondb
+            - key: DB_USER
+              value: neondb_owner
+            - key: DB_PASSWORD
+              generateValue: true
+              sync: false
+            - key: DB_SSL_MODE
+              value: require
+            - key: APP_ENV
+              value: production
+            - key: APP_DEBUG
+              value: "false"
+            - key: APP_URL
+              sync: false
+            - key: FRONTEND_URL
+              value: https://task-management-neon-one.vercel.app/
+
+       # Auto-deploy on GitHub push
+       autoDeploy: true
+
+       # Build settings
+       buildFilter:
+            paths:
+                 - backend/**
+                 - render.yaml
+            ignoredPaths:
+                 - .env
+                 - node_modules
+                 - vendor
+# Database - using NeonDB (external)
+# No database section needed - using external NeonDB service
