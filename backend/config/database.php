@@ -14,12 +14,20 @@ if (file_exists(__DIR__ . '/../.env')) {
 }
 
 // Database credentials (with fallback defaults)
-define('DB_HOST', defined('DB_HOST') ? DB_HOST : 'localhost');
-define('DB_PORT', defined('DB_PORT') ? DB_PORT : '5432');
-define('DB_NAME', defined('DB_NAME') ? DB_NAME : 'task_management');
-define('DB_USER', defined('DB_USER') ? DB_USER : 'postgres');
-define('DB_PASSWORD', defined('DB_PASSWORD') ? DB_PASSWORD : 'postgres');
-define('DB_SSL_MODE', defined('DB_SSL_MODE') ? DB_SSL_MODE : 'prefer');
+// Allow values from a .env file (constants) or from environment variables (getenv)
+$db_host = getenv('DB_HOST') !== false ? getenv('DB_HOST') : (defined('DB_HOST') ? DB_HOST : 'localhost');
+$db_port = getenv('DB_PORT') !== false ? getenv('DB_PORT') : (defined('DB_PORT') ? DB_PORT : '5432');
+$db_name = getenv('DB_NAME') !== false ? getenv('DB_NAME') : (defined('DB_NAME') ? DB_NAME : 'task_management');
+$db_user = getenv('DB_USER') !== false ? getenv('DB_USER') : (defined('DB_USER') ? DB_USER : 'postgres');
+$db_password = getenv('DB_PASSWORD') !== false ? getenv('DB_PASSWORD') : (defined('DB_PASSWORD') ? DB_PASSWORD : 'postgres');
+$db_ssl_mode = getenv('DB_SSL_MODE') !== false ? getenv('DB_SSL_MODE') : (defined('DB_SSL_MODE') ? DB_SSL_MODE : 'prefer');
+
+define('DB_HOST', $db_host);
+define('DB_PORT', $db_port);
+define('DB_NAME', $db_name);
+define('DB_USER', $db_user);
+define('DB_PASSWORD', $db_password);
+define('DB_SSL_MODE', $db_ssl_mode);
 
 // Build connection string for PDO
 $dsn = "pgsql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";sslmode=" . DB_SSL_MODE;
