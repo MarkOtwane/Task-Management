@@ -1,19 +1,30 @@
 <?php
-/**
- * Tasks API
- * Endpoints: GET, POST, PUT, DELETE for tasks
- */
+        $stmt = $pdo->prepare(""
+            INSERT INTO tasks (user_id, title, description, category, priority, status, due_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ""
+        );
 
-require_once '../config/cors.php';
-require_once '../config/database.php';
-require_once '../middleware/auth.php';
+        // Normalize due_date to SQL datetime string if provided
+        $due_date = null;
+        if (isset($input['due_date']) && !empty($input['due_date'])) {
+            try {
+                $dt = new DateTime($input['due_date']);
+                $due_date = $dt->format('Y-m-d H:i:s');
+            } catch (Exception $e) {
+                $due_date = null;
+            }
+        }
 
-$method = $_SERVER['REQUEST_METHOD'];
-$userId = requireAuth();
-
-if ($method === 'GET') {
-    getTasks($pdo, $userId);
-} elseif ($method === 'POST') {
+        $stmt->execute([
+            $userId,
+            $input['title'],
+            $input['description'] ?? null,
+            $input['category'] ?? null,
+            $input['priority'] ?? 'medium',
+            $input['status'] ?? 'pending',
+            $due_date
+        ]);
     createTask($pdo, $userId);
 } elseif ($method === 'PUT') {
     updateTask($pdo, $userId);
