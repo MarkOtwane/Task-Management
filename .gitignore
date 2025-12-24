@@ -1,0 +1,48 @@
+# Environment files with sensitive credentials
+.env
+.env.local
+.env.*.local
+
+# Backend sensitive files
+backend/.env
+!backend/.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE files
+.vscode/
+.idea/
+*.code-workspace
+
+# Node modules (if using Node in future)
+node_modules/
+npm-debug.log
+
+# PHP temporary files
+*.tmp
+*.temp
+*.log
+
+# Database files
+*.db
+*.sqlite
+
+# Cache
+.cache/
+*.cache
+
+# Build artifacts
+dist/
+build/
+
+# Vendor (Composer)
+/vendor/
+
+# Project specific
+backup.sql
+*.backup

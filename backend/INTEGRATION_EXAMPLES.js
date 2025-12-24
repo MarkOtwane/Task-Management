@@ -203,7 +203,7 @@ async function createTaskReminder(taskId, reminderType, reminderTime) {
 }
 
 // Example 13: Create Reminder 1 Day Before Due Date
-async function createOneDay Before Reminder(taskId, dueDate) {
+async function createOneDayBeforeReminder(taskId, dueDate) {
     const dueDateTime = new Date(dueDate);
     const oneDayBefore = new Date(dueDateTime.getTime() - 24 * 60 * 60 * 1000);
     
@@ -343,7 +343,7 @@ async function completeExampleFlow() {
         
         // 4. Create reminders for the task
         if (newTask.task_id) {
-            await createOneDay BeforeReminderReminder(newTask.task_id, newTask.task_id);
+            await createOneDayBeforeReminder(newTask.task_id, newTask.due_date);
         }
         
         // 5. Initialize reminder polling

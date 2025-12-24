@@ -2,17 +2,27 @@
 /**
  * PostgreSQL Database Configuration
  * Task Management System Backend
+ * Supports both local and remote (NeonDB) connections
  */
 
-// Database credentials
-define('DB_HOST', 'localhost');
-define('DB_PORT', '5432');
-define('DB_NAME', 'task_management');
-define('DB_USER', 'postgres');
-define('DB_PASSWORD', 'postgres');
+// Load environment variables from .env if it exists
+if (file_exists(__DIR__ . '/../.env')) {
+    $env = parse_ini_file(__DIR__ . '/../.env');
+    foreach ($env as $key => $value) {
+        define($key, $value);
+    }
+}
 
-// Connection string for PDO
-$dsn = "pgsql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME;
+// Database credentials (with fallback defaults)
+define('DB_HOST', defined('DB_HOST') ? DB_HOST : 'localhost');
+define('DB_PORT', defined('DB_PORT') ? DB_PORT : '5432');
+define('DB_NAME', defined('DB_NAME') ? DB_NAME : 'task_management');
+define('DB_USER', defined('DB_USER') ? DB_USER : 'postgres');
+define('DB_PASSWORD', defined('DB_PASSWORD') ? DB_PASSWORD : 'postgres');
+define('DB_SSL_MODE', defined('DB_SSL_MODE') ? DB_SSL_MODE : 'prefer');
+
+// Build connection string for PDO
+$dsn = "pgsql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";sslmode=" . DB_SSL_MODE;
 
 try {
     $pdo = new PDO($dsn, DB_USER, DB_PASSWORD, [
