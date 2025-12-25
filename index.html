@@ -2267,6 +2267,7 @@
 							
 							newTask = {
 								id: parseInt(response.task.id),
+								userId: currentUser.id,
 								title: response.task.title,
 								description: response.task.description || '',
 								plan: response.task.category || 'day',
@@ -2284,6 +2285,7 @@
 							// Fallback to local data if backend didn't return full task
 							newTask = {
 								id: response.task_id || response.id,
+								userId: currentUser.id,
 								title: taskData.title,
 								description: taskData.description,
 								plan: taskData.plan,
