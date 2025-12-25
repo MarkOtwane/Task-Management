@@ -32,14 +32,22 @@ function verifyAuth() {
     $headers = getallheaders();
     if (isset($headers['Authorization'])) {
         $token = str_replace('Bearer ', '', $headers['Authorization']);
-        return verifyJWT($token);
+        $userId = verifyJWT($token);
+        if ($userId) {
+            error_log('JWT auth successful for user: ' . $userId);
+            return $userId;
+        } else {
+            error_log('JWT auth failed for token: ' . substr($token, 0, 20) . '...');
+        }
     }
     
     // Check for session
     if (isset($_SESSION['user_id'])) {
+        error_log('Session auth successful for user: ' . $_SESSION['user_id']);
         return $_SESSION['user_id'];
     }
     
+    error_log('No valid authentication found');
     return false;
 }
 
@@ -52,16 +60,24 @@ function verifyJWT($token) {
     $parts = explode('.', $token);
     if (count($parts) !== 3) return false;
     
-    $header = json_decode(base64_decode($parts[0]), true);
-    $payload = json_decode(base64_decode($parts[1]), true);
-    
-    // Check expiration
-    if (isset($payload['exp']) && $payload['exp'] < time()) {
+    try {
+        $payload = json_decode(base64_decode($parts[1]), true);
+        
+        // Check if payload is valid
+        if (!$payload || !isset($payload['user_id'])) {
+            return false;
+        }
+        
+        // Check expiration
+        if (isset($payload['exp']) && $payload['exp'] < time()) {
+            return false;
+        }
+        
+        // Return user ID if valid
+        return $payload['user_id'];
+    } catch (Exception $e) {
         return false;
     }
-    
-    // Return user ID if valid
-    return $payload['user_id'] ?? false;
 }
 
 /**
@@ -71,8 +87,9 @@ function verifyJWT($token) {
 function generateJWT($userId) {
     $header = json_encode(['typ' => 'JWT', 'alg' => 'none']);
     $payload = json_encode([
-        'user_id' => $userId,
-        'exp' => time() + (24 * 60 * 60) // 24 hours
+        'user_id' => (int)$userId,
+        'exp' => time() + (24 * 60 * 60), // 24 hours
+        'iat' => time()
     ]);
     
     $token = base64_encode($header) . '.' . base64_encode($payload) . '.signature';
