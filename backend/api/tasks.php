@@ -46,6 +46,10 @@ function getTasks($pdo, $userId) {
 function createTask($pdo, $userId) {
     $input = json_decode(file_get_contents('php://input'), true);
     
+    // Log the input for debugging
+    error_log('Create task input: ' . json_encode($input));
+    error_log('User ID: ' . $userId);
+    
     if (!isset($input['title'])) {
         http_response_code(400);
         echo json_encode(['error' => 'Title is required']);

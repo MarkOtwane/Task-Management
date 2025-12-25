@@ -70,9 +70,11 @@ function generateJWT($userId) {
 function requireAuth() {
     $userId = verifyAuth();
     if (!$userId) {
+        error_log('Authentication failed - no valid session or token');
         http_response_code(401);
-        echo json_encode(['error' => 'Unauthorized']);
+        echo json_encode(['error' => 'Unauthorized - Please log in again']);
         exit;
     }
+    error_log('Authentication successful for user: ' . $userId);
     return $userId;
 }
