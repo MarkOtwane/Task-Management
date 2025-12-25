@@ -85,10 +85,17 @@ class TaskAPI {
 	 * Register a new user
 	 */
 	async register(email, password, username = "") {
-		return this.request("/api/auth.php?action=register", {
+		const result = await this.request("/api/auth.php?action=register", {
 			method: "POST",
 			body: JSON.stringify({ email, password, username }),
 		});
+		
+		// Store JWT token
+		if (result.token) {
+			localStorage.setItem('auth_token', result.token);
+		}
+		
+		return result;
 	}
 
 	/**
