@@ -1840,6 +1840,8 @@
 								tasks = (backendTasks || []).map((t) => {
 									const mapped = {
 										id: Number(t.id),
+										// Ensure userId is set so getUserTasks() can filter correctly
+										userId: t.user_id ? Number(t.user_id) : (currentUser ? currentUser.id : null),
 										title: t.title,
 										description: t.description,
 										plan: t.category || 'day',
@@ -1859,6 +1861,8 @@
 								renderTasks();
 								updateOverview();
 								updatePlans();
+								// Persist loaded tasks to localStorage for offline/quick access
+								try { storage.saveTasks(tasks); } catch (e) { console.warn('Could not save tasks to storage', e); }
 							} catch (error) {
 								console.error("Error loading tasks:", error);
 								// Fall back to localStorage if API fails
@@ -2301,7 +2305,10 @@
 							};
 						}
 						
-						tasks.push(newTask);
+							tasks.push(newTask);
+						// Persist the updated tasks list
+						try { storage.saveTasks(tasks); } catch (e) { console.warn('Could not save tasks to storage', e); }
+
 						showNotification("Task created successfully! 🎉", "success");
 						taskModal.classList.add("hidden");
 						renderTasks();
