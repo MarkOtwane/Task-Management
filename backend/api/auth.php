@@ -77,12 +77,14 @@ function registerUser($pdo, $input) {
         $userId = $pdo->lastInsertId();
         
         $_SESSION['user_id'] = $userId;
+        $tokenData = generateJWT($userId);
         
         http_response_code(201);
         echo json_encode([
             'message' => 'User registered successfully',
             'user_id' => $userId,
-            'email' => $email
+            'email' => $email,
+            'token' => $tokenData['token']
         ]);
     } catch (PDOException $e) {
         http_response_code(500);
@@ -115,11 +117,13 @@ function loginUser($pdo, $input) {
     }
     
     $_SESSION['user_id'] = $user['id'];
+    $tokenData = generateJWT($user['id']);
     
     echo json_encode([
         'message' => 'Login successful',
         'user_id' => $user['id'],
-        'email' => $email
+        'email' => $email,
+        'token' => $tokenData['token']
     ]);
 }
 

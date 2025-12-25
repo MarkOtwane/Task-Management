@@ -48,9 +48,20 @@ function verifyAuth() {
  * In production, use a proper JWT library
  */
 function verifyJWT($token) {
-    // Placeholder - implement proper JWT verification
-    // For now, using session-based auth
-    return false;
+    // Simple JWT implementation for demo
+    $parts = explode('.', $token);
+    if (count($parts) !== 3) return false;
+    
+    $header = json_decode(base64_decode($parts[0]), true);
+    $payload = json_decode(base64_decode($parts[1]), true);
+    
+    // Check expiration
+    if (isset($payload['exp']) && $payload['exp'] < time()) {
+        return false;
+    }
+    
+    // Return user ID if valid
+    return $payload['user_id'] ?? false;
 }
 
 /**
@@ -58,10 +69,15 @@ function verifyJWT($token) {
  * In production, use a proper JWT library
  */
 function generateJWT($userId) {
-    // Placeholder - implement proper JWT generation
-    // For now, using session-based auth
-    $_SESSION['user_id'] = $userId;
-    return ['token' => null];
+    $header = json_encode(['typ' => 'JWT', 'alg' => 'none']);
+    $payload = json_encode([
+        'user_id' => $userId,
+        'exp' => time() + (24 * 60 * 60) // 24 hours
+    ]);
+    
+    $token = base64_encode($header) . '.' . base64_encode($payload) . '.signature';
+    
+    return ['token' => $token];
 }
 
 /**

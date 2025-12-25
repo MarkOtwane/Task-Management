@@ -36,12 +36,20 @@ class TaskAPI {
 	async request(endpoint, options = {}) {
 		const url = `${this.baseURL}${endpoint}`;
 
+		const headers = {
+			"Content-Type": "application/json",
+			...options.headers,
+		};
+
+		// Add JWT token if available
+		const token = localStorage.getItem('auth_token');
+		if (token) {
+			headers['Authorization'] = `Bearer ${token}`;
+		}
+
 		const config = {
 			method: options.method || "GET",
-			headers: {
-				"Content-Type": "application/json",
-				...options.headers,
-			},
+			headers,
 			credentials: "include", // Include cookies for session
 			...options,
 		};
@@ -87,16 +95,26 @@ class TaskAPI {
 	 * Login user
 	 */
 	async login(email, password) {
-		return this.request("/api/auth.php?action=login", {
+		const result = await this.request("/api/auth.php?action=login", {
 			method: "POST",
 			body: JSON.stringify({ email, password }),
 		});
+		
+		// Store JWT token
+		if (result.token) {
+			localStorage.setItem('auth_token', result.token);
+		}
+		
+		return result;
 	}
 
 	/**
 	 * Logout user
 	 */
 	async logout() {
+		// Remove JWT token
+		localStorage.removeItem('auth_token');
+		
 		return this.request("/api/auth.php?action=logout", {
 			method: "POST",
 		});
