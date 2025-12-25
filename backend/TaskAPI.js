@@ -63,13 +63,14 @@ class TaskAPI {
 			method: config.method,
 			url: url,
 			headers: headers,
-			body: options.body ? JSON.parse(options.body) : null
+			body: options.body ? JSON.parse(options.body) : null,
 		});
 
-		// Ensure the token is sent with the request
-		if (!token) {
+		// Ensure the token is sent with the request (except for auth endpoints)
+		const isAuthEndpoint = endpoint.includes("auth.php");
+		if (!token && !isAuthEndpoint) {
 			console.error("No JWT token found. Redirecting to login.");
-			if (window.location.pathname !== '/') {
+			if (window.location.pathname !== "/") {
 				window.location.href = "/";
 			}
 			throw new Error("No JWT token found. Please log in again.");

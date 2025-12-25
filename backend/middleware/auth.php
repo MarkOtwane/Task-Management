@@ -72,8 +72,16 @@ function verifyJWT($token) {
 	list($header, $payload, $signature) = $parts;
 	
 	try {
+		// Add padding to base64url strings if needed (base64 requires length to be multiple of 4)
+		$padPayload = $payload . str_repeat('=', (4 - strlen($payload) % 4) % 4);
+		$padHeader = $header . str_repeat('=', (4 - strlen($header) % 4) % 4);
+		
+		// Convert from base64url to base64
+		$payloadBase64 = strtr($padPayload, '-_', '+/');
+		$headerBase64 = strtr($padHeader, '-_', '+/');
+		
 		// Decode payload
-		$payloadData = json_decode(base64_decode(str_pad($payload, strlen($payload) % 4, '=', STR_PAD_RIGHT)), true);
+		$payloadData = json_decode(base64_decode($payloadBase64), true);
 		
 		// Check if payload is valid
 		if (!$payloadData || !isset($payloadData['user_id'])) {
@@ -90,7 +98,7 @@ function verifyJWT($token) {
 		// Verify signature using a simple HMAC approach
 		$secret = getenv('JWT_SECRET') ?: 'default-secret-key-change-in-production';
 		$expectedSignature = hash_hmac('sha256', $header . '.' . $payload, $secret, true);
-		$expectedSignature = base64_encode($expectedSignature);
+		$expectedSignature = rtrim(strtr(base64_encode($expectedSignature), '+/', '-_'), '=');
 		
 		if (!hash_equals($expectedSignature, $signature)) {
 			error_log('Invalid JWT signature: expected ' . $expectedSignature . ', got ' . $signature);
@@ -117,13 +125,14 @@ function generateJWT($userId) {
         'iat' => time()
     ]);
     
-    $base64Header = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($header));
-    $base64Payload = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($payload));
+    // Use proper base64url encoding (remove padding and use URL-safe characters)
+    $base64Header = rtrim(strtr(base64_encode($header), '+/', '-_'), '=');
+    $base64Payload = rtrim(strtr(base64_encode($payload), '+/', '-_'), '=');
     
     // Create signature using HMAC
     $secret = getenv('JWT_SECRET') ?: 'default-secret-key-change-in-production';
     $signature = hash_hmac('sha256', $base64Header . '.' . $base64Payload, $secret, true);
-    $base64Signature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($signature));
+    $base64Signature = rtrim(strtr(base64_encode($signature), '+/', '-_'), '=');
     
     $token = $base64Header . '.' . $base64Payload . '.' . $base64Signature;
     
