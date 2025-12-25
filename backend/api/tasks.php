@@ -99,10 +99,16 @@ function createTask($pdo, $userId) {
         
         $taskId = $pdo->lastInsertId();
         
+        // Fetch the newly created task to return complete data
+        $stmt = $pdo->prepare("SELECT * FROM tasks WHERE id = ? AND user_id = ?");
+        $stmt->execute([$taskId, $userId]);
+        $task = $stmt->fetch();
+        
         http_response_code(201);
         echo json_encode([
             'message' => 'Task created successfully',
-            'task_id' => $taskId
+            'task_id' => $taskId,
+            'task' => $task
         ]);
     } catch (PDOException $e) {
         http_response_code(500);

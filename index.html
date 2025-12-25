@@ -1155,41 +1155,27 @@
 		<script src="/_sdk/element_sdk.js" type="text/javascript"></script>
 		<script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
 		<script>
-			// Ensure handleKeyDown function is defined
+			// Ensure handleKeyDown function is defined safely
 			window.handleKeyDown = function(event) {
 				try {
-					if (event && event.key) {
+					if (!event) {
+						console.warn('handleKeyDown: No event object');
+						return;
+					}
+					if (event.key) {
 						console.log('Key pressed:', event.key);
-					} else {
-						console.error('Invalid event object in handleKeyDown');
 					}
 				} catch (error) {
 					console.error('Error in handleKeyDown:', error);
 				}
 			};
 			
-			// Override any external handleKeyDown function
-			if (window.handleKeyDown && window.handleKeyDown.toString().includes('page-events.js')) {
-				console.warn('Overriding external handleKeyDown function');
-				window.handleKeyDown = function(event) {
-					try {
-						if (event && event.key) {
-							console.log('Key pressed:', event.key);
-						} else {
-							console.error('Invalid event object in handleKeyDown');
-						}
-					} catch (error) {
-						console.error('Error in handleKeyDown:', error);
-					}
-				};
-			}
-			
-			// Remove any external event listeners
+			// Remove any duplicate event listeners to prevent conflicts
 			if (document.removeEventListener) {
 				document.removeEventListener('keydown', window.handleKeyDown);
 			}
 			
-			// Add the correct event listener
+			// Add the event listener once
 			document.addEventListener('keydown', window.handleKeyDown);
 		</script>
 	</head>
@@ -2261,22 +2247,58 @@
 						category: taskData.plan,
 						due_date: dueDateIso
 					}).then((response) => {
-						// Add to local tasks array
-						const newTask = {
-							id: response.task_id || response.id,
-							title: taskData.title,
-							description: taskData.description,
-							plan: taskData.plan,
-							dueDate: taskData.dueDate,
-							dueTime: taskData.dueTime,
-							reminder: taskData.reminder,
-							customReminder: taskData.customReminder,
-							completed: false,
-							createdAt: Date.now(),
-							reflection: null,
-							reminderSent: false,
-							deadlineSent: false,
-						};
+						console.log('Task creation response:', response);
+						
+						// Parse the backend task data if available
+						let newTask;
+						if (response.task && response.task.id) {
+							// Map from backend response
+							const parseDueDate = (dateStr) => {
+								if (!dateStr) return null;
+								const date = new Date(dateStr);
+								return date.toISOString().split('T')[0]; // YYYY-MM-DD
+							};
+							
+							const parseDueTime = (dateStr) => {
+								if (!dateStr) return null;
+								const date = new Date(dateStr);
+								return date.toTimeString().split(' ')[0].substring(0, 5); // HH:MM
+							};
+							
+							newTask = {
+								id: parseInt(response.task.id),
+								title: response.task.title,
+								description: response.task.description || '',
+								plan: response.task.category || 'day',
+								dueDate: parseDueDate(response.task.due_date),
+								dueTime: parseDueTime(response.task.due_date),
+								reminder: 'none',
+								customReminder: null,
+								completed: response.task.status === 'completed',
+								createdAt: new Date(response.task.created_at).getTime(),
+								reflection: null,
+								reminderSent: false,
+								deadlineSent: false,
+							};
+						} else {
+							// Fallback to local data if backend didn't return full task
+							newTask = {
+								id: response.task_id || response.id,
+								title: taskData.title,
+								description: taskData.description,
+								plan: taskData.plan,
+								dueDate: taskData.dueDate,
+								dueTime: taskData.dueTime,
+								reminder: taskData.reminder,
+								customReminder: taskData.customReminder,
+								completed: false,
+								createdAt: Date.now(),
+								reflection: null,
+								reminderSent: false,
+								deadlineSent: false,
+							};
+						}
+						
 						tasks.push(newTask);
 						showNotification("Task created successfully! 🎉", "success");
 						taskModal.classList.add("hidden");
