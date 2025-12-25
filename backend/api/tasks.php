@@ -11,17 +11,24 @@ require_once '../middleware/auth.php';
 $method = $_SERVER['REQUEST_METHOD'];
 $userId = requireAuth();
 
-if ($method === 'GET') {
-    getTasks($pdo, $userId);
-} elseif ($method === 'POST') {
-    createTask($pdo, $userId);
-} elseif ($method === 'PUT') {
-    updateTask($pdo, $userId);
-} elseif ($method === 'DELETE') {
-    deleteTask($pdo, $userId);
+// Log the user ID for debugging
+if ($userId) {
+	error_log('Authenticated user ID: ' . $userId);
 } else {
-    http_response_code(405);
-    echo json_encode(['error' => 'Method not allowed']);
+	error_log('No authenticated user ID');
+}
+
+if ($method === 'GET') {
+	getTasks($pdo, $userId);
+} elseif ($method === 'POST') {
+	createTask($pdo, $userId);
+} elseif ($method === 'PUT') {
+	updateTask($pdo, $userId);
+} elseif ($method === 'DELETE') {
+	deleteTask($pdo, $userId);
+} else {
+	http_response_code(405);
+	echo json_encode(['error' => 'Method not allowed']);
 }
 
 /**

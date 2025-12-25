@@ -52,48 +52,75 @@ function verifyAuth() {
 }
 
 /**
- * Simple JWT verification
- * In production, use a proper JWT library
+ * Verify JWT token
+ * Returns user_id if valid, false otherwise
  */
 function verifyJWT($token) {
-    // Simple JWT implementation for demo
-    $parts = explode('.', $token);
-    if (count($parts) !== 3) return false;
-    
-    try {
-        $payload = json_decode(base64_decode($parts[1]), true);
-        
-        // Check if payload is valid
-        if (!$payload || !isset($payload['user_id'])) {
-            return false;
-        }
-        
-        // Check expiration
-        if (isset($payload['exp']) && $payload['exp'] < time()) {
-            return false;
-        }
-        
-        // Return user ID if valid
-        return $payload['user_id'];
-    } catch (Exception $e) {
-        return false;
-    }
+	$parts = explode('.', $token);
+	if (count($parts) !== 3) {
+		error_log('Invalid JWT token format: ' . $token);
+		return false;
+	}
+	
+	list($header, $payload, $signature) = $parts;
+	
+	try {
+		// Decode payload
+		$payloadData = json_decode(base64_decode(str_pad($payload, strlen($payload) % 4, '=', STR_PAD_RIGHT)), true);
+		
+		// Check if payload is valid
+		if (!$payloadData || !isset($payloadData['user_id'])) {
+			error_log('Invalid JWT payload: ' . json_encode($payloadData));
+			return false;
+		}
+		
+		// Check expiration
+		if (isset($payloadData['exp']) && $payloadData['exp'] < time()) {
+			error_log('JWT token expired: ' . $payloadData['exp'] . ' < ' . time());
+			return false;
+		}
+		
+		// Verify signature using a simple HMAC approach
+		$secret = getenv('JWT_SECRET') ?: 'default-secret-key-change-in-production';
+		$expectedSignature = hash_hmac('sha256', $header . '.' . $payload, $secret, true);
+		$expectedSignature = base64_encode($expectedSignature);
+		
+		if (!hash_equals($expectedSignature, $signature)) {
+			error_log('Invalid JWT signature: expected ' . $expectedSignature . ', got ' . $signature);
+			return false;
+		}
+		
+		error_log('JWT verification successful for user: ' . $payloadData['user_id']);
+		return $payloadData['user_id'];
+	} catch (Exception $e) {
+		error_log('JWT verification error: ' . $e->getMessage());
+		return false;
+	}
 }
 
 /**
  * Generate JWT token
- * In production, use a proper JWT library
+ * Returns token array with token string
  */
 function generateJWT($userId) {
-    $header = json_encode(['typ' => 'JWT', 'alg' => 'none']);
+    $header = json_encode(['typ' => 'JWT', 'alg' => 'HS256']);
     $payload = json_encode([
         'user_id' => (int)$userId,
         'exp' => time() + (24 * 60 * 60), // 24 hours
         'iat' => time()
     ]);
     
-    $token = base64_encode($header) . '.' . base64_encode($payload) . '.signature';
+    $base64Header = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($header));
+    $base64Payload = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($payload));
     
+    // Create signature using HMAC
+    $secret = getenv('JWT_SECRET') ?: 'default-secret-key-change-in-production';
+    $signature = hash_hmac('sha256', $base64Header . '.' . $base64Payload, $secret, true);
+    $base64Signature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($signature));
+    
+    $token = $base64Header . '.' . $base64Payload . '.' . $base64Signature;
+    
+    error_log('JWT generated successfully for user: ' . $userId);
     return ['token' => $token];
 }
 

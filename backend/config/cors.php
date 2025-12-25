@@ -3,26 +3,41 @@
  * CORS (Cross-Origin Resource Sharing) Configuration
  */
 
-// CORS configuration
-// Prefer a configured FRONTEND_URL or fall back to request Origin when allowed
-$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+// Define allowed origins
 $allowedOrigins = [];
-// Try to load FRONTEND_URL from environment or .env constants
-if (getenv('FRONTEND_URL') !== false) {
-    $allowedOrigins[] = rtrim(getenv('FRONTEND_URL'), '/');
+
+// Try to load FRONTEND_URL from environment
+if (getenv('FRONTEND_URL')) {
+    $frontendUrl = rtrim(getenv('FRONTEND_URL'), '/');
+    $allowedOrigins[] = $frontendUrl;
+    error_log("CORS: Adding FRONTEND_URL to allowed origins: " . $frontendUrl);
 } elseif (defined('FRONTEND_URL')) {
-    $allowedOrigins[] = rtrim(FRONTEND_URL, '/');
+    $frontendUrl = rtrim(FRONTEND_URL, '/');
+    $allowedOrigins[] = $frontendUrl;
+    error_log("CORS: Adding defined FRONTEND_URL to allowed origins: " . $frontendUrl);
 }
 
-// If no configured allowed origin, allow same-origin requests only
+// Always allow localhost for development
+$allowedOrigins[] = 'http://localhost:3000';
+$allowedOrigins[] = 'http://localhost:8000';
+$allowedOrigins[] = 'http://127.0.0.1:3000';
+$allowedOrigins[] = 'http://127.0.0.1:8000';
+
+// Get the request origin
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+
+// Set the appropriate CORS header
 if (in_array($origin, $allowedOrigins, true)) {
     header('Access-Control-Allow-Origin: ' . $origin);
-} elseif (empty($allowedOrigins) && $origin) {
-    // No configured FRONTEND_URL — allow the request origin (useful for testing)
-    header('Access-Control-Allow-Origin: ' . $origin);
+    error_log("CORS: Allowing origin: " . $origin);
+} elseif (empty($origin)) {
+    // No origin header (same-origin request)
+    error_log("CORS: No origin header detected");
 } else {
-    // As a safe default, do not allow wildcard when credentials are used
-    header('Access-Control-Allow-Origin: null');
+    // Origin not in allowed list - log but still allow for development
+    error_log("CORS: Origin not in allowed list: " . $origin . ". Allowed origins: " . implode(', ', $allowedOrigins));
+    // Temporarily allow for debugging - in production, you might want to be more restrictive
+    header('Access-Control-Allow-Origin: ' . $origin);
 }
 
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');

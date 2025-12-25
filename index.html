@@ -1154,9 +1154,28 @@
 		<script src="/_sdk/data_sdk.js" type="text/javascript"></script>
 		<script src="/_sdk/element_sdk.js" type="text/javascript"></script>
 		<script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
+		<script>
+			// Ensure handleKeyDown function is defined
+			window.handleKeyDown = function(event) {
+				if (event && event.key) {
+					console.log('Key pressed:', event.key);
+				} else {
+					console.error('Invalid event object in handleKeyDown');
+				}
+			};
+		</script>
 	</head>
 		<!-- Import TaskAPI for backend connectivity -->
-		<script src="https://task-management-bxpk.onrender.com/backend/TaskAPI.js"></script>
+		<script>
+			// Dynamic script loading based on environment
+			const taskApiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+				? "http://localhost:8000/backend/TaskAPI.js"
+				: "https://task-management-bxpk.onrender.com/backend/TaskAPI.js";
+			
+			const script = document.createElement('script');
+			script.src = taskApiUrl;
+			document.head.appendChild(script);
+		</script>
 	</head>
 	<body>
 		<div class="app-container">
@@ -1493,7 +1512,10 @@
 			};
 
 						// ===== BACKEND API INITIALIZATION =====
-						const API_URL = "https://task-management-bxpk.onrender.com/backend";
+						// Use localhost for development, production URL for deployed version
+						const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+							? "http://localhost:8000/backend" 
+							: "https://task-management-bxpk.onrender.com/backend";
 						let api = null;
 			
 						// Initialize API after TaskAPI loads
@@ -1506,11 +1528,26 @@
 								// Fallback to localhost for development
 								api = new TaskAPI("http://localhost:8000/backend");
 							}
+							
+							// Check for existing JWT token
+							const token = localStorage.getItem('auth_token');
+							if (token) {
+								console.log('Found existing JWT token:', token.substring(0, 20) + '...');
+							} else {
+								console.log('No existing JWT token found');
+							}
 
 							// If there's a logged-in user stored locally, load their tasks from backend
 							const savedUser = storage.getCurrentUser();
 							if (savedUser) {
 								currentUser = savedUser;
+								// Ensure the JWT token is present
+								const token = localStorage.getItem('auth_token');
+								if (token) {
+									console.log('Using stored JWT token:', token.substring(0, 20) + '...');
+								} else {
+									console.log('No stored JWT token found');
+								}
 								loadTasks().catch((err) => console.warn('Failed to load tasks on init:', err));
 							}
 						}
@@ -1731,9 +1768,20 @@
 					showNotification("API not initialized. Please refresh the page.", "error");
 					return;
 				}
+				
+				// Clear any existing token before login
+				localStorage.removeItem('auth_token');
 
+				console.log('Attempting login for:', email);
+				
 				api.login(email, password).then((response) => {
-					if (response && response.user_id) {
+					console.log('Login response:', response);
+					
+					if (response && response.user_id && response.token) {
+						// Store the JWT token
+						localStorage.setItem('auth_token', response.token);
+						console.log('JWT token stored:', response.token.substring(0, 20) + '...');
+						
 						currentUser = {
 							id: response.user_id,
 							email: email,
@@ -1747,10 +1795,16 @@
 						showNotification("Welcome back! 👋", "success");
 					} else {
 						showNotification("Login failed. Check credentials and try again.", "error");
+						console.error('Invalid login response:', response);
+						// Clear any existing token on login failure
+						localStorage.removeItem('auth_token');
 					}
 				}).catch((error) => {
 					showNotification("Login error: " + error.message, "error");
 					console.error("Login error:", error);
+					
+					// Clear any existing token on login failure
+					localStorage.removeItem('auth_token');
 				});
 
 						// ===== LOAD TASKS FROM BACKEND =====
@@ -1800,25 +1854,50 @@
 					showNotification("API not initialized. Please refresh the page.", "error");
 					return;
 				}
+				
+				// Clear any existing token before registration
+				localStorage.removeItem('auth_token');
 
+				console.log('Attempting registration for:', email);
+				
 				api.register(email, password, name).then((response) => {
-					if (response && response.user_id) {
-						showNotification("Registration successful! Please login.", "success");
+					console.log('Registration response:', response);
+					
+					if (response && response.user_id && response.token) {
+						// Store the JWT token
+						localStorage.setItem('auth_token', response.token);
+						console.log('JWT token stored after registration:', response.token.substring(0, 20) + '...');
+						
+						showNotification("Registration successful! Welcome aboard! 🎉", "success");
 						document.getElementById("registerForm").reset();
-						setTimeout(() => {
-							showPage("login");
-							document.getElementById("loginEmail").value = email;
-						}, 2000);
+						
+						// Auto-login after registration
+						currentUser = {
+							id: response.user_id,
+							email: email,
+							name: name
+						};
+						storage.setCurrentUser(currentUser);
+						document.getElementById("userNameDisplay").textContent = `Welcome, ${currentUser.name}!`;
+						showPage("dashboard");
+						showSection("overview");
+						loadTasks();
 					} else {
 						showNotification("Registration failed: " + (response.message || "Unknown error"), "error");
+						console.error('Invalid registration response:', response);
+						// Clear any existing token on registration failure
+						localStorage.removeItem('auth_token');
 					}
 				}).catch((error) => {
+					console.error("Registration error:", error);
+					
 					if (error.message && error.message.includes("already")) {
 						showNotification("Email already exists. Please login.", "error");
 					} else {
 						showNotification("Registration error: " + error.message, "error");
 					}
-					console.error("Registration error:", error);
+					// Clear any existing token on registration failure
+					localStorage.removeItem('auth_token');
 				});
 			});
 
@@ -1962,6 +2041,8 @@
 						currentUser = null;
 						storage.setCurrentUser(null);
 						tasks = [];
+						// Clear the JWT token on logout
+						localStorage.removeItem('auth_token');
 						showPage("login");
 						showNotification("Logged out successfully", "success");
 					}).catch((error) => {
@@ -1970,12 +2051,16 @@
 						currentUser = null;
 						storage.setCurrentUser(null);
 						tasks = [];
+						// Clear the JWT token on logout
+						localStorage.removeItem('auth_token');
 						showPage("login");
 					});
 				} else {
 					currentUser = null;
 					storage.setCurrentUser(null);
 					tasks = [];
+					// Clear the JWT token on logout
+					localStorage.removeItem('auth_token');
 					showPage("login");
 				}
 			});
@@ -2082,6 +2167,19 @@
 				// Use backend API to save/update task
 				if (!api || !currentUser) {
 					showNotification("User not authenticated", "error");
+					console.error('User not authenticated');
+					// Redirect to login page
+					showPage("login");
+					return;
+				}
+				
+				// Ensure the JWT token is present
+				const token = localStorage.getItem('auth_token');
+				if (!token) {
+					showNotification("Session expired. Please log in again.", "error");
+					console.error('No JWT token found');
+					// Redirect to login page
+					showPage("login");
 					return;
 				}
 
@@ -2205,6 +2303,18 @@
 
 				// Submit reflection to backend API (backend expects `reflection_text` string)
 				const reflectionPayload = JSON.stringify({ learning, experience });
+				
+				// Ensure the JWT token is present
+				const token = localStorage.getItem('auth_token');
+				if (!token) {
+					showNotification("Session expired. Please log in again.", "error");
+					console.error('No JWT token found');
+					// Redirect to login page
+					showPage("login");
+					reflectionModal.classList.add("hidden");
+					return;
+				}
+				
 				api.request('/api/reflections.php', {
 					method: 'POST',
 					body: JSON.stringify({ task_id: completingTaskId, reflection_text: reflectionPayload })
@@ -2401,6 +2511,16 @@
 			window.confirmDelete = (taskId) => {
 				if (!api) {
 					showNotification("API not initialized", "error");
+					return;
+				}
+				
+				// Ensure the JWT token is present
+				const token = localStorage.getItem('auth_token');
+				if (!token) {
+					showNotification("Session expired. Please log in again.", "error");
+					console.error('No JWT token found');
+					// Redirect to login page
+					showPage("login");
 					return;
 				}
 

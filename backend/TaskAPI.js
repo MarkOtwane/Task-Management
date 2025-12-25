@@ -38,14 +38,26 @@ class TaskAPI {
 
 		const headers = {
 			"Content-Type": "application/json",
+			"X-Requested-With": "XMLHttpRequest",
 			...options.headers,
 		};
 
 		// Add JWT token if available
-		const token = localStorage.getItem('auth_token');
+		const token = localStorage.getItem("auth_token");
 		if (token) {
-			headers['Authorization'] = `Bearer ${token}`;
+			headers["Authorization"] = `Bearer ${token}`;
+			console.log("Using auth token:", token.substring(0, 20) + "...");
+		} else {
+			console.log("No auth token found in localStorage");
 		}
+
+		// Log the full request details for debugging
+		console.log("Request details:", {
+			method: config.method,
+			url: url,
+			headers: headers,
+			body: options.body ? JSON.parse(options.body) : null
+		});
 
 		const config = {
 			method: options.method || "GET",
@@ -53,6 +65,9 @@ class TaskAPI {
 			credentials: "include", // Include cookies for session
 			...options,
 		};
+
+		console.log(`Making ${config.method} request to: ${url}`);
+		console.log("Request headers:", headers);
 
 		try {
 			const response = await fetch(url, config);
@@ -67,14 +82,27 @@ class TaskAPI {
 				data = await response.text();
 			}
 
+			console.log("Response status:", response.status);
+			console.log("Response data:", data);
+
 			if (!response.ok) {
 				const error = typeof data === "object" ? data.error : data;
+
+				// Handle specific authentication errors
+				if (response.status === 401) {
+					console.error("Authentication failed - clearing token");
+					localStorage.removeItem("auth_token");
+				}
+
 				throw new Error(error || `HTTP ${response.status}`);
 			}
 
 			return data;
 		} catch (error) {
 			console.error("API Error:", error);
+			if (error.name === "TypeError" && error.message.includes("fetch")) {
+				throw new Error("Network error: Unable to connect to the server");
+			}
 			throw error;
 		}
 	}
@@ -89,12 +117,12 @@ class TaskAPI {
 			method: "POST",
 			body: JSON.stringify({ email, password, username }),
 		});
-		
+
 		// Store JWT token
 		if (result.token) {
-			localStorage.setItem('auth_token', result.token);
+			localStorage.setItem("auth_token", result.token);
 		}
-		
+
 		return result;
 	}
 
@@ -106,12 +134,12 @@ class TaskAPI {
 			method: "POST",
 			body: JSON.stringify({ email, password }),
 		});
-		
+
 		// Store JWT token
 		if (result.token) {
-			localStorage.setItem('auth_token', result.token);
+			localStorage.setItem("auth_token", result.token);
 		}
-		
+
 		return result;
 	}
 
@@ -120,8 +148,8 @@ class TaskAPI {
 	 */
 	async logout() {
 		// Remove JWT token
-		localStorage.removeItem('auth_token');
-		
+		localStorage.removeItem("auth_token");
+
 		return this.request("/api/auth.php?action=logout", {
 			method: "POST",
 		});

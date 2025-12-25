@@ -34,6 +34,9 @@ services:
               sync: false
             - key: FRONTEND_URL
               value: https://task-management-neon-one.vercel.app/
+            - key: JWT_SECRET
+              generateValue: true
+              sync: false
 
        # Auto-deploy on GitHub push
        autoDeploy: true
