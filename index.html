@@ -1183,6 +1183,14 @@
 					}
 				};
 			}
+			
+			// Remove any external event listeners
+			if (document.removeEventListener) {
+				document.removeEventListener('keydown', window.handleKeyDown);
+			}
+			
+			// Add the correct event listener
+			document.addEventListener('keydown', window.handleKeyDown);
 		</script>
 	</head>
 		<!-- Import TaskAPI for backend connectivity -->
@@ -1559,6 +1567,12 @@
 								if (window.location.pathname !== '/') {
 									window.location.href = "/";
 								}
+							}
+							
+							// Ensure the API is initialized before making any requests
+							if (!api) {
+								console.error("API not initialized");
+								return;
 							}
 
 							// If there's a logged-in user stored locally, load their tasks from backend
@@ -2206,6 +2220,13 @@
 					window.location.href = "/";
 					return;
 				}
+				
+				// Ensure the API is initialized
+				if (!api) {
+					showNotification("API not initialized", "error");
+					console.error('API not initialized');
+					return;
+				}
 
 				if (editingTaskId) {
 					// Map frontend fields to backend fields and update via API
@@ -2335,6 +2356,14 @@
 					console.error('No JWT token found');
 					// Redirect to login page
 					window.location.href = "/";
+					reflectionModal.classList.add("hidden");
+					return;
+				}
+				
+				// Ensure the API is initialized
+				if (!api) {
+					showNotification("API not initialized", "error");
+					console.error('API not initialized');
 					reflectionModal.classList.add("hidden");
 					return;
 				}
@@ -2545,6 +2574,13 @@
 					console.error('No JWT token found');
 					// Redirect to login page
 					window.location.href = "/";
+					return;
+				}
+				
+				// Ensure the API is initialized
+				if (!api) {
+					showNotification("API not initialized", "error");
+					console.error('API not initialized');
 					return;
 				}
 

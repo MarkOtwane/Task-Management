@@ -22,6 +22,10 @@ if ($userId) {
 	error_log('Authenticated user ID: ' . $userId);
 } else {
 	error_log('No authenticated user ID');
+	// Return a more detailed error message
+	http_response_code(401);
+	echo json_encode(['error' => 'Unauthorized - No valid authentication found']);
+	exit;
 }
 
 if ($method === 'GET') {

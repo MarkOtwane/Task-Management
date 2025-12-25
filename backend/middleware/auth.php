@@ -39,9 +39,13 @@ function verifyAuth() {
 			return $userId;
 		} else {
 			error_log('JWT auth failed for token: ' . substr($token, 0, 20) . '...');
+			// Log the token for debugging
+			error_log('Failed token: ' . $token);
 		}
 	} else {
 		error_log('No Authorization header found');
+		// Log all headers for debugging
+		error_log('All headers: ' . json_encode($headers));
 	}
 	
 	// Check for session

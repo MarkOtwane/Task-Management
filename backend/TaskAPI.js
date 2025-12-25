@@ -51,6 +51,13 @@ class TaskAPI {
 			console.log("No auth token found in localStorage");
 		}
 
+		const config = {
+			method: options.method || "GET",
+			headers,
+			credentials: "include", // Include cookies for session
+			...options,
+		};
+
 		// Log the full request details for debugging
 		console.log("Request details:", {
 			method: config.method,
@@ -62,16 +69,11 @@ class TaskAPI {
 		// Ensure the token is sent with the request
 		if (!token) {
 			console.error("No JWT token found. Redirecting to login.");
-			window.location.href = "/";
-			return;
+			if (window.location.pathname !== '/') {
+				window.location.href = "/";
+			}
+			throw new Error("No JWT token found. Please log in again.");
 		}
-
-		const config = {
-			method: options.method || "GET",
-			headers,
-			credentials: "include", // Include cookies for session
-			...options,
-		};
 
 		console.log(`Making ${config.method} request to: ${url}`);
 		console.log("Request headers:", headers);
