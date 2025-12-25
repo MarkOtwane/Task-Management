@@ -28,27 +28,30 @@ session_start();
  * Returns user_id if valid, false otherwise
  */
 function verifyAuth() {
-    // Check for JWT token in Authorization header
-    $headers = getallheaders();
-    if (isset($headers['Authorization'])) {
-        $token = str_replace('Bearer ', '', $headers['Authorization']);
-        $userId = verifyJWT($token);
-        if ($userId) {
-            error_log('JWT auth successful for user: ' . $userId);
-            return $userId;
-        } else {
-            error_log('JWT auth failed for token: ' . substr($token, 0, 20) . '...');
-        }
-    }
-    
-    // Check for session
-    if (isset($_SESSION['user_id'])) {
-        error_log('Session auth successful for user: ' . $_SESSION['user_id']);
-        return $_SESSION['user_id'];
-    }
-    
-    error_log('No valid authentication found');
-    return false;
+	// Check for JWT token in Authorization header
+	$headers = getallheaders();
+	if (isset($headers['Authorization'])) {
+		$token = str_replace('Bearer ', '', $headers['Authorization']);
+		error_log('Attempting to verify JWT token: ' . substr($token, 0, 20) . '...');
+		$userId = verifyJWT($token);
+		if ($userId) {
+			error_log('JWT auth successful for user: ' . $userId);
+			return $userId;
+		} else {
+			error_log('JWT auth failed for token: ' . substr($token, 0, 20) . '...');
+		}
+	} else {
+		error_log('No Authorization header found');
+	}
+	
+	// Check for session
+	if (isset($_SESSION['user_id'])) {
+		error_log('Session auth successful for user: ' . $_SESSION['user_id']);
+		return $_SESSION['user_id'];
+	}
+	
+	error_log('No valid authentication found');
+	return false;
 }
 
 /**

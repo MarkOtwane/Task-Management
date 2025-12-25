@@ -1157,12 +1157,32 @@
 		<script>
 			// Ensure handleKeyDown function is defined
 			window.handleKeyDown = function(event) {
-				if (event && event.key) {
-					console.log('Key pressed:', event.key);
-				} else {
-					console.error('Invalid event object in handleKeyDown');
+				try {
+					if (event && event.key) {
+						console.log('Key pressed:', event.key);
+					} else {
+						console.error('Invalid event object in handleKeyDown');
+					}
+				} catch (error) {
+					console.error('Error in handleKeyDown:', error);
 				}
 			};
+			
+			// Override any external handleKeyDown function
+			if (window.handleKeyDown && window.handleKeyDown.toString().includes('page-events.js')) {
+				console.warn('Overriding external handleKeyDown function');
+				window.handleKeyDown = function(event) {
+					try {
+						if (event && event.key) {
+							console.log('Key pressed:', event.key);
+						} else {
+							console.error('Invalid event object in handleKeyDown');
+						}
+					} catch (error) {
+						console.error('Error in handleKeyDown:', error);
+					}
+				};
+			}
 		</script>
 	</head>
 		<!-- Import TaskAPI for backend connectivity -->
@@ -1535,6 +1555,10 @@
 								console.log('Found existing JWT token:', token.substring(0, 20) + '...');
 							} else {
 								console.log('No existing JWT token found');
+								// Redirect to login page if no token is found
+								if (window.location.pathname !== '/') {
+									window.location.href = "/";
+								}
 							}
 
 							// If there's a logged-in user stored locally, load their tasks from backend
@@ -2169,7 +2193,7 @@
 					showNotification("User not authenticated", "error");
 					console.error('User not authenticated');
 					// Redirect to login page
-					showPage("login");
+					window.location.href = "/";
 					return;
 				}
 				
@@ -2179,7 +2203,7 @@
 					showNotification("Session expired. Please log in again.", "error");
 					console.error('No JWT token found');
 					// Redirect to login page
-					showPage("login");
+					window.location.href = "/";
 					return;
 				}
 
@@ -2310,7 +2334,7 @@
 					showNotification("Session expired. Please log in again.", "error");
 					console.error('No JWT token found');
 					// Redirect to login page
-					showPage("login");
+					window.location.href = "/";
 					reflectionModal.classList.add("hidden");
 					return;
 				}
@@ -2520,7 +2544,7 @@
 					showNotification("Session expired. Please log in again.", "error");
 					console.error('No JWT token found');
 					// Redirect to login page
-					showPage("login");
+					window.location.href = "/";
 					return;
 				}
 

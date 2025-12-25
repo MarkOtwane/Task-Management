@@ -59,6 +59,13 @@ class TaskAPI {
 			body: options.body ? JSON.parse(options.body) : null
 		});
 
+		// Ensure the token is sent with the request
+		if (!token) {
+			console.error("No JWT token found. Redirecting to login.");
+			window.location.href = "/";
+			return;
+		}
+
 		const config = {
 			method: options.method || "GET",
 			headers,

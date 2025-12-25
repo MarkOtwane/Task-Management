@@ -9,6 +9,12 @@ require_once '../config/database.php';
 require_once '../middleware/auth.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
+
+// Log the request method and headers for debugging
+$headers = getallheaders();
+error_log('Request method: ' . $method);
+error_log('Request headers: ' . json_encode($headers));
+
 $userId = requireAuth();
 
 // Log the user ID for debugging
