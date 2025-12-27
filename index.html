@@ -1182,9 +1182,8 @@
 		<!-- Import TaskAPI for backend connectivity -->
 		<script>
 			// Dynamic script loading based on environment
-			const taskApiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-				? "http://localhost:8000/backend/TaskAPI.js"
-				: "https://task-management-bxpk.onrender.com/backend/TaskAPI.js";
+			// Always use Render backend for API assets
+			const taskApiUrl = "https://task-management-bxpk.onrender.com/backend/TaskAPI.js";
 			
 			const script = document.createElement('script');
 			script.id = 'taskApiScript';
@@ -1537,9 +1536,8 @@
 
 						// ===== BACKEND API INITIALIZATION =====
 						// Use localhost for development, production URL for deployed version
-						const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-							? "http://localhost:8000/backend" 
-							: "https://task-management-bxpk.onrender.com/backend";
+						// Always use Render backend (no localhost)
+						const API_URL = "https://task-management-bxpk.onrender.com/backend";
 						let api = null;
 			
 						// Initialize API after TaskAPI loads
