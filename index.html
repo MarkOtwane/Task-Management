@@ -1187,7 +1187,17 @@
 				: "https://task-management-bxpk.onrender.com/backend/TaskAPI.js";
 			
 			const script = document.createElement('script');
+			script.id = 'taskApiScript';
 			script.src = taskApiUrl;
+			script.onload = function() {
+				console.log('TaskAPI.js loaded');
+				window.taskApiLoaded = true;
+				if (typeof initializeAPI === 'function') initializeAPI();
+			};
+			script.onerror = function() {
+				console.error('Failed to load TaskAPI.js at', taskApiUrl);
+				window.taskApiLoaded = false;
+			};
 			document.head.appendChild(script);
 		</script>
 	</head>
@@ -1539,8 +1549,9 @@
 								console.log("Backend API initialized successfully");
 							} else {
 								console.error("TaskAPI library not loaded");
-								// Fallback to localhost for development
-								api = new TaskAPI("http://localhost:8000/backend");
+								window.taskApiLoaded = false;
+								// Defer initialization until the TaskAPI script finishes loading
+								return;
 							}
 							
 							// Check for existing JWT token
@@ -1870,6 +1881,11 @@
 							}
 						}
 			});
+
+				// Attempt initialization when DOM is ready (in case TaskAPI is already loaded)
+				document.addEventListener('DOMContentLoaded', () => {
+					if (typeof initializeAPI === 'function') initializeAPI();
+				});
 
 			document.getElementById("registerForm").addEventListener("submit", (e) => {
 				e.preventDefault();
