@@ -37,6 +37,18 @@ services:
             - key: JWT_SECRET
               generateValue: true
               sync: false
+            - key: SMTP_HOST
+              value: smtp.gmail.com
+            - key: SMTP_PORT
+              value: "587"
+            - key: SMTP_USER
+              value: taskflow-noreply@gmail.com
+            - key: SMTP_PASS
+              sync: false
+            - key: SMTP_FROM_EMAIL
+              value: taskflow-noreply@gmail.com
+            - key: SMTP_FROM_NAME
+              value: TaskFlow
 
        # Auto-deploy on GitHub push
        autoDeploy: true
