@@ -1593,51 +1593,42 @@
 			let editingTaskId = null;
 			let completingTaskId = null;
 
-			// ===== RESEND API CONFIGURATION =====
-			// Replace with your actual Resend API key
-			const RESEND_API_KEY = "re_evd2xq9q_4PobW8zYf1Zf3YTWb94bdXkw";
-			const RESEND_FROM_EMAIL = "noreply@taskmanagement.com";
+			// ===== SMTP MAILER CONFIGURATION =====
+			const MAILER_API_URL = "http://localhost:8000/backend/api/mailer.php";
 
-			// Check if API is properly configured
-			const isResendConfigured = () => {
-				return RESEND_API_KEY !== "re_evd2xq9q_4PobW8zYf1Zf3YTWb94bdXkw" && RESEND_FROM_EMAIL !== "noreply@taskmanagement.com";
-			};
-
-			// ===== RESEND API FUNCTIONS =====
-			async function sendPasswordResetEmail(email, resetCode) {
-				if (!isResendConfigured()) {
-					console.log("Resend API not configured - skipping email send");
+			// Check if mailer service is available
+			const isMailerConfigured = async () => {
+				try {
+					const response = await fetch(MAILER_API_URL + "?action=test", { method: "POST" });
+					const data = await response.json();
+					return data.success;
+				} catch (error) {
+					console.log("Mailer service unavailable");
 					return false;
 				}
+			};
 
+			// ===== SMTP MAILER FUNCTIONS =====
+			async function sendPasswordResetEmail(email, resetCode) {
 				try {
-					const response = await fetch("https://api.resend.com/emails", {
+					const response = await fetch(MAILER_API_URL + "?action=send-password-reset", {
 						method: "POST",
 						headers: {
-							Authorization: `Bearer ${RESEND_API_KEY}`,
 							"Content-Type": "application/json",
 						},
 						body: JSON.stringify({
-							from: RESEND_FROM_EMAIL,
-							to: [email],
-							subject: "Password Reset Code",
-							html: `
-								<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-									<h2 style="color: #667eea;">Password Reset Request</h2>
-									<p>You requested a password reset for your TaskFlow account.</p>
-									<p>Your reset code is: <strong style="font-size: 18px; color: #667eea;">${resetCode}</strong></p>
-									<p>This code will expire in 10 minutes.</p>
-									<p>If you didn't request this reset, please ignore this email.</p>
-								</div>
-							`,
+							email: email,
+							resetCode: resetCode
 						}),
 					});
 
-					if (response.ok) {
+					const data = await response.json();
+					
+					if (data.success) {
 						console.log("Password reset email sent successfully");
 						return true;
 					} else {
-						console.error("Failed to send password reset email");
+						console.error("Failed to send password reset email:", data.message);
 						return false;
 					}
 				} catch (error) {
@@ -1647,39 +1638,26 @@
 			}
 
 			async function sendTaskReminderEmail(email, taskTitle, reminderTime) {
-				if (!isResendConfigured()) {
-					console.log("Resend API not configured - skipping reminder email");
-					return false;
-				}
-
 				try {
-					const response = await fetch("https://api.resend.com/emails", {
+					const response = await fetch(MAILER_API_URL + "?action=send-reminder", {
 						method: "POST",
 						headers: {
-							Authorization: `Bearer ${RESEND_API_KEY}`,
 							"Content-Type": "application/json",
 						},
 						body: JSON.stringify({
-							from: RESEND_FROM_EMAIL,
-							to: [email],
-							subject: `Task Reminder: ${taskTitle}`,
-							html: `
-								<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-									<h2 style="color: #667eea;">Task Reminder</h2>
-									<p>This is a reminder for your task:</p>
-									<h3 style="color: #333;">${taskTitle}</h3>
-									<p>Reminder time: ${reminderTime}</p>
-									<p>Don't forget to complete this task!</p>
-								</div>
-							`,
+							email: email,
+							taskTitle: taskTitle,
+							reminderTime: reminderTime
 						}),
 					});
 
-					if (response.ok) {
+					const data = await response.json();
+					
+					if (data.success) {
 						console.log("Task reminder email sent successfully");
 						return true;
 					} else {
-						console.error("Failed to send task reminder email");
+						console.error("Failed to send task reminder email:", data.message);
 						return false;
 					}
 				} catch (error) {
@@ -1689,39 +1667,26 @@
 			}
 
 			async function sendTaskDeadlineEmail(email, taskTitle, dueDate) {
-				if (!isResendConfigured()) {
-					console.log("Resend API not configured - skipping deadline email");
-					return false;
-				}
-
 				try {
-					const response = await fetch("https://api.resend.com/emails", {
+					const response = await fetch(MAILER_API_URL + "?action=send-deadline", {
 						method: "POST",
 						headers: {
-							Authorization: `Bearer ${RESEND_API_KEY}`,
 							"Content-Type": "application/json",
 						},
 						body: JSON.stringify({
-							from: RESEND_FROM_EMAIL,
-							to: [email],
-							subject: `Task Deadline: ${taskTitle}`,
-							html: `
-								<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-									<h2 style="color: #ef4444;">Task Deadline Alert</h2>
-									<p>Your task is due now:</p>
-									<h3 style="color: #333;">${taskTitle}</h3>
-									<p>Due date: ${dueDate}</p>
-									<p>Please complete this task as soon as possible!</p>
-								</div>
-							`,
+							email: email,
+							taskTitle: taskTitle,
+							dueDate: dueDate
 						}),
 					});
 
-					if (response.ok) {
+					const data = await response.json();
+					
+					if (data.success) {
 						console.log("Task deadline email sent successfully");
 						return true;
 					} else {
-						console.error("Failed to send task deadline email");
+						console.error("Failed to send task deadline email:", data.message);
 						return false;
 					}
 				} catch (error) {
@@ -1996,7 +1961,7 @@
 				};
 				storage.saveResetTokens(resetTokens);
 
-				// Send email using Resend API
+				// Send email using SMTP Mailer
 				const emailSent = await sendPasswordResetEmail(email, resetCode);
 
 				if (emailSent) {
@@ -2007,22 +1972,18 @@
 					document.getElementById("confirmPassword").value = "";
 					showNotification("Reset code sent to your email!", "success");
 				} else {
-					if (!isResendConfigured()) {
-						showNotification("Email sending not configured. For demo purposes, use code: 123456", "warning");
-						// For demo, set a fixed code
-						resetTokens[email] = {
-							code: "123456",
-							expires: Date.now() + 10 * 60 * 1000,
-						};
-						storage.saveResetTokens(resetTokens);
-						document.getElementById("forgotPasswordModal").classList.add("hidden");
-						document.getElementById("resetPasswordModal").classList.remove("hidden");
-						document.getElementById("resetCode").value = "";
-						document.getElementById("newPassword").value = "";
-						document.getElementById("confirmPassword").value = "";
-					} else {
-						showNotification("Failed to send email. Please check your Resend API configuration.", "error");
-					}
+					showNotification("Email sending not configured. For demo purposes, use code: 123456", "warning");
+					// For demo, set a fixed code
+					resetTokens[email] = {
+						code: "123456",
+						expires: Date.now() + 10 * 60 * 1000,
+					};
+					storage.saveResetTokens(resetTokens);
+					document.getElementById("forgotPasswordModal").classList.add("hidden");
+					document.getElementById("resetPasswordModal").classList.remove("hidden");
+					document.getElementById("resetCode").value = "";
+					document.getElementById("newPassword").value = "";
+					document.getElementById("confirmPassword").value = "";
 				}
 			});
 
