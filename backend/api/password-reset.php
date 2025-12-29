@@ -7,6 +7,9 @@
 require_once '../config/cors.php';
 require_once '../config/database.php';
 
+// Include mailer functions
+require_once 'mailer.php';
+
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? null;
 
@@ -66,10 +69,22 @@ function requestPasswordReset($pdo) {
         ");
         $stmt->execute([$user['id'], $token, $expiresAt]);
         
-        echo json_encode([
-            'message' => 'Reset link sent',
-            'token' => $token // In production, send this via email only
-        ]);
+        // Send email with reset code
+        $emailResult = sendPasswordResetEmail($email, $token);
+        
+        if ($emailResult['success']) {
+            echo json_encode([
+                'message' => 'Reset link sent',
+                'token' => $token // In production, send this via email only
+            ]);
+        } else {
+            // If email fails, delete the token and return error
+            $stmt = $pdo->prepare("DELETE FROM password_reset_tokens WHERE token = ?");
+            $stmt->execute([$token]);
+            
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to send reset email: ' . $emailResult['message']]);
+        }
     } catch (PDOException $e) {
         http_response_code(500);
         echo json_encode(['error' => 'Failed to create reset token: ' . $e->getMessage()]);

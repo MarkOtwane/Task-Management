@@ -52,7 +52,7 @@ function sendEmail($toEmail, $subject, $htmlBody, $textBody = '') {
     try {
         // Create connection
         $socket = fsockopen(SMTP_HOST, SMTP_PORT, $errno, $errstr, 10);
-        
+         
         if (!$socket) {
             throw new Exception("Failed to connect to SMTP server: $errstr ($errno)");
         }
@@ -65,7 +65,10 @@ function sendEmail($toEmail, $subject, $htmlBody, $textBody = '') {
 
         // Send EHLO
         fputs($socket, "EHLO " . gethostname() . "\r\n");
-        $response = fgets($socket);
+        // Read all EHLO responses (multi-line)
+        while (($response = fgets($socket)) && strpos($response, '250') === 0) {
+            if (strpos($response, '250 ') === 0) break; // End of EHLO response
+        }
 
         // Start TLS
         fputs($socket, "STARTTLS\r\n");
@@ -79,18 +82,21 @@ function sendEmail($toEmail, $subject, $htmlBody, $textBody = '') {
 
         // Re-send EHLO after TLS
         fputs($socket, "EHLO " . gethostname() . "\r\n");
-        $response = fgets($socket);
+        // Read all EHLO responses (multi-line)
+        while (($response = fgets($socket)) && strpos($response, '250') === 0) {
+            if (strpos($response, '250 ') === 0) break; // End of EHLO response
+        }
 
         // Authenticate
         fputs($socket, "AUTH LOGIN\r\n");
         fgets($socket);
-        
+         
         fputs($socket, base64_encode(SMTP_USER) . "\r\n");
         fgets($socket);
-        
+         
         fputs($socket, base64_encode(SMTP_PASS) . "\r\n");
         $response = fgets($socket);
-        
+         
         if (strpos($response, '235') === false) {
             throw new Exception("Authentication failed: $response");
         }
