@@ -1580,16 +1580,18 @@
 					<h2>🔑 Set New Password</h2>
 					<p class="modal-subtitle">Enter the reset code and your new password</p>
 					<form id="resetPasswordForm">
-						<div class="form-group">
-							<label for="resetCode">Reset Code</label>
-							<input type="text" id="resetCode" placeholder="Enter 6-digit code" maxlength="6" required />
+							<div class="form-group">
+							<label for="resetCode">Reset Code *</label>
+							<input type="text" id="resetCode" placeholder="Enter 6-digit code" maxlength="6" pattern="\d{6}" inputmode="numeric" required />
+							<small style="color: var(--text-tertiary); font-size: 12px;">Check your email for the 6-digit code</small>
 						</div>
 						<div class="form-group">
-							<label for="newPassword">New Password</label>
+							<label for="newPassword">New Password *</label>
 							<input type="password" id="newPassword" placeholder="Enter new password" required minlength="6" />
+							<small style="color: var(--text-tertiary); font-size: 12px;">Minimum 6 characters</small>
 						</div>
 						<div class="form-group">
-							<label for="confirmPassword">Confirm Password</label>
+							<label for="confirmPassword">Confirm Password *</label>
 							<input type="password" id="confirmPassword" placeholder="Confirm new password" required minlength="6" />
 						</div>
 						<div class="modal-actions">
@@ -2055,13 +2057,25 @@
 			document.getElementById("forgotPasswordForm").addEventListener("submit", async (e) => {
 				e.preventDefault();
 				const email = document.getElementById("forgotEmail").value.trim();
+				const sendBtn = document.getElementById("sendResetBtn");
+				
+				// Validate email format
+				if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+					showNotification("Please enter a valid email address", "error");
+					return;
+				}
+				
 				const users = storage.getUsers();
 				const user = users.find((u) => u.email === email);
 
 				if (!user) {
-					showNotification("Email not found", "error");
+					showNotification("Email not found in our system", "error");
 					return;
 				}
+				
+				// Show loading state
+				sendBtn.classList.add('loading');
+				sendBtn.textContent = 'Sending...';
 
 				// Generate 6-digit reset code
 				const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -2074,29 +2088,36 @@
 				};
 				storage.saveResetTokens(resetTokens);
 
-				// Send email using SMTP Mailer
-				const emailSent = await sendPasswordResetEmail(email, resetCode);
+				try {
+					// Send email using SMTP Mailer
+					const emailSent = await sendPasswordResetEmail(email, resetCode);
 
-				if (emailSent) {
+					if (emailSent) {
+						showNotification("Reset code sent to your email!", "success");
+					} else {
+						showNotification("Email service unavailable. Demo code: 123456", "warning");
+						// For demo, set a fixed code
+						resetTokens[email] = {
+							code: "123456",
+							expires: Date.now() + 10 * 60 * 1000,
+						};
+						storage.saveResetTokens(resetTokens);
+					}
+					
+					// Always proceed to reset modal after sending
 					document.getElementById("forgotPasswordModal").classList.add("hidden");
 					document.getElementById("resetPasswordModal").classList.remove("hidden");
 					document.getElementById("resetCode").value = "";
 					document.getElementById("newPassword").value = "";
 					document.getElementById("confirmPassword").value = "";
-					showNotification("Reset code sent to your email!", "success");
-				} else {
-					showNotification("Email sending not configured. For demo purposes, use code: 123456", "warning");
-					// For demo, set a fixed code
-					resetTokens[email] = {
-						code: "123456",
-						expires: Date.now() + 10 * 60 * 1000,
-					};
-					storage.saveResetTokens(resetTokens);
-					document.getElementById("forgotPasswordModal").classList.add("hidden");
-					document.getElementById("resetPasswordModal").classList.remove("hidden");
-					document.getElementById("resetCode").value = "";
-					document.getElementById("newPassword").value = "";
-					document.getElementById("confirmPassword").value = "";
+					document.getElementById("resetCode").focus();
+				} catch (error) {
+					console.error('Password reset error:', error);
+					showNotification("Failed to send reset code. Please try again.", "error");
+				} finally {
+					// Reset button state
+					sendBtn.classList.remove('loading');
+					sendBtn.textContent = 'Send Reset Link';
 				}
 			});
 
@@ -2106,16 +2127,44 @@
 				const code = document.getElementById("resetCode").value.trim();
 				const newPassword = document.getElementById("newPassword").value;
 				const confirmPassword = document.getElementById("confirmPassword").value;
-
-				if (newPassword !== confirmPassword) {
-					showNotification("Passwords don't match", "error");
+				const resetBtn = document.getElementById("confirmResetBtn");
+				
+				// Validate code is entered
+				if (!code) {
+					showNotification("Please enter the reset code", "error");
+					document.getElementById("resetCode").focus();
+					return;
+				}
+				
+				// Validate code format (6 digits)
+				if (!/^\d{6}$/.test(code)) {
+					showNotification("Reset code must be 6 digits", "error");
+					document.getElementById("resetCode").focus();
+					return;
+				}
+				
+				// Validate passwords
+				if (!newPassword) {
+					showNotification("Please enter a new password", "error");
+					document.getElementById("newPassword").focus();
 					return;
 				}
 
 				if (newPassword.length < 6) {
 					showNotification("Password must be at least 6 characters", "error");
+					document.getElementById("newPassword").focus();
 					return;
 				}
+				
+				if (newPassword !== confirmPassword) {
+					showNotification("Passwords don't match", "error");
+					document.getElementById("confirmPassword").focus();
+					return;
+				}
+				
+				// Show loading state
+				resetBtn.classList.add('loading');
+				resetBtn.textContent = 'Resetting...';
 
 				const resetTokens = storage.getResetTokens();
 				const users = storage.getUsers();
@@ -2130,7 +2179,10 @@
 				}
 
 				if (!emailWithCode) {
-					showNotification("Invalid or expired reset code", "error");
+					showNotification("Invalid or expired reset code. Please try again.", "error");
+					document.getElementById("resetCode").focus();
+					resetBtn.classList.remove('loading');
+					resetBtn.textContent = 'Reset Password';
 					return;
 				}
 
@@ -2145,10 +2197,19 @@
 					storage.saveResetTokens(resetTokens);
 
 					document.getElementById("resetPasswordModal").classList.add("hidden");
-					showNotification("Password reset successfully! Please login.", "success");
+					showNotification("Password reset successfully! Please login with your new password.", "success");
+					
+					// Clear form and focus login
+					document.getElementById("loginEmail").value = emailWithCode;
+					document.getElementById("loginPassword").value = "";
+					document.getElementById("loginPassword").focus();
 				} else {
-					showNotification("User not found", "error");
+					showNotification("User account not found. Please contact support.", "error");
 				}
+				
+				// Reset button state
+				resetBtn.classList.remove('loading');
+				resetBtn.textContent = 'Reset Password';
 			});
 
 			document.getElementById("logoutBtn").addEventListener("click", () => {
