@@ -18,8 +18,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // Update these with your SMTP settings
 define('SMTP_HOST', getenv('SMTP_HOST') ?: 'smtp.gmail.com');
 define('SMTP_PORT', getenv('SMTP_PORT') ?: 587);
-define('SMTP_USER', getenv('SMTP_USER') ?: 'your-email@gmail.com');
-define('SMTP_PASS', getenv('SMTP_PASS') ?: 'your-app-password');
+define('SMTP_USER', getenv('SMTP_USER') ?: '');
+define('SMTP_PASS', getenv('SMTP_PASS') ?: '');
 define('SMTP_FROM_EMAIL', getenv('SMTP_FROM_EMAIL') ?: 'noreply@taskmanagement.com');
 define('SMTP_FROM_NAME', getenv('SMTP_FROM_NAME') ?: 'TaskFlow');
 
@@ -42,7 +42,7 @@ function sendEmail($toEmail, $subject, $htmlBody, $textBody = '') {
     }
 
     // Check if SMTP is configured
-    if (SMTP_USER === 'your-email@gmail.com' || SMTP_PASS === 'your-app-password') {
+    if (empty(SMTP_USER) || empty(SMTP_PASS)) {
         return [
             'success' => false,
             'message' => 'SMTP not configured. Please set environment variables.'
@@ -372,7 +372,7 @@ switch ($action) {
 
     case 'test':
         // Test endpoint - verify SMTP configuration
-        if (SMTP_USER === 'your-email@gmail.com' || SMTP_PASS === 'your-app-password') {
+        if (empty(SMTP_USER) || empty(SMTP_PASS)) {
             echo json_encode([
                 'success' => false,
                 'message' => 'SMTP not configured. Please set environment variables.',
