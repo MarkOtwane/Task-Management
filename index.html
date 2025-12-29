@@ -1776,6 +1776,38 @@
 				}
 			}
 
+			async function sendMeetingInvitation(emails, taskTitle, meetingLink, dueDate, dueTime, inviterName) {
+				try {
+					const response = await fetch(MAILER_API_URL + "?action=send-meeting-invite", {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+						},
+						body: JSON.stringify({
+							emails: emails,
+							taskTitle: taskTitle,
+							meetingLink: meetingLink,
+							dueDate: dueDate,
+							dueTime: dueTime,
+							inviterName: inviterName
+						}),
+					});
+
+					const data = await response.json();
+					
+					if (data.success) {
+						console.log("Meeting invitations sent successfully");
+						return true;
+					} else {
+						console.error("Failed to send meeting invitations:", data.message);
+						return false;
+					}
+				} catch (error) {
+					console.error("Error sending meeting invitations:", error);
+					return false;
+				}
+			}
+
 			// ===== NAVIGATION & PAGE MANAGEMENT =====
 			const pages = {
 				login: document.getElementById("loginPage"),
@@ -2375,6 +2407,27 @@
 							tasks.push(newTask);
 						// Persist the updated tasks list
 						try { storage.saveTasks(tasks); } catch (e) { console.warn('Could not save tasks to storage', e); }
+
+						// Send meeting invitations if invitees and meeting link are provided
+						if (taskData.invitees && taskData.meetingLink) {
+							const emails = taskData.invitees.split(',').map(email => email.trim()).filter(email => email);
+							if (emails.length > 0) {
+								sendMeetingInvitation(
+									emails,
+									taskData.title,
+									taskData.meetingLink,
+									taskData.dueDate,
+									taskData.dueTime,
+									currentUser.name
+								).then(sent => {
+									if (sent) {
+										showNotification(`Meeting invitations sent to ${emails.length} people! 📧`, "success");
+									} else {
+										showNotification("Task created but invitations failed to send", "warning");
+									}
+								});
+							}
+						}
 
 						showNotification("Task created successfully! 🎉", "success");
 						taskModal.classList.add("hidden");

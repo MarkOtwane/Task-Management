@@ -211,6 +211,46 @@ function sendTaskReminderEmail($toEmail, $taskTitle, $reminderTime) {
 }
 
 /**
+ * Send meeting invitation email
+ */
+function sendMeetingInvitationEmail($toEmail, $taskTitle, $meetingLink, $dueDate, $dueTime, $inviterName) {
+    $subject = "Meeting Invitation: $taskTitle - TaskFlow";
+    
+    $meetingDateTime = $dueDate && $dueTime ? date('F j, Y \a\t g:i A', strtotime("$dueDate $dueTime")) : 'TBD';
+    
+    $htmlBody = <<<HTML
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; border-bottom: 2px solid #667eea; padding-bottom: 20px; margin-bottom: 30px;">
+            <h2 style="color: #667eea; margin: 0;">📅 Meeting Invitation</h2>
+        </div>
+        
+        <p>Hello,</p>
+        
+        <p><strong>${inviterName}</strong> has invited you to a meeting:</p>
+        
+        <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin: 0 0 15px 0; color: #333;">${taskTitle}</h3>
+            <p style="margin: 5px 0; color: #666;"><strong>📅 Date & Time:</strong> ${meetingDateTime}</p>
+            <p style="margin: 5px 0; color: #666;"><strong>👤 Organizer:</strong> ${inviterName}</p>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="${meetingLink}" style="background-color: #667eea; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">🔗 Join Meeting</a>
+        </div>
+        
+        <p style="color: #666; font-size: 14px;">Meeting Link: <a href="${meetingLink}" style="color: #667eea;">${meetingLink}</a></p>
+        
+        <div style="border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 30px; color: #999; font-size: 12px;">
+            <p style="margin: 0;">This invitation was sent via TaskFlow.</p>
+            <p style="margin: 10px 0 0 0;">© 2025 TaskFlow. All rights reserved.</p>
+        </div>
+    </div>
+    HTML;
+
+    return sendEmail($toEmail, $subject, $htmlBody);
+}
+
+/**
  * Send task deadline email
  */
 function sendTaskDeadlineEmail($toEmail, $taskTitle, $dueDate) {
@@ -296,6 +336,38 @@ switch ($action) {
         
         $result = sendTaskDeadlineEmail($input['email'], $input['taskTitle'], $input['dueDate']);
         echo json_encode($result);
+        break;
+
+    case 'send-meeting-invite':
+        if (!isset($input['emails']) || !isset($input['taskTitle']) || !isset($input['meetingLink']) || !isset($input['inviterName'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Emails, taskTitle, meetingLink, and inviterName required']);
+            exit();
+        }
+        
+        $emails = $input['emails'];
+        $taskTitle = $input['taskTitle'];
+        $meetingLink = $input['meetingLink'];
+        $dueDate = $input['dueDate'] ?? null;
+        $dueTime = $input['dueTime'] ?? null;
+        $inviterName = $input['inviterName'];
+        
+        $results = [];
+        $successCount = 0;
+        
+        foreach ($emails as $email) {
+            $result = sendMeetingInvitationEmail($email, $taskTitle, $meetingLink, $dueDate, $dueTime, $inviterName);
+            $results[] = ['email' => $email, 'result' => $result];
+            if ($result['success']) {
+                $successCount++;
+            }
+        }
+        
+        echo json_encode([
+            'success' => $successCount > 0,
+            'message' => "Sent $successCount of " . count($emails) . " invitations",
+            'results' => $results
+        ]);
         break;
 
     case 'test':
