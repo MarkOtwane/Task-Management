@@ -37,7 +37,7 @@
 				--notification-warning: #f59e0b;
 			}
 
-			[data-theme="light"] {
+			body[data-theme="light"] {
 				/* Light Theme */
 				--bg-primary: #ffffff;
 				--bg-secondary: #f8f9fa;
@@ -60,7 +60,7 @@
 				--shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.12);
 
 				--gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-				--gradient-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				--gradient-bg: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
 
 				--notification-success: #10b981;
 				--notification-error: #ef4444;
@@ -175,10 +175,39 @@
 				font-size: 16px;
 				font-weight: 600;
 				cursor: pointer;
-				transition: all 0.3s ease;
+				transition: all 0.2s ease;
 				text-decoration: none;
 				display: inline-block;
 				text-align: center;
+				position: relative;
+			}
+
+			.btn:active {
+				transform: scale(0.98);
+			}
+
+			.btn.loading {
+				pointer-events: none;
+				opacity: 0.7;
+			}
+
+			.btn.loading::after {
+				content: '';
+				position: absolute;
+				top: 50%;
+				right: 12px;
+				width: 16px;
+				height: 16px;
+				border: 2px solid transparent;
+				border-top: 2px solid currentColor;
+				border-radius: 50%;
+				transform: translateY(-50%);
+				animation: spin 1s linear infinite;
+			}
+
+			@keyframes spin {
+				0% { transform: translateY(-50%) rotate(0deg); }
+				100% { transform: translateY(-50%) rotate(360deg); }
 			}
 
 			.btn-primary {
@@ -1464,6 +1493,28 @@
 						<div class="form-group"><label for="taskDueDate">Due Date</label> <input type="date" id="taskDueDate" /></div>
 						<div class="form-group"><label for="taskDueTime">Due Time</label> <input type="time" id="taskDueTime" /></div>
 						<div class="form-group">
+							<label for="taskTimezone">Timezone</label>
+							<select id="taskTimezone">
+								<option value="UTC">UTC</option>
+								<option value="America/New_York">Eastern Time</option>
+								<option value="America/Chicago">Central Time</option>
+								<option value="America/Denver">Mountain Time</option>
+								<option value="America/Los_Angeles">Pacific Time</option>
+								<option value="Europe/London">London</option>
+								<option value="Europe/Paris">Paris</option>
+								<option value="Asia/Tokyo">Tokyo</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="taskMeetingLink">Meeting Link (Optional)</label>
+							<input type="url" id="taskMeetingLink" placeholder="https://zoom.us/j/123456789" />
+						</div>
+						<div class="form-group">
+							<label for="taskInvitees">Invite People (Optional)</label>
+							<input type="text" id="taskInvitees" placeholder="email1@example.com, email2@example.com" />
+							<small style="color: var(--text-tertiary); font-size: 12px;">Separate multiple emails with commas</small>
+						</div>
+						<div class="form-group">
 							<label for="taskReminder">Reminder Settings</label>
 							<select id="taskReminder">
 								<option value="none">No Reminder</option>
@@ -2186,6 +2237,9 @@
 					plan: document.getElementById("taskPlan").value,
 					dueDate: document.getElementById("taskDueDate").value,
 					dueTime: document.getElementById("taskDueTime").value,
+					timezone: document.getElementById("taskTimezone").value,
+					meetingLink: document.getElementById("taskMeetingLink").value.trim(),
+					invitees: document.getElementById("taskInvitees").value.trim(),
 					reminder: document.getElementById("taskReminder").value,
 					customReminder: document.getElementById("customReminder").value,
 					userId: currentUser.id,
@@ -2223,6 +2277,10 @@
 					return;
 				}
 
+				const saveBtn = document.getElementById('saveTaskBtn');
+				saveBtn.classList.add('loading');
+				saveBtn.textContent = editingTaskId ? 'Updating...' : 'Creating...';
+
 				if (editingTaskId) {
 					// Map frontend fields to backend fields and update via API
 					const dueDateIso = taskData.dueDate ? (taskData.dueTime ? new Date(taskData.dueDate + 'T' + taskData.dueTime).toISOString() : new Date(taskData.dueDate).toISOString()) : null;
@@ -2232,11 +2290,12 @@
 						category: taskData.plan,
 						due_date: dueDateIso
 					}).then((response) => {
-						// Update local tasks array
+						// Update local tasks array with all new data
 						const taskIndex = tasks.findIndex((t) => t.id === editingTaskId);
 						if (taskIndex !== -1) {
-							tasks[taskIndex] = { ...tasks[taskIndex], ...response };
+							tasks[taskIndex] = { ...tasks[taskIndex], ...taskData, id: editingTaskId };
 						}
+						storage.saveTasks(tasks);
 						showNotification("Task updated successfully! ✏️", "success");
 						taskModal.classList.add("hidden");
 						renderTasks();
@@ -2246,6 +2305,9 @@
 					}).catch((error) => {
 						showNotification("Failed to update task: " + error.message, "error");
 						console.error("Update error:", error);
+					}).finally(() => {
+						saveBtn.classList.remove('loading');
+						saveBtn.textContent = 'Save Task';
 					});
 				} else {
 					// Create new task via API (map fields)
@@ -2902,10 +2964,10 @@
 
 			function applyTheme(theme) {
 				if (theme === "light") {
-					document.documentElement.setAttribute("data-theme", "light");
+					document.body.setAttribute("data-theme", "light");
 					document.getElementById("themeToggle").checked = true;
 				} else {
-					document.documentElement.setAttribute("data-theme", "dark");
+					document.body.removeAttribute("data-theme");
 					document.getElementById("themeToggle").checked = false;
 				}
 			}
