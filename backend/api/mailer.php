@@ -16,9 +16,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 // ===== SMTP CONFIGURATION =====
 // Update these with your SMTP settings
-define('SMTP_HOST', getenv('SMTP_HOST') ?: 'smtp.resend.com');
+define('SMTP_HOST', getenv('SMTP_HOST') ?: 'smtp.gmail.com');
 define('SMTP_PORT', getenv('SMTP_PORT') ?: 587);
-define('SMTP_USER', getenv('SMTP_USER') ?: 'resend');
+define('SMTP_USER', getenv('SMTP_USER') ?: '');
 define('SMTP_PASS', getenv('SMTP_PASS') ?: '');
 define('SMTP_FROM_EMAIL', getenv('SMTP_FROM_EMAIL') ?: 'noreply@taskmanagement.com');
 define('SMTP_FROM_NAME', getenv('SMTP_FROM_NAME') ?: 'TaskFlow');
