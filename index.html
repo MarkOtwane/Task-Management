@@ -693,6 +693,29 @@
 				font-size: 15px;
 				margin-bottom: 16px;
 				line-height: 1.6;
+				white-space: pre-line;
+			}
+
+			.description-toolbar {
+				display: flex;
+				gap: 8px;
+				margin-bottom: 8px;
+			}
+
+			.btn-format {
+				padding: 6px 12px;
+				border: 1px solid var(--border-primary);
+				background: var(--bg-tertiary);
+				color: var(--text-secondary);
+				border-radius: 4px;
+				font-size: 12px;
+				cursor: pointer;
+				transition: all 0.2s ease;
+			}
+
+			.btn-format:hover {
+				background: var(--bg-secondary);
+				color: var(--text-primary);
 			}
 
 			.task-reflection {
@@ -1421,7 +1444,14 @@
 
 					<form id="taskForm">
 						<div class="form-group"><label for="taskTitle">Task Title *</label> <input type="text" id="taskTitle" placeholder="Enter task title" required /></div>
-						<div class="form-group"><label for="taskDescription">Description</label> <textarea id="taskDescription" placeholder="Describe your task in detail..."></textarea></div>
+						<div class="form-group">
+							<label for="taskDescription">Description</label>
+							<div class="description-toolbar">
+								<button type="button" class="btn-format" onclick="insertBullet()" title="Add bullet point">• Bullet</button>
+								<button type="button" class="btn-format" onclick="insertNumber()" title="Add numbered list">1. Number</button>
+							</div>
+							<textarea id="taskDescription" placeholder="Describe your task in detail...&#10;&#10;Use toolbar buttons or type:&#10;• Bullet point&#10;1. Numbered item"></textarea>
+						</div>
 						<div class="form-group">
 							<label for="taskPlan">Plan Type *</label>
 							<select id="taskPlan" required>
@@ -2483,7 +2513,7 @@
               <div class="task-title">${task.title}</div>
               ${task.completed ? '<span class="completion-badge">✓ Done</span>' : ""}
             </div>
-            <div class="task-description">${task.description || "No description provided"}</div>
+            <div class="task-description">${formatDescription(task.description) || "No description provided"}</div>
             ${reflectionHTML}
             ${timerHTML}
             <div class="task-meta">
@@ -2892,6 +2922,64 @@
 
 			// Theme toggle event listener
 			document.getElementById("themeToggle").addEventListener("change", toggleTheme);
+
+			// ===== DESCRIPTION FORMATTING FUNCTIONS =====
+			function insertBullet() {
+				const textarea = document.getElementById('taskDescription');
+				const cursorPos = textarea.selectionStart;
+				const textBefore = textarea.value.substring(0, cursorPos);
+				const textAfter = textarea.value.substring(cursorPos);
+				
+				const needsNewline = textBefore.length > 0 && !textBefore.endsWith('\n');
+				const bulletText = (needsNewline ? '\n' : '') + '• ';
+				
+				textarea.value = textBefore + bulletText + textAfter;
+				textarea.selectionStart = textarea.selectionEnd = cursorPos + bulletText.length;
+				textarea.focus();
+			}
+
+			function insertNumber() {
+				const textarea = document.getElementById('taskDescription');
+				const cursorPos = textarea.selectionStart;
+				const textBefore = textarea.value.substring(0, cursorPos);
+				const textAfter = textarea.value.substring(cursorPos);
+				
+				// Find the next number in sequence
+				const lines = textBefore.split('\n');
+				let nextNumber = 1;
+				for (let i = lines.length - 1; i >= 0; i--) {
+					const match = lines[i].match(/^(\d+)\. /);
+					if (match) {
+						nextNumber = parseInt(match[1]) + 1;
+						break;
+					}
+				}
+				
+				const needsNewline = textBefore.length > 0 && !textBefore.endsWith('\n');
+				const numberText = (needsNewline ? '\n' : '') + nextNumber + '. ';
+				
+				textarea.value = textBefore + numberText + textAfter;
+				textarea.selectionStart = textarea.selectionEnd = cursorPos + numberText.length;
+				textarea.focus();
+			}
+
+			function formatDescription(description) {
+				if (!description) return '';
+				
+				// Escape HTML to prevent XSS
+				const escaped = description
+					.replace(/&/g, '&amp;')
+					.replace(/</g, '&lt;')
+					.replace(/>/g, '&gt;')
+					.replace(/"/g, '&quot;')
+					.replace(/'/g, '&#39;');
+				
+				return escaped;
+			}
+
+			// Make functions globally available
+			window.insertBullet = insertBullet;
+			window.insertNumber = insertNumber;
 
 			// ===== INITIALIZE APP =====
 			if (currentUser) {
