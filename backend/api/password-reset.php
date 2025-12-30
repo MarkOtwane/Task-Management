@@ -8,7 +8,7 @@ require_once '../config/cors.php';
 require_once '../config/database.php';
 
 // Include mailer functions
-require_once 'mailer.php';
+require_once 'mailer_functions.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? null;
