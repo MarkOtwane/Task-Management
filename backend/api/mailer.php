@@ -15,6 +15,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 // ===== SMTP CONFIGURATION =====
+// Load environment variables from .env if it exists
+$envPath = __DIR__ . '/../../backend/.env';
+if (file_exists($envPath)) {
+    // Use custom parser to handle comments and special characters properly
+    $envContent = file_get_contents($envPath);
+    $lines = explode("\n", $envContent);
+    
+    foreach ($lines as $line) {
+        $line = trim($line);
+        // Skip empty lines and comments
+        if (empty($line) || strpos($line, '#') === 0) {
+            continue;
+        }
+        // Parse key=value pairs
+        if (strpos($line, '=') !== false) {
+            list($key, $value) = explode('=', $line, 2);
+            // Set as environment variable for getenv() to work
+            putenv("$key=" . trim($value));
+        }
+    }
+}
+
+// Environment variables loaded successfully
+
 // Update these with your SMTP settings
 define('SMTP_HOST', getenv('SMTP_HOST') ?: 'smtp.gmail.com');
 define('SMTP_PORT', getenv('SMTP_PORT') ?: 587);

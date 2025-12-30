@@ -7,7 +7,24 @@
 
 // Load environment variables from .env if it exists
 if (file_exists(__DIR__ . '/../.env')) {
-    $env = parse_ini_file(__DIR__ . '/../.env');
+    // Use custom parser to handle comments and special characters properly
+    $envContent = file_get_contents(__DIR__ . '/../.env');
+    $lines = explode("\n", $envContent);
+    $env = [];
+    
+    foreach ($lines as $line) {
+        $line = trim($line);
+        // Skip empty lines and comments
+        if (empty($line) || strpos($line, '#') === 0) {
+            continue;
+        }
+        // Parse key=value pairs
+        if (strpos($line, '=') !== false) {
+            list($key, $value) = explode('=', $line, 2);
+            $env[trim($key)] = trim($value);
+        }
+    }
+    
     foreach ($env as $key => $value) {
         define($key, $value);
     }
