@@ -382,6 +382,11 @@ switch ($action) {
         $dueTime = $input['dueTime'] ?? null;
         $inviterName = $input['inviterName'];
         
+        // Handle both single email string and array of emails
+        if (!is_array($emails)) {
+            $emails = [$emails];
+        }
+        
         $results = [];
         $successCount = 0;
         
