@@ -47,8 +47,8 @@ brew services start postgresql
 
 **Windows:**
 
--    Download from: https://www.postgresql.org/download/windows/
--    Run the installer and note your postgres password
+- Download from: https://www.postgresql.org/download/windows/
+- Run the installer and note your postgres password
 
 ### 2. Create Database
 
@@ -127,37 +127,37 @@ const result = await api.deleteTask(1);
 
 ## API Features
 
-### ✅ User Authentication
+### [check] User Authentication
 
--    Register new users
--    Login/logout
--    Session-based authentication
--    Password hashing with bcrypt
+- Register new users
+- Login/logout
+- Session-based authentication
+- Password hashing with bcrypt
 
-### ✅ Task Management
+### [check] Task Management
 
--    Create, read, update, delete tasks
--    Organize by category, priority, status
--    Set due dates
--    User-specific task isolation
+- Create, read, update, delete tasks
+- Organize by category, priority, status
+- Set due dates
+- User-specific task isolation
 
-### ✅ Task Reflections
+### [check] Task Reflections
 
--    Add reflections to completed tasks
--    Track learning and insights
--    Reflect on task outcomes
+- Add reflections to completed tasks
+- Track learning and insights
+- Reflect on task outcomes
 
-### ✅ Reminders
+### [check] Reminders
 
--    Create task reminders
--    Multiple reminder types (1 day before, 30 min before, custom)
--    Track sent reminders
+- Create task reminders
+- Multiple reminder types (1 day before, 30 min before, custom)
+- Track sent reminders
 
-### ✅ Password Reset
+### [check] Password Reset
 
--    Request password reset via email
--    Token-based verification
--    Secure password updates
+- Request password reset via email
+- Token-based verification
+- Secure password updates
 
 ## Database Tables
 
@@ -260,9 +260,9 @@ php -S localhost:8001  # Use different port
 
 ## Documentation Files
 
--    `BACKEND_SETUP.md` - Complete backend setup guide
--    `POSTGRES_SETUP.md` - PostgreSQL installation guide
--    `backend/index.php` - API documentation dashboard
+- `BACKEND_SETUP.md` - Complete backend setup guide
+- `POSTGRES_SETUP.md` - PostgreSQL installation guide
+- `backend/index.php` - API documentation dashboard
 
 ## Support
 
@@ -275,4 +275,4 @@ For issues or questions:
 
 ---
 
-**Your backend is now ready to power your Task Management application!** 🚀
+**Your backend is now ready to power your Task Management application!** [rocket]

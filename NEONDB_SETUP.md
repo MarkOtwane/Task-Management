@@ -33,12 +33,12 @@ NeonDB is a managed PostgreSQL service perfect for hosting your Task Management 
 
 From your connection string, extract:
 
--    **DB_HOST**: `ep-square-art-a8zobyl9-pooler.eastus2.azure.neon.tech`
--    **DB_PORT**: `5432` (default)
--    **DB_NAME**: `neondb`
--    **DB_USER**: `neondb_owner`
--    **DB_PASSWORD**: `npg_IKyCX2SeJY9r`
--    **DB_SSL_MODE**: `require`
+- **DB_HOST**: `ep-square-art-a8zobyl9-pooler.eastus2.azure.neon.tech`
+- **DB_PORT**: `5432` (default)
+- **DB_NAME**: `neondb`
+- **DB_USER**: `neondb_owner`
+- **DB_PASSWORD**: `npg_IKyCX2SeJY9r`
+- **DB_SSL_MODE**: `require`
 
 ### 5. Update Backend Configuration
 
@@ -85,13 +85,13 @@ You can deploy the backend to any PHP hosting:
 
 **Popular options:**
 
--    **Heroku** (free tier available)
--    **Vercel** (with PHP support)
--    **PythonAnywhere**
--    **AWS** (Elastic Beanstalk)
--    **DigitalOcean** (App Platform)
--    **Render.com**
--    **Railway.app**
+- **Heroku** (free tier available)
+- **Vercel** (with PHP support)
+- **PythonAnywhere**
+- **AWS** (Elastic Beanstalk)
+- **DigitalOcean** (App Platform)
+- **Render.com**
+- **Railway.app**
 
 ## Configuration Files
 
@@ -117,10 +117,10 @@ FRONTEND_URL=https://your-frontend-url.com
 
 The `backend/config/database.php` now:
 
--    ✅ Reads from `.env` file automatically
--    ✅ Supports SSL/TLS connections (required for NeonDB)
--    ✅ Includes SSL mode in connection string
--    ✅ Works with local and remote PostgreSQL
+- ✅ Reads from `.env` file automatically
+- ✅ Supports SSL/TLS connections (required for NeonDB)
+- ✅ Includes SSL mode in connection string
+- ✅ Works with local and remote PostgreSQL
 
 ## Connection Details
 
@@ -144,8 +144,8 @@ DB_SSL_MODE=require
 
 ### 1. Keep Credentials Secret
 
--    Never commit `.env` to Git
--    Add `.env` to `.gitignore`:
+- Never commit `.env` to Git
+- Add `.env` to `.gitignore`:
      ```
      echo ".env" >> .gitignore
      ```
@@ -234,9 +234,9 @@ The backend automatically creates indexes on important fields
 
 In NeonDB dashboard:
 
--    Check "Storage" usage
--    Monitor "Compute credits"
--    Review "Recent queries"
+- Check "Storage" usage
+- Monitor "Compute credits"
+- Review "Recent queries"
 
 ### 4. Optimize Queries
 
@@ -246,15 +246,15 @@ The PHP backend uses prepared statements (already optimized)
 
 ### When to Upgrade
 
--    Storage approaching limit
--    Frequent timeout errors
--    High query latency
+- Storage approaching limit
+- Frequent timeout errors
+- High query latency
 
 ### NeonDB Tiers
 
--    **Free**: Great for development/testing
--    **Pro**: For production with guaranteed uptime
--    **Custom**: For enterprise needs
+- **Free**: Great for development/testing
+- **Pro**: For production with guaranteed uptime
+- **Custom**: For enterprise needs
 
 ## Backup & Recovery
 
@@ -314,16 +314,16 @@ This allows you to:
 
 ## Deployment Checklist
 
--    [ ] Create NeonDB account
--    [ ] Create PostgreSQL project
--    [ ] Get connection string
--    [ ] Create `.env` file with credentials
--    [ ] Update `FRONTEND_URL` in `.env`
--    [ ] Test connection locally
--    [ ] Deploy backend to hosting
--    [ ] Set environment variables on server
--    [ ] Test from frontend
--    [ ] Monitor database usage
+- [ ] Create NeonDB account
+- [ ] Create PostgreSQL project
+- [ ] Get connection string
+- [ ] Create `.env` file with credentials
+- [ ] Update `FRONTEND_URL` in `.env`
+- [ ] Test connection locally
+- [ ] Deploy backend to hosting
+- [ ] Set environment variables on server
+- [ ] Test from frontend
+- [ ] Monitor database usage
 
 ## Next Steps
 
@@ -337,16 +337,16 @@ This allows you to:
 
 For NeonDB issues:
 
--    Visit [neon.tech docs](https://neon.tech/docs)
--    Check NeonDB dashboard for status
--    Review connection details
+- Visit [neon.tech docs](https://neon.tech/docs)
+- Check NeonDB dashboard for status
+- Review connection details
 
 For backend issues:
 
--    Check `FAQ_TROUBLESHOOTING.md`
--    Review `BACKEND_SETUP.md`
--    Check PHP error logs
+- Check `FAQ_TROUBLESHOOTING.md`
+- Review `BACKEND_SETUP.md`
+- Check PHP error logs
 
 ---
 
-**Your backend is now connected to NeonDB!** 🚀
+**Your backend is now connected to NeonDB!** [rocket]

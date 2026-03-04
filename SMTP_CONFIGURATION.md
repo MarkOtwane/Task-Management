@@ -6,22 +6,22 @@ The TaskFlow application now uses a backend SMTP mailer service for sending emai
 
 ## Features
 
--    📧 **Password Reset Emails** - Send reset codes securely
--    🔔 **Task Reminder Emails** - Notify users of upcoming tasks
--    ⚠️ **Deadline Alert Emails** - Alert users when tasks are due
--    🔒 **Secure SMTP Connection** - Uses TLS encryption
--    📝 **Professional HTML Templates** - Beautiful, responsive emails
+- 📧 **Password Reset Emails** - Send reset codes securely
+- [bell] **Task Reminder Emails** - Notify users of upcoming tasks
+- [warning] **Deadline Alert Emails** - Alert users when tasks are due
+- [lock] **Secure SMTP Connection** - Uses TLS encryption
+- [document] **Professional HTML Templates** - Beautiful, responsive emails
 
 ## Supported SMTP Providers
 
 You can use any SMTP provider:
 
--    **Gmail** (recommended for testing)
--    **SendGrid**
--    **Mailgun**
--    **AWS SES**
--    **Your own mail server**
--    **Any SMTP provider**
+- **Gmail** (recommended for testing)
+- **SendGrid**
+- **Mailgun**
+- **AWS SES**
+- **Your own mail server**
+- **Any SMTP provider**
 
 ## Configuration
 
@@ -55,16 +55,16 @@ define('SMTP_FROM_NAME', 'TaskFlow');
 
 ### 1. Create a Gmail Account
 
--    Sign up for a Gmail account if you don't have one
--    Use a dedicated email for your app (e.g., `taskflow-noreply@gmail.com`)
+- Sign up for a Gmail account if you don't have one
+- Use a dedicated email for your app (e.g., `taskflow-noreply@gmail.com`)
 
 ### 2. Enable App Password
 
--    Go to [Google Account Security](https://myaccount.google.com/security)
--    Enable 2-factor authentication if not already enabled
--    Scroll to "App passwords"
--    Select "Mail" and "Windows Computer" (or your OS)
--    Google will generate a 16-character password
+- Go to [Google Account Security](https://myaccount.google.com/security)
+- Enable 2-factor authentication if not already enabled
+- Scroll to "App passwords"
+- Select "Mail" and "Windows Computer" (or your OS)
+- Google will generate a 16-character password
 
 ### 3. Update Configuration
 
@@ -200,15 +200,15 @@ POST /backend/api/mailer.php?action=send-deadline
 
 ### Gmail Specific Issues
 
--    **"Invalid credentials"** - Check that App Password (not regular password) is used
--    **"Less secure apps"** - This error is outdated; use App Password instead
--    **2FA not enabled** - Google requires 2FA to generate App Password
+- **"Invalid credentials"** - Check that App Password (not regular password) is used
+- **"Less secure apps"** - This error is outdated; use App Password instead
+- **2FA not enabled** - Google requires 2FA to generate App Password
 
 ### PHP Errors
 
--    **"Failed to connect"** - SMTP host/port is incorrect
--    **"STARTTLS failed"** - TLS protocol issue; check provider supports TLS
--    **"Authentication failed"** - Username/password incorrect
+- **"Failed to connect"** - SMTP host/port is incorrect
+- **"STARTTLS failed"** - TLS protocol issue; check provider supports TLS
+- **"Authentication failed"** - Username/password incorrect
 
 ## Production Considerations
 
@@ -241,10 +241,10 @@ function logEmail($toEmail, $subject, $action) {
 
 The frontend has been updated to use the SMTP mailer instead of Resend API:
 
-1. ✅ Removed all Resend API references
-2. ✅ Updated frontend to call `/backend/api/mailer.php`
-3. ✅ Email functions work identically to users
-4. ✅ All HTML templates preserved
+1. [check] Removed all Resend API references
+2. [check] Updated frontend to call `/backend/api/mailer.php`
+3. [check] Email functions work identically to users
+4. [check] All HTML templates preserved
 
 No changes needed to the rest of the application!
 

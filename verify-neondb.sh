@@ -9,7 +9,7 @@ echo ""
 
 # Check if .env file exists
 if [ -f "/home/king/Desktop/Projects/Task-Management/backend/.env" ]; then
-    echo "✅ .env file found"
+    echo "[check] .env file found"
 else
     echo "❌ .env file not found"
     exit 1
@@ -19,7 +19,7 @@ fi
 source "/home/king/Desktop/Projects/Task-Management/backend/.env"
 
 echo ""
-echo "📊 NeonDB Configuration:"
+echo "[chart] NeonDB Configuration:"
 echo "────────────────────────────────────────────────────────────────"
 echo "Host:        $DB_HOST"
 echo "Port:        $DB_PORT"
@@ -31,14 +31,14 @@ echo ""
 
 # Test if psql is available
 if command -v psql &> /dev/null; then
-    echo "🧪 Testing NeonDB Connection..."
+    echo "[beaker] Testing NeonDB Connection..."
     echo "────────────────────────────────────────────────────────────────"
     
     # Test connection
     PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -c "SELECT version();" 2>/dev/null
     
     if [ $? -eq 0 ]; then
-        echo "✅ NeonDB Connection: SUCCESS"
+        echo "[check] NeonDB Connection: SUCCESS"
     else
         echo "❌ NeonDB Connection: FAILED"
         echo ""
@@ -48,14 +48,14 @@ if command -v psql &> /dev/null; then
         echo "3. Check firewall allows outbound port 5432"
     fi
 else
-    echo "⚠️  psql not installed (install postgresql client to test)"
+    echo "[warning] psql not installed (install postgresql client to test)"
     echo ""
     echo "To test manually, try:"
     echo "psql 'postgresql://$DB_USER:****@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=$DB_SSL_MODE'"
 fi
 
 echo ""
-echo "🚀 To start the backend:"
+echo "[rocket] To start the backend:"
 echo "────────────────────────────────────────────────────────────────"
 echo "cd /home/king/Desktop/Projects/Task-Management"
 echo "php -S localhost:8000"

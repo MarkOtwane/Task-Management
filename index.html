@@ -1230,6 +1230,7 @@
 			// Add the event listener once
 			document.addEventListener('keydown', window.handleKeyDown);
 		</script>
+		<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css\">
 	</head>
 		<!-- Import TaskAPI for backend connectivity -->
 		<script>
@@ -1257,7 +1258,7 @@
 			<!-- ===== LOGIN PAGE ===== -->
 			<div id="loginPage" class="auth-page">
 				<div class="auth-card">
-					<h1>✨ Welcome Back</h1>
+					<h1><i class="fas fa-sparkles"></i> Welcome Back</h1>
 					<p class="subtitle">Sign in to continue your journey</p>
 
 					<form id="loginForm">
@@ -1274,7 +1275,7 @@
 			<!-- ===== REGISTER PAGE ===== -->
 			<div id="registerPage" class="auth-page hidden">
 				<div class="auth-card">
-					<h1>🚀 Get Started</h1>
+					<h1><i class="fas fa-rocket"></i> Get Started</h1>
 					<p class="subtitle">Create your account to begin</p>
 					<form id="registerForm">
 						<div class="form-group"><label for="registerName">Full Name</label> <input type="text" id="registerName" placeholder="John Doe" required /></div>
@@ -1292,19 +1293,19 @@
 				<!-- Sidebar -->
 				<aside class="sidebar" id="sidebar">
 					<div class="sidebar-header">
-						<h2>📋 TaskFlow</h2>
+						<h2><i class="fas fa-list-check"></i> TaskFlow</h2>
 						<p id="userNameDisplay">Welcome!</p>
 					</div>
 					<nav class="sidebar-nav">
 						<div class="nav-section">
 							<div class="nav-section-title">Main</div>
-							<a href="#" class="nav-link active" data-section="overview"> <span class="icon">📊</span> Overview </a>
-							<a href="#" class="nav-link" data-section="tasks"> <span class="icon">✅</span> All Tasks </a>
-							<a href="#" class="nav-link" data-section="analytics"> <span class="icon">📈</span> Analytics </a>
+							<a href="#" class="nav-link active" data-section="overview"> <span class="icon"><i class="fas fa-chart-bar"></i></span> Overview </a>
+							<a href="#" class="nav-link" data-section="tasks"> <span class="icon"><i class="fas fa-check"></i></span> All Tasks </a>
+							<a href="#" class="nav-link" data-section="analytics"> <span class="icon"><i class="fas fa-chart-line"></i></span> Analytics </a>
 						</div>
 						<div class="nav-section">
 							<div class="nav-section-title">Plans</div>
-							<a href="#" class="nav-link" data-section="plans"> <span class="icon">🗓️</span> My Plans </a>
+							<a href="#" class="nav-link" data-section="plans"> <span class="icon"><i class="fas fa-calendar-alt"></i></span> My Plans </a>
 						</div>
 					</nav>
 
@@ -1336,7 +1337,7 @@
 							<div class="stat-card">
 								<h3>Completed</h3>
 								<div class="stat-value" id="overviewCompletedTasks">0</div>
-								<div class="stat-subtext">Well done! 🎉</div>
+								<div class="stat-subtext">Well done! <i class="fas fa-party-popper"></i></div>
 							</div>
 							<div class="stat-card">
 								<h3>In Progress</h3>
@@ -1351,22 +1352,22 @@
 						</div>
 						<div class="plans-grid">
 							<div class="plan-card year">
-								<h3>📅 Year Plan</h3>
+								<h3><i class="fas fa-calendar"></i> Year Plan</h3>
 								<div class="plan-count" id="overviewYearCount">0</div>
 								<p>Long-term goals</p>
 							</div>
 							<div class="plan-card month">
-								<h3>📆 Month Plan</h3>
+								<h3><i class="fas fa-calendar-alt"></i> Month Plan</h3>
 								<div class="plan-count" id="overviewMonthCount">0</div>
 								<p>Monthly objectives</p>
 							</div>
 							<div class="plan-card week">
-								<h3>📋 Week Plan</h3>
+								<h3><i class="fas fa-list-ul"></i> Week Plan</h3>
 								<div class="plan-count" id="overviewWeekCount">0</div>
 								<p>Weekly tasks</p>
 							</div>
 							<div class="plan-card day">
-								<h3>📝 Day Plan</h3>
+								<h3><i class="fas fa-list-check"></i> Day Plan</h3>
 								<div class="plan-count" id="overviewDayCount">0</div>
 								<p>Today's priorities</p>
 							</div>
@@ -1380,22 +1381,22 @@
 						</div>
 						<div class="plans-grid">
 							<div class="plan-card year" data-plan-filter="year">
-								<h3>📅 Year Plan</h3>
+								<h3><i class="fas fa-calendar"></i> Year Plan</h3>
 								<div class="plan-count" id="planYearCount">0</div>
 								<p>Strategic annual goals and milestones</p>
 							</div>
 							<div class="plan-card month" data-plan-filter="month">
-								<h3>📆 Month Plan</h3>
+								<h3><i class="fas fa-calendar-alt"></i> Month Plan</h3>
 								<div class="plan-count" id="planMonthCount">0</div>
 								<p>Monthly objectives and projects</p>
 							</div>
 							<div class="plan-card week" data-plan-filter="week">
-								<h3>📋 Week Plan</h3>
+								<h3><i class="fas fa-list-ul"></i> Week Plan</h3>
 								<div class="plan-count" id="planWeekCount">0</div>
 								<p>Weekly tasks and deliverables</p>
 							</div>
 							<div class="plan-card day" data-plan-filter="day">
-								<h3>📝 Day Plan</h3>
+								<h3><i class="fas fa-list-check"></i> Day Plan</h3>
 								<div class="plan-count" id="planDayCount">0</div>
 								<p>Daily actions and priorities</p>
 							</div>
@@ -1408,13 +1409,13 @@
 							<p>Create, edit, and complete your tasks</p>
 						</div>
 						<div class="controls-bar">
-							<div class="search-box"><input type="text" id="searchInput" placeholder="🔍 Search tasks..." /></div>
+							<div class="search-box"><input type="text" id="searchInput" placeholder="<i class='fas fa-search'></i> Search tasks..." /></div>
 							<select id="filterPlan">
 								<option value="all">All Plans</option>
-								<option value="year">📅 Year</option>
-								<option value="month">📆 Month</option>
-								<option value="week">📋 Week</option>
-								<option value="day">📝 Day</option>
+								<option value="year"><i class="fas fa-calendar"></i> Year</option>
+								<option value="month"><i class="fas fa-calendar-alt"></i> Month</option>
+								<option value="week"><i class="fas fa-list-ul"></i> Week</option>
+								<option value="day"><i class="fas fa-list-check"></i> Day</option>
 							</select>
 							<select id="filterStatus">
 								<option value="all">All Status</option>
@@ -1425,7 +1426,7 @@
 						</div>
 						<div class="tasks-grid" id="tasksGrid"></div>
 						<div id="emptyTasksState" class="empty-state hidden">
-							<div class="empty-state-icon">📝</div>
+							<div class="empty-state-icon"><i class="fas fa-list-check"></i></div>
 							<h3>No tasks yet</h3>
 							<p>Create your first task to get started on your journey!</p>
 						</div>
@@ -1459,7 +1460,7 @@
 							</div>
 						</div>
 						<div class="chart-container">
-							<h2>📊 Task Distribution by Plan</h2>
+							<h2><i class="fas fa-chart-bar"></i> Task Distribution by Plan</h2>
 							<div class="bar-chart" id="barChart"></div>
 						</div>
 					</section>
@@ -1484,10 +1485,10 @@
 						<div class="form-group">
 							<label for="taskPlan">Plan Type *</label>
 							<select id="taskPlan" required>
-								<option value="year">📅 Year Plan</option>
-								<option value="month">📆 Month Plan</option>
-								<option value="week">📋 Week Plan</option>
-								<option value="day">📝 Day Plan</option>
+								<option value="year"><i class="fas fa-calendar"></i> Year Plan</option>
+								<option value="month"><i class="fas fa-calendar-alt"></i> Month Plan</option>
+								<option value="week"><i class="fas fa-list-ul"></i> Week Plan</option>
+								<option value="day"><i class="fas fa-list-check"></i> Day Plan</option>
 							</select>
 						</div>
 						<div class="form-group"><label for="taskDueDate">Due Date</label> <input type="date" id="taskDueDate" /></div>
@@ -1518,9 +1519,9 @@
 							<label for="taskReminder">Reminder Settings</label>
 							<select id="taskReminder">
 								<option value="none">No Reminder</option>
-								<option value="1day">📅 1 Day Before</option>
-								<option value="30min">⏰ 30 Minutes Before</option>
-								<option value="custom">🕐 Custom Time</option>
+								<option value="1day"><i class="fas fa-calendar"></i> 1 Day Before</option>
+								<option value="30min"><i class="fas fa-clock"></i> 30 Minutes Before</option>
+								<option value="custom"><i class="fas fa-hourglass-start"></i> Custom Time</option>
 							</select>
 						</div>
 						<div class="form-group hidden" id="customReminderGroup">
@@ -1536,9 +1537,9 @@
 			<!-- ===== REFLECTION MODAL ===== -->
 			<div id="reflectionModal" class="modal-overlay hidden">
 				<div class="modal reflection-modal">
-					<h2>✨ Task Reflection</h2>
+					<h2><i class="fas fa-sparkles"></i> Task Reflection</h2>
 					<p class="modal-subtitle">Take a moment to reflect on your accomplishment</p>
-					<div class="reflection-hint">💡 Reflecting on your tasks helps you grow and learn from each experience!</div>
+					<div class="reflection-hint"><i class="fas fa-lightbulb"></i> Reflecting on your tasks helps you grow and learn from each experience!</div>
 					<form id="reflectionForm">
 						<div class="form-group">
 							<label for="reflectionLearning">1. What did you learn from this task? *</label>
@@ -1560,7 +1561,7 @@
 			<!-- ===== FORGOT PASSWORD MODAL ===== -->
 			<div id="forgotPasswordModal" class="modal-overlay hidden">
 				<div class="modal">
-					<h2>🔐 Reset Password</h2>
+					<h2><i class="fas fa-lock"></i> Reset Password</h2>
 					<p class="modal-subtitle">Enter your email to receive a reset link</p>
 					<form id="forgotPasswordForm">
 						<div class="form-group">
@@ -1990,7 +1991,7 @@
 						localStorage.setItem('auth_token', response.token);
 						console.log('JWT token stored after registration:', response.token.substring(0, 20) + '...');
 						
-						showNotification("Registration successful! Welcome aboard! 🎉", "success");
+						showNotification("Registration successful! Welcome aboard! <i class=\"fas fa-party-popper\"></i>", "success");
 						document.getElementById("registerForm").reset();
 						
 						// Auto-login after registration
@@ -2490,7 +2491,7 @@
 							}
 						}
 
-						showNotification("Task created successfully! 🎉", "success");
+						showNotification("Task created successfully! <i class=\"fas fa-party-popper\"></i>", "success");
 						taskModal.classList.add("hidden");
 						renderTasks();
 						updateOverview();
@@ -2607,7 +2608,7 @@
 					updatePlans();
 					updateAnalytics();
 
-					showNotification("Task completed! Great reflection! 🌟", "success");
+					showNotification("Task completed! Great reflection! <i class=\"fas fa-star\"></i>", "success");
 				}).catch((error) => {
 					showNotification("Failed to save reflection: " + error.message, "error");
 					console.error("Reflection error:", error);
@@ -2648,19 +2649,19 @@
 				tasksGrid.innerHTML = filteredTasks
 					.map((task) => {
 						const planIcons = {
-							year: "📅",
-							month: "📆",
-							week: "📋",
-							day: "📝",
+							year: "<i class=\"fas fa-calendar\"></i>",
+							month: "<i class=\"fas fa-calendar-alt\"></i>",
+							week: "<i class=\"fas fa-list-ul\"></i>",
+							day: "<i class=\"fas fa-list-check\"></i>",
 						};
 
 						let reflectionHTML = "";
 						if (task.completed && task.reflection) {
 							reflectionHTML = `
             <div class="task-reflection">
-              <strong>1. 💡 What I learned:</strong>
+              <strong>1. <i class="fas fa-lightbulb"></i> What I learned:</strong>
               <p>${task.reflection.learning}</p>
-              <strong>2. 📖 My experience:</strong>
+              <strong>2. <i class="fas fa-book"></i> My experience:</strong>
               <p>${task.reflection.experience}</p>
             </div>
           `;
@@ -2676,9 +2677,9 @@
 						let reminderHTML = "";
 						if (task.reminder && task.reminder !== "none" && !task.completed) {
 							const reminderText = {
-								"1day": "📅 1 day before",
-								"30min": "⏰ 30 min before",
-								custom: "🕐 Custom time",
+								"1day": "<i class=\"fas fa-calendar\"></i> 1 day before",
+								"30min": "<i class=\"fas fa-clock\"></i> 30 min before",
+								custom: "<i class=\"fas fa-hourglass-start\"></i> Custom time",
 							};
 							reminderHTML = `<span class="task-reminder-indicator email">${reminderText[task.reminder] || "Reminder set"}</span>`;
 						}
@@ -2697,11 +2698,11 @@
               ${
 				task.dueDate
 					? `<span class="task-badge ${isOverdue(task.dueDate) && !task.completed ? "due" : ""}">
-                📅 ${new Date(task.dueDate).toLocaleDateString()}
+                <i class=\"fas fa-calendar\"></i> ${new Date(task.dueDate).toLocaleDateString()}
               </span>`
 					: ""
 			}
-              ${task.dueTime ? `<span class="task-badge">🕐 ${task.dueTime}</span>` : ""}
+              ${task.dueTime ? `<span class="task-badge"><i class="fas fa-clock"></i> ${task.dueTime}</span>` : ""}
               ${reminderHTML}
             </div>
             <div class="task-actions">
@@ -2764,7 +2765,7 @@
 				const confirmDiv = document.createElement("div");
 				confirmDiv.style.cssText = "margin-top: 12px; padding: 12px; background: #fee2e2; border-radius: 8px; border-left: 3px solid #ef4444;";
 				confirmDiv.innerHTML = `
-        <p style="margin-bottom: 10px; color: #991b1b; font-weight: 600; font-size: 14px;">⚠️ Delete this task permanently?</p>
+        <p style="margin-bottom: 10px; color: #991b1b; font-weight: 600; font-size: 14px;"><i class="fas fa-exclamation-triangle"></i> Delete this task permanently?</p>
         <div style="display: flex; gap: 8px;">
           <button class="btn btn-small btn-danger" onclick="confirmDelete('${taskId}')">Yes, Delete</button>
           <button class="btn btn-small btn-secondary" onclick="cancelDelete('${taskId}')">Cancel</button>
@@ -2986,7 +2987,7 @@
 				if ("Notification" in window && Notification.permission === "granted") {
 					new Notification(title, {
 						body: message,
-						icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">✅</text></svg>',
+						icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90"><i class="fas fa-check"></i></text></svg>',
 					});
 				}
 			}
