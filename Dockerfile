@@ -1,23 +1,42 @@
-# Use PHP 8.1 with built-in web server
-FROM php:8.1-cli
+FROM php:8.2-apache
 
-# Install system dependencies for PostgreSQL
+# Enable necessary extensions
 RUN apt-get update && apt-get install -y \
-    postgresql-client \
-    libpq-dev \
+    libmysqlclient-dev \
+    zlib1g-dev \
+    libpng-dev \
+    libjpeg-dev \
+    mysql-client \
+    curl \
+    git \
+    unzip \
+    && docker-php-ext-configure gd --with-jpeg \
+    && docker-php-ext-install -j$(nproc) gd mysqli pdo pdo_mysql \
     && rm -rf /var/lib/apt/lists/*
 
-# Install required PHP extensions
-RUN docker-php-ext-install pdo pdo_pgsql
+# Enable Apache modules
+RUN a2enmod rewrite
+RUN a2enmod headers
+RUN a2enmod ssl
 
 # Set working directory
-WORKDIR /app
+WORKDIR /var/www/html
 
-# Copy application files
-COPY . .
+# Copy Apache configuration
+COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
 
-# Expose port (Render uses PORT environment variable, default 10000)
-EXPOSE 10000
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Start PHP built-in server
-CMD ["php", "-S", "0.0.0.0:10000", "-t", "."]
+# Set proper permissions
+RUN chown -R www-data:www-data /var/www/html
+RUN chmod -R 755 /var/www/html
+
+# Expose ports
+EXPOSE 80 443
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost/ || exit 1
+
+CMD ["apache2-foreground"]

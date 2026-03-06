@@ -140,7 +140,7 @@
 
 			.toggle-slider:before {
 				position: absolute;
-				content: "🌙";
+				content: "\f186";
 				height: 22px;
 				width: 22px;
 				left: 2px;
@@ -152,6 +152,8 @@
 				align-items: center;
 				justify-content: center;
 				font-size: 12px;
+				font-family: "Font Awesome 6 Free";
+				font-weight: 900;
 			}
 
 			input:checked + .toggle-slider {
@@ -160,7 +162,7 @@
 
 			input:checked + .toggle-slider:before {
 				transform: translateX(24px);
-				content: "☀️";
+				content: "\f185";
 			}
 
 			/* ===== UTILITY CLASSES ===== */
@@ -1317,7 +1319,7 @@
 								<span class="toggle-slider"></span>
 							</label>
 						</div>
-						<button class="btn btn-secondary" id="logoutBtn" style="width: 100%; margin-top: 15px">🚪 Logout</button>
+						<button class="btn btn-secondary" id="logoutBtn" style="width: 100%; margin-top: 15px"><i class="fas fa-right-from-bracket"></i> Logout</button>
 					</div>
 				</aside>
 				<!-- Main Content -->
@@ -1578,7 +1580,7 @@
 			<!-- ===== RESET PASSWORD MODAL ===== -->
 			<div id="resetPasswordModal" class="modal-overlay hidden">
 				<div class="modal">
-					<h2>🔑 Set New Password</h2>
+					<h2><i class="fas fa-key"></i> Set New Password</h2>
 					<p class="modal-subtitle">Enter the reset code and your new password</p>
 					<form id="resetPasswordForm">
 							<div class="form-group">
@@ -1906,7 +1908,7 @@
 						showPage("dashboard");
 						showSection("overview");
 						loadTasks(); // Load tasks from backend
-						showNotification("Welcome back! 👋", "success");
+						showNotification("Welcome back! <i class=\"fas fa-hand\"></i>", "success");
 					} else {
 						showNotification("Login failed. Check credentials and try again.", "error");
 						console.error('Invalid login response:', response);
@@ -2483,7 +2485,7 @@
 									currentUser.name
 								).then(sent => {
 									if (sent) {
-										showNotification(`Meeting invitations sent to ${emails.length} people! 📧`, "success");
+										showNotification(`Meeting invitations sent to ${emails.length} people! <i class=\"fas fa-envelope\"></i>`, "success");
 									} else {
 										showNotification("Task created but invitations failed to send", "warning");
 									}
@@ -2688,7 +2690,7 @@
           <div class="task-card ${task.plan} ${task.completed ? "completed" : ""}" data-task-id="${task.id}">
             <div class="task-header">
               <div class="task-title">${task.title}</div>
-              ${task.completed ? '<span class="completion-badge">✓ Done</span>' : ""}
+							  ${task.completed ? '<span class="completion-badge"><i class="fas fa-check"></i> Done</span>' : ""}
             </div>
             <div class="task-description">${formatDescription(task.description) || "No description provided"}</div>
             ${reflectionHTML}
@@ -2709,18 +2711,18 @@
               ${
 				!task.completed
 					? `
-                <button class="btn btn-small btn-success" onclick="openReflectionModal('${task.id}')">
-                  ✓ Complete
-                </button>
-                <button class="btn btn-small btn-primary" onclick="editTask('${task.id}')">
-                  ✏️ Edit
-                </button>
+										<button class="btn btn-small btn-success" onclick="openReflectionModal('${task.id}')">
+										  <i class="fas fa-check"></i> Complete
+										</button>
+										<button class="btn btn-small btn-primary" onclick="editTask('${task.id}')">
+										  <i class="fas fa-pen"></i> Edit
+										</button>
               `
 					: ""
 			}
-              <button class="btn btn-small btn-danger" onclick="deleteTask('${task.id}')">
-                🗑️ Delete
-              </button>
+							  <button class="btn btn-small btn-danger" onclick="deleteTask('${task.id}')">
+								<i class="fas fa-trash"></i> Delete
+							  </button>
             </div>
           </div>
         `;
@@ -3204,5 +3206,11 @@
 				}
 			})();
 		</script>
+
+		<!-- Countdown Timer Module -->
+		<script src="frontend/js/countdown-timer.js"></script>
+
+		<!-- Personal Mode Enhancements -->
+		<script src="frontend/js/personal-mode-enhancements.js"></script>
 	</body>
 </html>

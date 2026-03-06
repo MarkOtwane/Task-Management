@@ -1,0 +1,99 @@
+version: "3.8"
+
+services:
+  # MySQL Database Service
+  mysql:
+    image: mysql:8.0
+    container_name: taskflow-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_password}
+      MYSQL_DATABASE: ${DB_NAME:-taskflow}
+      MYSQL_USER: ${DB_USER:-taskflow_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-taskflow_password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./database/initial_data.sql:/docker-entrypoint-initdb.d/02-initial_data.sql
+    networks:
+      - taskflow-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+  # PHP Apache Service
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: taskflow-php
+    restart: always
+    environment:
+      DB_HOST: mysql
+      DB_NAME: ${DB_NAME:-taskflow}
+      DB_USER: ${DB_USER:-taskflow_user}
+      DB_PASSWORD: ${DB_PASSWORD:-taskflow_password}
+      DB_PORT: 3306
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      APP_ENV: ${APP_ENV:-development}
+      APP_URL: ${APP_URL:-http://localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./:/var/www/html
+      - ./uploads:/var/www/html/uploads
+      - ./logs:/var/log/apache2
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - taskflow-network
+    command: apache2-foreground
+
+  # phpMyAdmin for Database Management
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: taskflow-phpmyadmin
+    restart: always
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: ${DB_USER:-taskflow_user}
+      PMA_PASSWORD: ${DB_PASSWORD:-taskflow_password}
+      PMA_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_password}
+    ports:
+      - "8081:80"
+    depends_on:
+      - mysql
+    networks:
+      - taskflow-network
+
+  # Optional: Redis for caching and sessions
+  redis:
+    image: redis:7-alpine
+    container_name: taskflow-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - taskflow-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      timeout: 20s
+      retries: 10
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  taskflow-network:
+    driver: bridge

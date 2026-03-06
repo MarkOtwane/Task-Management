@@ -1,0 +1,80 @@
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.sublime-workspace
+
+# Logs
+logs/
+*.log
+npm-debug.log
+yarn-error.log
+
+# Dependencies
+node_modules/
+vendor/
+composer.lock
+
+# Database
+*.sql.bak
+database/backups/
+
+# Build and dist
+dist/
+build/
+*.min.js
+*.min.css
+
+# OS files
+Thumbs.db
+.DS_Store
+*.pem
+*.key
+
+# Testing
+coverage/
+.coverage
+__pycache__/
+
+# Docker
+.docker-sync/
+
+# Uploads (development)
+uploads/*/
+!uploads/.gitkeep
+
+# PHP
+php-error.log
+phar-errors.txt
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+
+# IDE specific
+*.iml
+.gradle
+.gradle/
+local.properties
+
+# Jest and test coverage
+coverage/
+.nyc_output/
+
+# Next.js / Nuxt.js dist directory
+.next
+.nuxt
+
+# Misc
+.cache/
+proxy.config.json

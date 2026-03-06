@@ -1,0 +1,1367 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Admin Dashboard - TaskFlow</title>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+
+			body {
+				font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				min-height: 100vh;
+				color: #333;
+			}
+
+			.container {
+				max-width: 1400px;
+				margin: 0 auto;
+				padding: 20px;
+			}
+
+			/* Header & Navigation */
+			.header {
+				background: white;
+				border-radius: 10px;
+				padding: 20px;
+				margin-bottom: 30px;
+				box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+
+			.header h1 {
+				color: #667eea;
+				font-size: 28px;
+			}
+
+			.user-info {
+				display: flex;
+				align-items: center;
+				gap: 20px;
+			}
+
+			.user-name {
+				font-weight: 600;
+				color: #333;
+			}
+
+			.logout-btn {
+				background: #ff6b6b;
+				color: white;
+				border: none;
+				padding: 10px 20px;
+				border-radius: 5px;
+				cursor: pointer;
+				font-size: 14px;
+				transition: background 0.3s;
+			}
+
+			.logout-btn:hover {
+				background: #ff5252;
+			}
+
+			.tabs {
+				display: flex;
+				gap: 10px;
+				margin-bottom: 30px;
+				background: white;
+				padding: 15px;
+				border-radius: 10px;
+				box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+			}
+
+			.tab-btn {
+				padding: 10px 20px;
+				border: 2px solid #ddd;
+				background: white;
+				color: #333;
+				border-radius: 5px;
+				cursor: pointer;
+				font-size: 14px;
+				font-weight: 600;
+				transition: all 0.3s;
+			}
+
+			.tab-btn.active {
+				background: #667eea;
+				color: white;
+				border-color: #667eea;
+			}
+
+			.tab-btn:hover {
+				border-color: #667eea;
+			}
+
+			/* Overview Cards */
+			.overview-grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+				gap: 20px;
+				margin-bottom: 30px;
+			}
+
+			.card {
+				background: white;
+				border-radius: 10px;
+				padding: 20px;
+				box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+				transition: transform 0.3s;
+			}
+
+			.card:hover {
+				transform: translateY(-5px);
+			}
+
+			.card-title {
+				color: #666;
+				font-size: 14px;
+				text-transform: uppercase;
+				margin-bottom: 10px;
+				font-weight: 600;
+			}
+
+			.card-value {
+				font-size: 32px;
+				font-weight: bold;
+				color: #667eea;
+				margin-bottom: 10px;
+			}
+
+			.card-subtitle {
+				color: #999;
+				font-size: 12px;
+			}
+
+			/* Tabs Content */
+			.tab-content {
+				display: none;
+			}
+
+			.tab-content.active {
+				display: block;
+			}
+
+			/* Forms */
+			.form-group {
+				background: white;
+				border-radius: 10px;
+				padding: 25px;
+				margin-bottom: 20px;
+				box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+			}
+
+			.form-title {
+				font-size: 20px;
+				font-weight: bold;
+				color: #333;
+				margin-bottom: 20px;
+				border-bottom: 2px solid #667eea;
+				padding-bottom: 10px;
+			}
+
+			.form-row {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+				gap: 20px;
+				margin-bottom: 20px;
+			}
+
+			.form-field {
+				display: flex;
+				flex-direction: column;
+			}
+
+			.form-field label {
+				margin-bottom: 8px;
+				font-weight: 600;
+				color: #333;
+				font-size: 14px;
+			}
+
+			.form-field input,
+			.form-field textarea,
+			.form-field select {
+				padding: 12px;
+				border: 2px solid #ddd;
+				border-radius: 5px;
+				font-size: 14px;
+				font-family: inherit;
+				transition: border 0.3s;
+			}
+
+			.form-field input:focus,
+			.form-field textarea:focus,
+			.form-field select:focus {
+				outline: none;
+				border-color: #667eea;
+				box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+			}
+
+			.form-field textarea {
+				resize: vertical;
+				min-height: 100px;
+			}
+
+			.btn-group {
+				display: flex;
+				gap: 10px;
+				margin-top: 20px;
+			}
+
+			.btn {
+				padding: 12px 24px;
+				border: none;
+				border-radius: 5px;
+				cursor: pointer;
+				font-size: 14px;
+				font-weight: 600;
+				transition: all 0.3s;
+			}
+
+			.btn-primary {
+				background: #667eea;
+				color: white;
+			}
+
+			.btn-primary:hover {
+				background: #5568d3;
+				transform: translateY(-2px);
+				box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+			}
+
+			.btn-secondary {
+				background: #f0f0f0;
+				color: #333;
+			}
+
+			.btn-secondary:hover {
+				background: #e0e0e0;
+			}
+
+			.btn-danger {
+				background: #ff6b6b;
+				color: white;
+			}
+
+			.btn-danger:hover {
+				background: #ff5252;
+			}
+
+			.btn-success {
+				background: #51cf66;
+				color: white;
+			}
+
+			.btn-success:hover {
+				background: #40c057;
+			}
+
+			/* Tables */
+			.table-container {
+				background: white;
+				border-radius: 10px;
+				padding: 20px;
+				margin-bottom: 20px;
+				box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+				overflow-x: auto;
+			}
+
+			.table-title {
+				font-size: 18px;
+				font-weight: bold;
+				color: #333;
+				margin-bottom: 20px;
+				padding-bottom: 10px;
+				border-bottom: 2px solid #667eea;
+			}
+
+			table {
+				width: 100%;
+				border-collapse: collapse;
+			}
+
+			th {
+				background: #f8f9ff;
+				color: #333;
+				padding: 15px;
+				text-align: left;
+				font-weight: 600;
+				font-size: 13px;
+				text-transform: uppercase;
+				border-bottom: 2px solid #ddd;
+			}
+
+			td {
+				padding: 15px;
+				border-bottom: 1px solid #eee;
+			}
+
+			tr:hover {
+				background: #f8f9ff;
+			}
+
+			.status-badge {
+				padding: 6px 12px;
+				border-radius: 20px;
+				font-size: 12px;
+				font-weight: 600;
+				text-transform: uppercase;
+				width: fit-content;
+			}
+
+			.status-pending {
+				background: #fff3cd;
+				color: #856404;
+			}
+
+			.status-approved {
+				background: #d4edda;
+				color: #155724;
+			}
+
+			.status-rejected {
+				background: #f8d7da;
+				color: #721c24;
+			}
+
+			.status-completed {
+				background: #d1ecf1;
+				color: #0c5460;
+			}
+
+			/* Modal */
+			.modal {
+				display: none;
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background: rgba(0, 0, 0, 0.5);
+				z-index: 1000;
+				align-items: center;
+				justify-content: center;
+			}
+
+			.modal.active {
+				display: flex;
+			}
+
+			.modal-content {
+				background: white;
+				border-radius: 10px;
+				padding: 30px;
+				max-width: 600px;
+				max-height: 90vh;
+				overflow-y: auto;
+				box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+			}
+
+			.modal-header {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				margin-bottom: 20px;
+				padding-bottom: 15px;
+				border-bottom: 2px solid #eee;
+			}
+
+			.modal-header h2 {
+				color: #333;
+			}
+
+			.close-btn {
+				background: none;
+				border: none;
+				font-size: 24px;
+				cursor: pointer;
+				color: #999;
+			}
+
+			.close-btn:hover {
+				color: #333;
+			}
+
+			/* Alerts */
+			.alert {
+				padding: 15px;
+				border-radius: 5px;
+				margin-bottom: 20px;
+				display: none;
+			}
+
+			.alert.show {
+				display: block;
+			}
+
+			.alert-success {
+				background: #d4edda;
+				color: #155724;
+				border: 1px solid #c3e6cb;
+			}
+
+			.alert-error {
+				background: #f8d7da;
+				color: #721c24;
+				border: 1px solid #f5c6cb;
+			}
+
+			.alert-info {
+				background: #d1ecf1;
+				color: #0c5460;
+				border: 1px solid #bee5eb;
+			}
+
+			/* Loading */
+			.loading {
+				display: none;
+				text-align: center;
+				padding: 40px;
+			}
+
+			.loading.show {
+				display: block;
+			}
+
+			.spinner {
+				border: 4px solid #f3f3f3;
+				border-top: 4px solid #667eea;
+				border-radius: 50%;
+				width: 40px;
+				height: 40px;
+				animation: spin 1s linear infinite;
+				margin: 0 auto;
+			}
+
+			@keyframes spin {
+				0% {
+					transform: rotate(0deg);
+				}
+				100% {
+					transform: rotate(360deg);
+				}
+			}
+
+			/* Responsive */
+			@media (max-width: 768px) {
+				.header {
+					flex-direction: column;
+					gap: 15px;
+					text-align: center;
+				}
+
+				.user-info {
+					flex-direction: column;
+				}
+
+				.overview-grid {
+					grid-template-columns: 1fr;
+				}
+
+				.form-row {
+					grid-template-columns: 1fr;
+				}
+
+				.tabs {
+					flex-wrap: wrap;
+				}
+
+				.modal-content {
+					margin: 20px;
+					max-width: 90vw;
+				}
+			}
+
+			.search-box {
+				margin-bottom: 20px;
+			}
+
+			.search-box input {
+				width: 100%;
+				padding: 12px;
+				border: 2px solid #ddd;
+				border-radius: 5px;
+				font-size: 14px;
+			}
+
+			.search-box input:focus {
+				outline: none;
+				border-color: #667eea;
+			}
+
+			.empty-state {
+				text-align: center;
+				padding: 40px;
+				color: #999;
+			}
+
+			.empty-state-icon {
+				font-size: 48px;
+				margin-bottom: 10px;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<!-- Header -->
+			<div class="header">
+				<div>
+					<h1>Admin Dashboard</h1>
+					<p style="color: #999; margin-top: 5px">Manage tasks, employees, and submissions</p>
+				</div>
+				<div class="user-info">
+					<div>
+						<div class="user-name" id="userName">Loading...</div>
+						<small style="color: #999">Administrator</small>
+					</div>
+					<button class="logout-btn" onclick="logout()">Logout</button>
+				</div>
+			</div>
+
+			<!-- Alert Messages -->
+			<div id="alertBox" class="alert"></div>
+
+			<!-- Tabs -->
+			<div class="tabs">
+				<button class="tab-btn active" onclick="switchTab('overview')"><i class="fa-solid fa-chart-line" aria-hidden="true"></i> Overview</button>
+				<button class="tab-btn" onclick="switchTab('tasks')"><i class="fa-solid fa-list-check" aria-hidden="true"></i> Tasks</button>
+				<button class="tab-btn" onclick="switchTab('submissions')"><i class="fa-solid fa-file-arrow-up" aria-hidden="true"></i> Submissions</button>
+				<button class="tab-btn" onclick="switchTab('employees')"><i class="fa-solid fa-users" aria-hidden="true"></i> Employees</button>
+				<button class="tab-btn" onclick="switchTab('analytics')"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i> Analytics</button>
+			</div>
+
+			<!-- OVERVIEW TAB -->
+			<div id="overview" class="tab-content active">
+				<div class="overview-grid" id="overviewCards">
+					<div class="card">
+						<div class="card-title">Total Tasks</div>
+						<div class="card-value" id="totalTasks">0</div>
+						<div class="card-subtitle">Across all employees</div>
+					</div>
+					<div class="card">
+						<div class="card-title">Completed Tasks</div>
+						<div class="card-value" id="completedTasks">0</div>
+						<div class="card-subtitle" id="completionRate">0%</div>
+					</div>
+					<div class="card">
+						<div class="card-title">Pending Tasks</div>
+						<div class="card-value" id="pendingTasks">0</div>
+						<div class="card-subtitle">Awaiting completion</div>
+					</div>
+					<div class="card">
+						<div class="card-title">Total Employees</div>
+						<div class="card-value" id="totalEmployees">0</div>
+						<div class="card-subtitle">Active staff</div>
+					</div>
+					<div class="card">
+						<div class="card-title">Submissions</div>
+						<div class="card-value" id="totalSubmissions">0</div>
+						<div class="card-subtitle">Awaiting review</div>
+					</div>
+					<div class="card">
+						<div class="card-title">Avg Completion</div>
+						<div class="card-value" id="avgCompletion">0%</div>
+						<div class="card-subtitle">Team performance</div>
+					</div>
+				</div>
+
+				<!-- Recent Submissions -->
+				<div class="table-container">
+					<div class="table-title">Recent Submissions (Last 10)</div>
+					<div id="recentSubmissionsLoading" class="loading show">
+						<div class="spinner"></div>
+					</div>
+					<table id="recentSubmissionsTable" style="display: none">
+						<thead>
+							<tr>
+								<th>Employee</th>
+								<th>Task</th>
+								<th>Status</th>
+								<th>Submitted</th>
+								<th>Actions</th>
+							</tr>
+						</thead>
+						<tbody id="recentSubmissionsBody"></tbody>
+					</table>
+					<div id="recentSubmissionsEmpty" class="empty-state" style="display: none">
+						<div class="empty-state-icon"><i class="fa-regular fa-inbox" aria-hidden="true"></i></div>
+						<p>No submissions yet</p>
+					</div>
+				</div>
+			</div>
+
+			<!-- TASKS TAB -->
+			<div id="tasks" class="tab-content">
+				<!-- Create Task Form -->
+				<div class="form-group">
+					<div class="form-title">Create New Task</div>
+					<form id="createTaskForm">
+						<div class="form-row">
+							<div class="form-field">
+								<label>Task Title *</label>
+								<input type="text" id="taskTitle" required />
+							</div>
+							<div class="form-field">
+								<label>Assign To *</label>
+								<select id="taskAssignee" required>
+									<option value="">Select employee...</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="form-field">
+								<label>Deadline *</label>
+								<input type="date" id="taskDeadline" required />
+							</div>
+							<div class="form-field">
+								<label>Due Time</label>
+								<input type="time" id="taskDueTime" />
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="form-field">
+								<label>Priority</label>
+								<select id="taskPriority">
+									<option value="low">Low</option>
+									<option value="medium" selected>Medium</option>
+									<option value="high">High</option>
+									<option value="urgent">Urgent</option>
+								</select>
+							</div>
+							<div class="form-field">
+								<label>Reminder Type</label>
+								<select id="taskReminderType">
+									<option value="none">None</option>
+									<option value="email">Email</option>
+									<option value="both" selected>Both</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="form-field" style="grid-column: 1 / -1">
+								<label>Task Description</label>
+								<textarea id="taskDescription" placeholder="Detailed task description..."></textarea>
+							</div>
+						</div>
+						<div class="btn-group">
+							<button type="submit" class="btn btn-primary">Create Task</button>
+							<button type="reset" class="btn btn-secondary">Clear</button>
+						</div>
+					</form>
+				</div>
+
+				<!-- Task List -->
+				<div class="table-container">
+					<div class="table-title">All Tasks</div>
+					<div class="search-box">
+						<input type="text" id="taskSearch" placeholder="Search tasks by title..." />
+					</div>
+					<div id="tasksLoading" class="loading show">
+						<div class="spinner"></div>
+					</div>
+					<table id="tasksTable" style="display: none">
+						<thead>
+							<tr>
+								<th>Title</th>
+								<th>Assigned To</th>
+								<th>Deadline</th>
+								<th>Priority</th>
+								<th>Status</th>
+								<th>Submissions</th>
+								<th>Actions</th>
+							</tr>
+						</thead>
+						<tbody id="tasksBody"></tbody>
+					</table>
+					<div id="tasksEmpty" class="empty-state" style="display: none">
+						<div class="empty-state-icon"><i class="fa-regular fa-inbox" aria-hidden="true"></i></div>
+						<p>No tasks created yet</p>
+					</div>
+				</div>
+			</div>
+
+			<!-- SUBMISSIONS TAB -->
+			<div id="submissions" class="tab-content">
+				<div class="table-container">
+					<div class="table-title">Task Submissions</div>
+					<div class="search-box">
+						<input type="text" id="submissionSearch" placeholder="Search by employee or task..." />
+					</div>
+					<div id="submissionsLoading" class="loading show">
+						<div class="spinner"></div>
+					</div>
+					<table id="submissionsTable" style="display: none">
+						<thead>
+							<tr>
+								<th>Employee</th>
+								<th>Task</th>
+								<th>Status</th>
+								<th>Submitted On</th>
+								<th>Reviewed On</th>
+								<th>Actions</th>
+							</tr>
+						</thead>
+						<tbody id="submissionsBody"></tbody>
+					</table>
+					<div id="submissionsEmpty" class="empty-state" style="display: none">
+						<div class="empty-state-icon"><i class="fa-regular fa-inbox" aria-hidden="true"></i></div>
+						<p>No submissions yet</p>
+					</div>
+				</div>
+			</div>
+
+			<!-- EMPLOYEES TAB -->
+			<div id="employees" class="tab-content">
+				<!-- Create Employee Form -->
+				<div class="form-group">
+					<div class="form-title">Add New Employee</div>
+					<form id="createEmployeeForm">
+						<div class="form-row">
+							<div class="form-field">
+								<label>Full Name *</label>
+								<input type="text" id="empName" required />
+							</div>
+							<div class="form-field">
+								<label>Email *</label>
+								<input type="email" id="empEmail" required />
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="form-field">
+								<label>Department</label>
+								<input type="text" id="empDepartment" placeholder="e.g., Engineering" />
+							</div>
+							<div class="form-field">
+								<label>Phone</label>
+								<input type="tel" id="empPhone" />
+							</div>
+						</div>
+						<div class="btn-group">
+							<button type="submit" class="btn btn-primary">Add Employee</button>
+							<button type="reset" class="btn btn-secondary">Clear</button>
+						</div>
+					</form>
+				</div>
+
+				<!-- Employees List -->
+				<div class="table-container">
+					<div class="table-title">Employees</div>
+					<div class="search-box">
+						<input type="text" id="employeeSearch" placeholder="Search employees..." />
+					</div>
+					<div id="employeesLoading" class="loading show">
+						<div class="spinner"></div>
+					</div>
+					<table id="employeesTable" style="display: none">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Email</th>
+								<th>Department</th>
+								<th>Tasks</th>
+								<th>Completed</th>
+								<th>Status</th>
+								<th>Actions</th>
+							</tr>
+						</thead>
+						<tbody id="employeesBody"></tbody>
+					</table>
+					<div id="employeesEmpty" class="empty-state" style="display: none">
+						<div class="empty-state-icon"><i class="fa-solid fa-users" aria-hidden="true"></i></div>
+						<p>No employees yet</p>
+					</div>
+				</div>
+			</div>
+
+			<!-- ANALYTICS TAB -->
+			<div id="analytics" class="tab-content">
+				<div class="overview-grid">
+					<div class="card">
+						<div class="card-title">Avg Tasks per Employee</div>
+						<div class="card-value" id="avgTasksPerEmp">0</div>
+					</div>
+					<div class="card">
+						<div class="card-title">Avg Completion Rate</div>
+						<div class="card-value" id="avgCompletionRate">0%</div>
+					</div>
+					<div class="card">
+						<div class="card-title">Submissions Approved</div>
+						<div class="card-value" id="approvedSubmissions">0</div>
+					</div>
+					<div class="card">
+						<div class="card-title">Submissions Rejected</div>
+						<div class="card-value" id="rejectedSubmissions">0</div>
+					</div>
+				</div>
+
+				<!-- Employee Performance -->
+				<div class="table-container">
+					<div class="table-title">Employee Performance</div>
+					<table id="analyticsTable">
+						<thead>
+							<tr>
+								<th>Employee</th>
+								<th>Tasks Assigned</th>
+								<th>Tasks Completed</th>
+								<th>Completion Rate</th>
+								<th>Submissions Approved</th>
+							</tr>
+						</thead>
+						<tbody id="analyticsBody"></tbody>
+					</table>
+					<div id="analyticsEmpty" class="empty-state" style="display: none">
+						<div class="empty-state-icon"><i class="fa-solid fa-chart-simple" aria-hidden="true"></i></div>
+						<p>No data yet</p>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Submission Detail Modal -->
+		<div id="submissionModal" class="modal">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h2>Review Submission</h2>
+					<button class="close-btn" onclick="closeModal('submissionModal')">&times;</button>
+				</div>
+				<div id="submissionDetails">
+					<p><strong>Employee:</strong> <span id="modalEmpName"></span></p>
+					<p><strong>Task:</strong> <span id="modalTaskTitle"></span></p>
+					<p><strong>Submitted:</strong> <span id="modalSubmittedDate"></span></p>
+					<p><strong>Submission Text:</strong></p>
+					<div style="background: #f8f9ff; padding: 15px; border-radius: 5px; margin: 10px 0">
+						<p id="modalSubmissionText"></p>
+					</div>
+					<p><strong>Attached File:</strong> <a id="modalFileLink" href="#" target="_blank">View File</a></p>
+				</div>
+				<div class="form-field" style="margin-top: 20px">
+					<label>Admin Feedback/Comment</label>
+					<textarea id="adminComment" placeholder="Provide feedback for the employee..."></textarea>
+				</div>
+				<div class="btn-group" style="margin-top: 20px">
+					<button class="btn btn-success" onclick="approveSubmission()"><i class="fa-solid fa-check" aria-hidden="true"></i> Approve</button>
+					<button class="btn btn-danger" onclick="rejectSubmission()"><i class="fa-solid fa-xmark" aria-hidden="true"></i> Reject</button>
+					<button class="btn btn-secondary" onclick="closeModal('submissionModal')">Cancel</button>
+				</div>
+			</div>
+		</div>
+
+		<script>
+			const API_BASE = "/backend/api";
+			let currentAuthToken = null;
+			let currentUser = null;
+			let currentSubmissionId = null;
+			let allTasks = [];
+			let allEmployees = [];
+
+			// Initialize
+			window.addEventListener("load", function () {
+				const token = localStorage.getItem("token");
+				const user = localStorage.getItem("user");
+
+				if (!token || !user) {
+					window.location.href = "login.html";
+					return;
+				}
+
+				currentAuthToken = token;
+				currentUser = JSON.parse(user);
+
+				if (currentUser.role !== "admin") {
+					showAlert("Access Denied", "error");
+					setTimeout(() => (window.location.href = "login.html"), 2000);
+					return;
+				}
+
+				document.getElementById("userName").textContent = currentUser.name;
+				loadDashboardData();
+				loadEmployeesList();
+			});
+
+			// API Helper
+			async function apiCall(endpoint, method = "GET", data = null) {
+				const options = {
+					method,
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: `Bearer ${currentAuthToken}`,
+					},
+				};
+
+				if (data && method !== "GET") {
+					options.body = JSON.stringify(data);
+				}
+
+				const response = await fetch(`${API_BASE}${endpoint}`, options);
+				const result = await response.json();
+
+				if (!response.ok) {
+					throw new Error(result.error || "API Error");
+				}
+
+				return result;
+			}
+
+			// Load Dashboard Data
+			async function loadDashboardData() {
+				try {
+					document.getElementById("overviewCards").querySelector(".loading") || document.getElementById("recentSubmissionsLoading").classList.add("show");
+
+					const overview = await apiCall("/dashboard/admin-overview");
+
+					document.getElementById("totalTasks").textContent = overview.data.total_tasks || 0;
+					document.getElementById("completedTasks").textContent = overview.data.completed_tasks || 0;
+					document.getElementById("pendingTasks").textContent = overview.data.pending_tasks || 0;
+					document.getElementById("totalEmployees").textContent = overview.data.total_employees || 0;
+					document.getElementById("totalSubmissions").textContent = overview.data.total_submissions || 0;
+					document.getElementById("avgCompletion").textContent = (overview.data.completion_rate || 0).toFixed(1) + "%";
+					document.getElementById("completionRate").textContent = (overview.data.completion_rate || 0).toFixed(1) + "% completed";
+
+					// Load recent submissions
+					const recentSubmissions = await apiCall("/dashboard/recent-submissions");
+					displayRecentSubmissions(recentSubmissions.data || []);
+
+					// Load all tasks
+					const tasks = await apiCall("/tasks");
+					allTasks = tasks.data || [];
+					displayTasks(allTasks);
+
+					// Load all submissions
+					const submissions = await apiCall("/submissions");
+					displaySubmissions(submissions.data || []);
+				} catch (error) {
+					showAlert("Error loading dashboard: " + error.message, "error");
+				}
+			}
+
+			// Load Employees List
+			async function loadEmployeesList() {
+				try {
+					const employees = await apiCall("/users/employees");
+					allEmployees = employees.data || [];
+					populateEmployeeSelect();
+				} catch (error) {
+					console.error("Error loading employees:", error);
+				}
+			}
+
+			// Populate employee select dropdown
+			function populateEmployeeSelect() {
+				const select = document.getElementById("taskAssignee");
+				select.innerHTML = '<option value="">Select employee...</option>';
+				allEmployees.forEach((emp) => {
+					const option = document.createElement("option");
+					option.value = emp.id;
+					option.textContent = emp.name;
+					select.appendChild(option);
+				});
+			}
+
+			// Display Recent Submissions
+			function displayRecentSubmissions(submissions) {
+				const table = document.getElementById("recentSubmissionsTable");
+				const body = document.getElementById("recentSubmissionsBody");
+				const loading = document.getElementById("recentSubmissionsLoading");
+				const empty = document.getElementById("recentSubmissionsEmpty");
+
+				loading.classList.remove("show");
+
+				if (!submissions || submissions.length === 0) {
+					empty.style.display = "block";
+					table.style.display = "none";
+					return;
+				}
+
+				body.innerHTML = "";
+				submissions.forEach((sub) => {
+					const row = document.createElement("tr");
+					row.innerHTML = `
+                    <td>${sub.employee_name || "Unknown"}</td>
+                    <td>${sub.task_title || "Unknown"}</td>
+                    <td><span class="status-badge status-${sub.status}">${sub.status}</span></td>
+                    <td>${formatDate(sub.created_at)}</td>
+                    <td>
+                        ${
+						sub.status === "pending"
+							? `<button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;" 
+                                onclick="openSubmissionModal(${sub.id})">Review</button>`
+							: "<small>Reviewed</small>"
+					}
+                    </td>
+                `;
+					body.appendChild(row);
+				});
+
+				table.style.display = "table";
+				empty.style.display = "none";
+			}
+
+			// Display Tasks
+			function displayTasks(tasks) {
+				const table = document.getElementById("tasksTable");
+				const body = document.getElementById("tasksBody");
+				const loading = document.getElementById("tasksLoading");
+				const empty = document.getElementById("tasksEmpty");
+
+				loading.classList.remove("show");
+
+				if (!tasks || tasks.length === 0) {
+					empty.style.display = "block";
+					table.style.display = "none";
+					return;
+				}
+
+				body.innerHTML = "";
+				tasks.forEach((task) => {
+					const row = document.createElement("tr");
+					row.innerHTML = `
+                    <td>${task.title}</td>
+                    <td>${task.assigned_to_name || "Unassigned"}</td>
+                    <td>${formatDate(task.deadline)}</td>
+                    <td><span class="status-badge status-${task.priority}">${task.priority}</span></td>
+                    <td><span class="status-badge status-${task.status}">${task.status}</span></td>
+                    <td>${task.submission_count || 0}</td>
+                    <td>
+                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;" 
+                            onclick="editTask(${task.id})">Edit</button>
+                        <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" 
+                            onclick="deleteTask(${task.id})">Delete</button>
+                    </td>
+                `;
+					body.appendChild(row);
+				});
+
+				table.style.display = "table";
+				empty.style.display = "none";
+			}
+
+			// Display Submissions
+			function displaySubmissions(submissions) {
+				const table = document.getElementById("submissionsTable");
+				const body = document.getElementById("submissionsBody");
+				const loading = document.getElementById("submissionsLoading");
+				const empty = document.getElementById("submissionsEmpty");
+
+				loading.classList.remove("show");
+
+				if (!submissions || submissions.length === 0) {
+					empty.style.display = "block";
+					table.style.display = "none";
+					return;
+				}
+
+				body.innerHTML = "";
+				submissions.forEach((sub) => {
+					const row = document.createElement("tr");
+					row.innerHTML = `
+                    <td>${sub.employee_name || "Unknown"}</td>
+                    <td>${sub.task_title || "Unknown"}</td>
+                    <td><span class="status-badge status-${sub.status}">${sub.status}</span></td>
+                    <td>${formatDate(sub.created_at)}</td>
+                    <td>${sub.reviewed_at ? formatDate(sub.reviewed_at) : "-"}</td>
+                    <td>
+                        <button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;" 
+                            onclick="openSubmissionModal(${sub.id})">View</button>
+                    </td>
+                `;
+					body.appendChild(row);
+				});
+
+				table.style.display = "table";
+				empty.style.display = "none";
+			}
+
+			// Display Employees
+			function displayEmployees(employees) {
+				const table = document.getElementById("employeesTable");
+				const body = document.getElementById("employeesBody");
+				const loading = document.getElementById("employeesLoading");
+				const empty = document.getElementById("employeesEmpty");
+
+				loading.classList.remove("show");
+
+				if (!employees || employees.length === 0) {
+					empty.style.display = "block";
+					table.style.display = "none";
+					return;
+				}
+
+				body.innerHTML = "";
+				employees.forEach((emp) => {
+					const row = document.createElement("tr");
+					row.innerHTML = `
+                    <td>${emp.name}</td>
+                    <td>${emp.email}</td>
+                    <td>${emp.department || "-"}</td>
+                    <td>${emp.total_tasks_assigned || 0}</td>
+                    <td>${emp.total_completed || 0}</td>
+                    <td><span class="status-badge status-${emp.status === "active" ? "completed" : "pending"}">
+                        ${emp.status}
+                    </span></td>
+                    <td>
+                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;" 
+                            onclick="toggleEmployeeStatus(${emp.id}, '${emp.status}')">
+                            ${emp.status === "active" ? "Deactivate" : "Activate"}
+                        </button>
+                    </td>
+                `;
+					body.appendChild(row);
+				});
+
+				table.style.display = "table";
+				empty.style.display = "none";
+			}
+
+			// Display Analytics
+			async function displayAnalytics() {
+				try {
+					const stats = await apiCall("/dashboard/employee-stats");
+					const body = document.getElementById("analyticsBody");
+					const empty = document.getElementById("analyticsEmpty");
+
+					if (!stats.data || stats.data.length === 0) {
+						empty.style.display = "block";
+						document.getElementById("analyticsTable").style.display = "none";
+						return;
+					}
+
+					body.innerHTML = "";
+					stats.data.forEach((emp) => {
+						const completed = parseInt(emp.total_completed) || 0;
+						const assigned = parseInt(emp.total_tasks_assigned) || 0;
+						const rate = assigned > 0 ? ((completed / assigned) * 100).toFixed(1) : 0;
+
+						const row = document.createElement("tr");
+						row.innerHTML = `
+                        <td>${emp.name}</td>
+                        <td>${assigned}</td>
+                        <td>${completed}</td>
+                        <td>${rate}%</td>
+                        <td>${emp.total_approved || 0}</td>
+                    `;
+						body.appendChild(row);
+					});
+
+					document.getElementById("analyticsTable").style.display = "table";
+					empty.style.display = "none";
+				} catch (error) {
+					showAlert("Error loading analytics: " + error.message, "error");
+				}
+			}
+
+			// Form Handlers
+			document.getElementById("createTaskForm").addEventListener("submit", async (e) => {
+				e.preventDefault();
+
+				try {
+					const data = {
+						title: document.getElementById("taskTitle").value,
+						description: document.getElementById("taskDescription").value,
+						assigned_to: parseInt(document.getElementById("taskAssignee").value),
+						deadline: document.getElementById("taskDeadline").value,
+						due_time: document.getElementById("taskDueTime").value || null,
+						priority: document.getElementById("taskPriority").value,
+						reminder_type: document.getElementById("taskReminderType").value,
+					};
+
+					const result = await apiCall("/tasks/create", "POST", data);
+					showAlert("Task created successfully!", "success");
+					document.getElementById("createTaskForm").reset();
+					loadDashboardData();
+				} catch (error) {
+					showAlert("Error creating task: " + error.message, "error");
+				}
+			});
+
+			document.getElementById("createEmployeeForm").addEventListener("submit", async (e) => {
+				e.preventDefault();
+
+				try {
+					const data = {
+						name: document.getElementById("empName").value,
+						email: document.getElementById("empEmail").value,
+						department: document.getElementById("empDepartment").value || null,
+						phone: document.getElementById("empPhone").value || null,
+					};
+
+					await apiCall("/users/create-employee", "POST", data);
+					showAlert("Employee added successfully!", "success");
+					document.getElementById("createEmployeeForm").reset();
+					loadEmployeesList();
+					loadDashboardData();
+				} catch (error) {
+					showAlert("Error adding employee: " + error.message, "error");
+				}
+			});
+
+			// Submission Modal
+			async function openSubmissionModal(submissionId) {
+				try {
+					currentSubmissionId = submissionId;
+					const submission = await apiCall(`/submissions/${submissionId}`);
+					const sub = submission.data;
+
+					document.getElementById("modalEmpName").textContent = sub.employee_name || "Unknown";
+					document.getElementById("modalTaskTitle").textContent = sub.task_title || "Unknown";
+					document.getElementById("modalSubmittedDate").textContent = formatDate(sub.created_at);
+					document.getElementById("modalSubmissionText").textContent = sub.submission_text || "No text provided";
+					document.getElementById("adminComment").value = sub.admin_comment || "";
+
+					if (sub.file_path) {
+						document.getElementById("modalFileLink").href = sub.file_path;
+						document.getElementById("modalFileLink").textContent = "Download File";
+					} else {
+						document.getElementById("modalFileLink").textContent = "No file";
+					}
+
+					document.getElementById("submissionModal").classList.add("active");
+				} catch (error) {
+					showAlert("Error loading submission: " + error.message, "error");
+				}
+			}
+
+			async function approveSubmission() {
+				try {
+					const comment = document.getElementById("adminComment").value;
+					await apiCall(`/submissions/${currentSubmissionId}/approve`, "PUT", { admin_comment: comment });
+					showAlert("Submission approved!", "success");
+					closeModal("submissionModal");
+					loadDashboardData();
+				} catch (error) {
+					showAlert("Error approving submission: " + error.message, "error");
+				}
+			}
+
+			async function rejectSubmission() {
+				try {
+					const comment = document.getElementById("adminComment").value;
+					if (!comment) {
+						showAlert("Please provide feedback before rejecting", "error");
+						return;
+					}
+					await apiCall(`/submissions/${currentSubmissionId}/reject`, "PUT", { admin_comment: comment });
+					showAlert("Submission rejected!", "success");
+					closeModal("submissionModal");
+					loadDashboardData();
+				} catch (error) {
+					showAlert("Error rejecting submission: " + error.message, "error");
+				}
+			}
+
+			// Tab Switching
+			function switchTab(tabName) {
+				document.querySelectorAll(".tab-content").forEach((tab) => tab.classList.remove("active"));
+				document.getElementById(tabName).classList.add("active");
+
+				document.querySelectorAll(".tab-btn").forEach((btn) => btn.classList.remove("active"));
+				event.target.classList.add("active");
+
+				if (tabName === "employees") {
+					const loading = document.getElementById("employeesLoading");
+					loading && loading.classList.add("show");
+					loadEmployeesData();
+				} else if (tabName === "analytics") {
+					displayAnalytics();
+				}
+			}
+
+			async function loadEmployeesData() {
+				try {
+					const employees = await apiCall("/users/employees");
+					displayEmployees(employees.data || []);
+				} catch (error) {
+					showAlert("Error loading employees: " + error.message, "error");
+				}
+			}
+
+			// Other Actions
+			async function deleteTask(taskId) {
+				if (!confirm("Are you sure you want to delete this task?")) return;
+
+				try {
+					await apiCall(`/tasks/${taskId}`, "DELETE");
+					showAlert("Task deleted!", "success");
+					allTasks = allTasks.filter((t) => t.id !== taskId);
+					displayTasks(allTasks);
+				} catch (error) {
+					showAlert("Error deleting task: " + error.message, "error");
+				}
+			}
+
+			async function toggleEmployeeStatus(empId, currentStatus) {
+				try {
+					await apiCall(`/users/${empId}/toggle-status`, "PUT");
+					showAlert(`Employee ${currentStatus === "active" ? "deactivated" : "activated"}!`, "success");
+					loadEmployeesData();
+				} catch (error) {
+					showAlert("Error updating employee: " + error.message, "error");
+				}
+			}
+
+			function editTask(taskId) {
+				showAlert("Edit functionality coming soon!", "info");
+			}
+
+			// Modal helpers
+			function closeModal(modalId) {
+				document.getElementById(modalId).classList.remove("active");
+			}
+
+			// Alert Helper
+			function showAlert(message, type = "info") {
+				const alert = document.getElementById("alertBox");
+				alert.textContent = message;
+				alert.className = `alert show alert-${type}`;
+				setTimeout(() => alert.classList.remove("show"), 5000);
+			}
+
+			// Utility Functions
+			function formatDate(dateString) {
+				if (!dateString) return "-";
+				const date = new Date(dateString);
+				return (
+					date.toLocaleDateString() +
+					" " +
+					date.toLocaleTimeString([], {
+						hour: "2-digit",
+						minute: "2-digit",
+					})
+				);
+			}
+
+			// Logout
+			function logout() {
+				if (confirm("Are you sure you want to logout?")) {
+					localStorage.removeItem("token");
+					localStorage.removeItem("user");
+					window.location.href = "login.html";
+				}
+			}
+
+			// Search functionality
+			document.getElementById("taskSearch")?.addEventListener("input", (e) => {
+				const searchTerm = e.target.value.toLowerCase();
+				const filtered = allTasks.filter((task) => task.title.toLowerCase().includes(searchTerm));
+				displayTasks(filtered);
+			});
+
+			document.getElementById("submissionSearch")?.addEventListener("input", (e) => {
+				// Implement submission search
+				loadDashboardData();
+			});
+
+			document.getElementById("employeeSearch")?.addEventListener("input", (e) => {
+				// Implement employee search
+				loadEmployeesData();
+			});
+		</script>
+	</body>
+</html>
