@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>TaskFlow - Create Organization Account</title>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+		<style>
+			* {
+				box-sizing: border-box;
+				margin: 0;
+				padding: 0;
+			}
+			body {
+				font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+				min-height: 100vh;
+				display: grid;
+				place-items: center;
+				background: linear-gradient(145deg, #eef3ff, #dce7ff);
+			}
+			.card {
+				width: min(520px, 92vw);
+				background: #fff;
+				border: 1px solid #dbe4ff;
+				border-radius: 16px;
+				padding: 26px;
+				box-shadow: 0 16px 32px rgba(52, 74, 182, 0.15);
+			}
+			h1 {
+				font-size: 1.4rem;
+				color: #22327b;
+				margin-bottom: 8px;
+			}
+			p.sub {
+				color: #4b5563;
+				margin-bottom: 18px;
+			}
+			.grid {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 12px;
+			}
+			.group {
+				margin-bottom: 12px;
+			}
+			label {
+				display: block;
+				margin-bottom: 6px;
+				color: #2b365f;
+				font-weight: 600;
+			}
+			input,
+			select {
+				width: 100%;
+				padding: 10px 11px;
+				border: 1px solid #c7d3ff;
+				border-radius: 10px;
+			}
+			input:focus,
+			select:focus {
+				outline: none;
+				border-color: #5a6ef2;
+				box-shadow: 0 0 0 3px rgba(90, 110, 242, 0.14);
+			}
+			.actions {
+				display: flex;
+				gap: 10px;
+				margin-top: 14px;
+			}
+			button,
+			a.link-btn {
+				border: none;
+				border-radius: 10px;
+				padding: 11px 14px;
+				font-weight: 600;
+				cursor: pointer;
+				text-decoration: none;
+				display: inline-flex;
+				align-items: center;
+				gap: 8px;
+				justify-content: center;
+			}
+			button {
+				flex: 1;
+				background: linear-gradient(135deg, #4561f6, #6b46c1);
+				color: #fff;
+			}
+			a.link-btn {
+				background: #eef2ff;
+				color: #3042a6;
+			}
+			.alert {
+				margin-bottom: 14px;
+				padding: 10px 12px;
+				border-radius: 10px;
+				display: none;
+			}
+			.alert.show {
+				display: block;
+			}
+			.alert.error {
+				background: #ffe9e9;
+				color: #a31d1d;
+				border: 1px solid #f6b2b2;
+			}
+			.alert.success {
+				background: #e9fff1;
+				color: #186a3b;
+				border: 1px solid #b5ebc9;
+			}
+			@media (max-width: 620px) {
+				.grid {
+					grid-template-columns: 1fr;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<div class="card">
+			<h1><i class="fa-solid fa-user-plus" aria-hidden="true"></i> Create Organization Account</h1>
+			<p class="sub">Register and start using team task workflows.</p>
+			<div id="alert" class="alert"></div>
+			<form id="registerForm">
+				<div class="group">
+					<label for="name">Full Name</label>
+					<input id="name" required placeholder="Jane Doe" />
+				</div>
+				<div class="group">
+					<label for="email">Email</label>
+					<input id="email" type="email" required placeholder="jane@company.com" />
+				</div>
+				<div class="grid">
+					<div class="group">
+						<label for="password">Password</label>
+						<input id="password" type="password" minlength="6" required />
+					</div>
+					<div class="group">
+						<label for="passwordConfirm">Confirm Password</label>
+						<input id="passwordConfirm" type="password" minlength="6" required />
+					</div>
+				</div>
+				<div class="group">
+					<label for="role">Role</label>
+					<select id="role" required>
+						<option value="employee">Employee</option>
+						<option value="admin">Admin</option>
+					</select>
+				</div>
+				<div class="actions">
+					<button type="submit" id="submitBtn"><i class="fa-solid fa-user-check" aria-hidden="true"></i> Register</button>
+					<a class="link-btn" href="login.html"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back</a>
+				</div>
+			</form>
+		</div>
+
+		<script>
+			const BACKEND_ORIGIN = window.location.hostname.includes("vercel.app") ? "https://task-management-bxpk.onrender.com" : "";
+			const AUTH_API = `${BACKEND_ORIGIN}/backend/api/auth.php`;
+
+			const form = document.getElementById("registerForm");
+			const alertBox = document.getElementById("alert");
+			const submitBtn = document.getElementById("submitBtn");
+
+			function showAlert(message, type = "error") {
+				alertBox.textContent = message;
+				alertBox.className = `alert show ${type}`;
+			}
+
+			form.addEventListener("submit", async (e) => {
+				e.preventDefault();
+				submitBtn.disabled = true;
+				submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Creating...';
+				const payload = {
+					name: document.getElementById("name").value.trim(),
+					email: document.getElementById("email").value.trim(),
+					password: document.getElementById("password").value,
+					password_confirm: document.getElementById("passwordConfirm").value,
+					role: document.getElementById("role").value,
+				};
+
+				try {
+					const response = await fetch(`${AUTH_API}?action=register`, {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify(payload),
+					});
+					const result = await response.json();
+					if (!response.ok || !result.token || !result.role) {
+						throw new Error(result.error || "Registration failed");
+					}
+
+					localStorage.setItem("token", result.token);
+					localStorage.setItem(
+						"user",
+						JSON.stringify({
+							id: result.user_id,
+							name: payload.name,
+							email: payload.email,
+							role: result.role,
+						}),
+					);
+
+					showAlert("Registration successful. Redirecting...", "success");
+					window.location.href = result.role === "admin" ? "admin-dashboard.html" : "employee-dashboard.html";
+				} catch (err) {
+					showAlert(err.message || "Unable to register.");
+				} finally {
+					submitBtn.disabled = false;
+					submitBtn.innerHTML = '<i class="fa-solid fa-user-check" aria-hidden="true"></i> Register';
+				}
+			});
+		</script>
+	</body>
+</html>

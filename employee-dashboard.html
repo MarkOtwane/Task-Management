@@ -746,7 +746,8 @@
 		</div>
 
 		<script>
-			const API_BASE = "/backend/api";
+			const BACKEND_ORIGIN = window.location.hostname.includes("vercel.app") ? "https://task-management-bxpk.onrender.com" : "";
+			const API_BASE = `${BACKEND_ORIGIN}/backend/api`;
 			let currentAuthToken = null;
 			let currentUser = null;
 			let allTasks = [];

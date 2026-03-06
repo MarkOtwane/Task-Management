@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>TaskFlow - Choose Mode</title>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+		<style>
+			* {
+				box-sizing: border-box;
+				margin: 0;
+				padding: 0;
+			}
+			body {
+				font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+				min-height: 100vh;
+				display: grid;
+				place-items: center;
+				background: radial-gradient(circle at 20% 20%, #f7f7ff 0%, #e7edff 35%, #dbe5ff 100%);
+				color: #1f2937;
+			}
+			.wrapper {
+				width: min(980px, 92vw);
+				background: #ffffffcc;
+				backdrop-filter: blur(8px);
+				border: 1px solid #d6def7;
+				border-radius: 18px;
+				padding: 28px;
+				box-shadow: 0 20px 45px rgba(67, 97, 238, 0.15);
+			}
+			h1 {
+				font-size: clamp(1.7rem, 2.2vw, 2.3rem);
+				margin-bottom: 8px;
+				color: #243c84;
+			}
+			p.lead {
+				color: #4b5563;
+				margin-bottom: 24px;
+			}
+			.grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+				gap: 18px;
+			}
+			.card {
+				background: #fff;
+				border: 1px solid #dfe5ff;
+				border-radius: 14px;
+				padding: 22px;
+				display: flex;
+				flex-direction: column;
+				gap: 12px;
+				transition:
+					transform 0.2s ease,
+					box-shadow 0.2s ease;
+			}
+			.card:hover {
+				transform: translateY(-3px);
+				box-shadow: 0 14px 28px rgba(36, 60, 132, 0.12);
+			}
+			.icon {
+				width: 52px;
+				height: 52px;
+				display: grid;
+				place-items: center;
+				border-radius: 12px;
+				background: #eef2ff;
+				color: #3346b8;
+				font-size: 1.25rem;
+			}
+			h2 {
+				font-size: 1.15rem;
+				color: #1f2d62;
+			}
+			.desc {
+				color: #4b5563;
+				min-height: 44px;
+			}
+			.btn {
+				margin-top: auto;
+				display: inline-flex;
+				align-items: center;
+				gap: 8px;
+				justify-content: center;
+				padding: 11px 14px;
+				border-radius: 10px;
+				text-decoration: none;
+				font-weight: 600;
+				border: none;
+				cursor: pointer;
+			}
+			.btn-primary {
+				background: linear-gradient(135deg, #4561f6, #6b46c1);
+				color: #fff;
+			}
+			.btn-secondary {
+				background: #eef2ff;
+				color: #2f3f9f;
+			}
+			.footer {
+				margin-top: 18px;
+				font-size: 0.9rem;
+				color: #6b7280;
+				display: flex;
+				gap: 8px;
+				align-items: center;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="wrapper">
+			<h1><i class="fa-solid fa-layer-group" aria-hidden="true"></i> Welcome to TaskFlow</h1>
+			<p class="lead">Choose how you want to use TaskFlow today.</p>
+			<div class="grid">
+				<div class="card">
+					<div class="icon"><i class="fa-solid fa-user" aria-hidden="true"></i></div>
+					<h2>Personal Mode</h2>
+					<p class="desc">Use TaskFlow as your standalone personal planner in this browser.</p>
+					<a class="btn btn-secondary" href="index.html"><i class="fa-solid fa-arrow-right" aria-hidden="true"></i> Open Personal</a>
+				</div>
+				<div class="card">
+					<div class="icon"><i class="fa-solid fa-building" aria-hidden="true"></i></div>
+					<h2>Organization Mode</h2>
+					<p class="desc">Sign in to manage team tasks, submissions, and role-based dashboards.</p>
+					<a class="btn btn-primary" href="login.html"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> Continue to Login</a>
+				</div>
+			</div>
+			<div class="footer">
+				<i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+				<span>If a page does not load after deploy, redeploy Vercel so new HTML files are published.</span>
+			</div>
+		</div>
+	</body>
+</html>
