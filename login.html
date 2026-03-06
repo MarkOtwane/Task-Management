@@ -174,23 +174,27 @@
 					});
 
 					const result = await response.json();
-					if (!response.ok || !result.token || !result.role) {
+					if (!response.ok || !result.token) {
 						throw new Error(result.error || "Login failed");
 					}
 
+					const resolvedRole = result.role || localStorage.getItem("preferredRole") || "employee";
+					const fallbackName = result.email ? result.email.split("@")[0] : "User";
+
 					localStorage.setItem("token", result.token);
+					localStorage.setItem("preferredRole", resolvedRole);
 					localStorage.setItem(
 						"user",
 						JSON.stringify({
 							id: result.user_id,
-							name: result.name,
-							email: result.email,
-							role: result.role,
+							name: result.name || fallbackName,
+							email: result.email || document.getElementById("email").value.trim(),
+							role: resolvedRole,
 						}),
 					);
 
 					showAlert("Login successful. Redirecting...", "success");
-					window.location.href = result.role === "admin" ? "admin-dashboard.html" : "employee-dashboard.html";
+					window.location.href = resolvedRole === "admin" ? "admin-dashboard.html" : "employee-dashboard.html";
 				} catch (err) {
 					showAlert(err.message || "Unable to login.");
 				} finally {

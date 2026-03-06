@@ -185,23 +185,26 @@
 						body: JSON.stringify(payload),
 					});
 					const result = await response.json();
-					if (!response.ok || !result.token || !result.role) {
+					if (!response.ok || !result.token) {
 						throw new Error(result.error || "Registration failed");
 					}
 
+					const resolvedRole = result.role || payload.role;
+
 					localStorage.setItem("token", result.token);
+					localStorage.setItem("preferredRole", resolvedRole);
 					localStorage.setItem(
 						"user",
 						JSON.stringify({
 							id: result.user_id,
-							name: payload.name,
+							name: result.name || payload.name,
 							email: payload.email,
-							role: result.role,
+							role: resolvedRole,
 						}),
 					);
 
 					showAlert("Registration successful. Redirecting...", "success");
-					window.location.href = result.role === "admin" ? "admin-dashboard.html" : "employee-dashboard.html";
+					window.location.href = resolvedRole === "admin" ? "admin-dashboard.html" : "employee-dashboard.html";
 				} catch (err) {
 					showAlert(err.message || "Unable to register.");
 				} finally {
