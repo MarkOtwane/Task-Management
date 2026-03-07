@@ -1285,7 +1285,8 @@
 
 			// Other Actions
 			async function deleteTask(taskId) {
-				if (!confirm("Are you sure you want to delete this task?")) return;
+				const confirmed = await showConfirm("Are you sure you want to delete this task?", "Delete Task");
+				if (!confirmed) return;
 
 				try {
 					await apiCall(`/tasks/${taskId}`, "DELETE");
@@ -1324,6 +1325,38 @@
 				setTimeout(() => alert.classList.remove("show"), 5000);
 			}
 
+			// Custom Confirmation Modal
+			function showConfirm(message, title = "Confirm Action") {
+				return new Promise((resolve) => {
+					const modal = document.getElementById("confirmModal");
+					const titleEl = document.getElementById("confirmTitle");
+					const msgEl = document.getElementById("confirmMessage");
+					const yesBtn = document.getElementById("confirmYes");
+					const noBtn = document.getElementById("confirmNo");
+
+					titleEl.textContent = title;
+					msgEl.textContent = message;
+					modal.style.display = "block";
+
+					const handleYes = () => {
+						modal.style.display = "none";
+						yesBtn.removeEventListener("click", handleYes);
+						noBtn.removeEventListener("click", handleNo);
+						resolve(true);
+					};
+
+					const handleNo = () => {
+						modal.style.display = "none";
+						yesBtn.removeEventListener("click", handleYes);
+						noBtn.removeEventListener("click", handleNo);
+						resolve(false);
+					};
+
+					yesBtn.addEventListener("click", handleYes);
+					noBtn.addEventListener("click", handleNo);
+				});
+			}
+
 			// Utility Functions
 			function formatDate(dateString) {
 				if (!dateString) return "-";
@@ -1339,8 +1372,9 @@
 			}
 
 			// Logout
-			function logout() {
-				if (confirm("Are you sure you want to logout?")) {
+			async function logout() {
+				const confirmed = await showConfirm("Are you sure you want to logout?", "Logout");
+				if (confirmed) {
 					localStorage.removeItem("token");
 					localStorage.removeItem("user");
 					window.location.href = "login.html";
@@ -1364,5 +1398,16 @@
 				loadEmployeesData();
 			});
 		</script>
+			<!-- Custom Confirmation Modal -->
+		<div id="confirmModal" class="modal" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+			<div style="background-color: #fff; margin: 15% auto; padding: 25px; border-radius: 10px; max-width: 400px; text-align: center; box-shadow: 0 5px 20px rgba(0,0,0,0.3);">
+				<h3 id="confirmTitle" style="margin: 0 0 15px 0; color: #333;">Confirm Action</h3>
+				<p id="confirmMessage" style="margin: 0 0 20px 0; color: #666;">Are you sure?</p>
+				<div style="display: flex; gap: 10px; justify-content: center;">
+					<button id="confirmYes" style="padding: 10px 25px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">Yes</button>
+					<button id="confirmNo" style="padding: 10px 25px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">Cancel</button>
+				</div>
+			</div>
+		</div>
 	</body>
 </html>
