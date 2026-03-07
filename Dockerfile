@@ -17,7 +17,6 @@ RUN apt-get update && apt-get install -y \
 # Enable Apache modules
 RUN a2enmod rewrite
 RUN a2enmod headers
-RUN a2enmod ssl
 
 # Set working directory
 WORKDIR /var/www/html
