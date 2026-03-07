@@ -2,11 +2,11 @@ FROM php:8.2-apache
 
 # Enable necessary extensions
 RUN apt-get update && apt-get install -y \
-    libmysqlclient-dev \
+    libmariadb-dev \
     zlib1g-dev \
     libpng-dev \
     libjpeg-dev \
-    mysql-client \
+    mariadb-client \
     curl \
     git \
     unzip \
