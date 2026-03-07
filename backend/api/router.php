@@ -10,15 +10,35 @@ require_once __DIR__ . '/../helpers.php';
 $requestUri = $_SERVER['REQUEST_URI'];
 $basePath = '/backend/api';
 
-// Parse the request path
-$path = str_replace($basePath, '', parse_url($requestUri, PHP_URL_PATH));
-$path = trim($path, '/');
+// Check if resource is passed via query string (from URL rewrite)
+if (isset($_GET['resource'])) {
+    $resource = $_GET['resource'];
+    $action = $_GET['action'] ?? 'list';
+    $id = $_GET['id'] ?? null;
+} else {
+    // Parse the request path
+    $path = str_replace($basePath, '', parse_url($requestUri, PHP_URL_PATH));
+    $path = trim($path, '/');
 
-// Extract the resource and action
-$parts = explode('/', $path);
-$resource = $parts[0] ?? '';
-$action = $parts[1] ?? '';
-$id = $parts[2] ?? null;
+    // Extract the resource and action
+    $parts = explode('/', $path);
+    $resource = $parts[0] ?? '';
+    $action = $parts[1] ?? '';
+    $id = $parts[2] ?? null;
+}
+
+// Set the action from the URL path so the included files can access it via $_GET['action']
+// Default to 'list' if no action is specified
+if ($action) {
+    $_GET['action'] = $action;
+} else {
+    $_GET['action'] = 'list';
+}
+
+// Set the ID if provided
+if ($id) {
+    $_GET['id'] = $id;
+}
 
 // Route to appropriate handler
 try {

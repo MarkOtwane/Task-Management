@@ -1006,7 +1006,7 @@
 					}
 
 					// Special API call for multipart form data
-					const response = await fetch(`${API_BASE}/submissions/submit`, {
+					const response = await fetch(`${API_BASE}/submissions.php?action=submit`, {
 						method: "POST",
 						headers: {
 							Authorization: `Bearer ${currentAuthToken}`,

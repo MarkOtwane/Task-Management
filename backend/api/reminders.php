@@ -4,12 +4,17 @@
  * Endpoints: GET, POST for task reminders
  */
 
-require_once '../config/cors.php';
-require_once '../config/database.php';
-require_once '../middleware/auth.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../helpers.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
-$userId = requireAuth();
+$user = getCurrentUser();
+
+if (!$user) {
+    sendError('Not authenticated', 401);
+}
+
+$userId = $user['id'];
 
 if ($method === 'GET') {
     getReminders($pdo, $userId);

@@ -1639,7 +1639,7 @@
 							}
 							
 							// Check for existing JWT token
-							const token = localStorage.getItem('auth_token');
+							const token = localStorage.getItem('token');
 							if (token) {
 								console.log('Found existing JWT token:', token.substring(0, 20) + '...');
 							} else {
@@ -1661,7 +1661,7 @@
 							if (savedUser) {
 								currentUser = savedUser;
 								// Ensure the JWT token is present
-								const token = localStorage.getItem('auth_token');
+								const token = localStorage.getItem('token');
 								if (token) {
 									console.log('Using stored JWT token:', token.substring(0, 20) + '...');
 								} else {
@@ -1886,7 +1886,7 @@
 				}
 				
 				// Clear any existing token before login
-				localStorage.removeItem('auth_token');
+				localStorage.removeItem('token');
 
 				console.log('Attempting login for:', email);
 				
@@ -1895,7 +1895,7 @@
 					
 					if (response && response.user_id && response.token) {
 						// Store the JWT token
-						localStorage.setItem('auth_token', response.token);
+						localStorage.setItem('token', response.token);
 						console.log('JWT token stored:', response.token.substring(0, 20) + '...');
 						
 						currentUser = {
@@ -1913,14 +1913,14 @@
 						showNotification("Login failed. Check credentials and try again.", "error");
 						console.error('Invalid login response:', response);
 						// Clear any existing token on login failure
-						localStorage.removeItem('auth_token');
+						localStorage.removeItem('token');
 					}
 				}).catch((error) => {
 					showNotification("Login error: " + error.message, "error");
 					console.error("Login error:", error);
 					
 					// Clear any existing token on login failure
-					localStorage.removeItem('auth_token');
+					localStorage.removeItem('token');
 				});
 
 						// ===== LOAD TASKS FROM BACKEND =====
@@ -1981,7 +1981,7 @@
 				}
 				
 				// Clear any existing token before registration
-				localStorage.removeItem('auth_token');
+				localStorage.removeItem('token');
 
 				console.log('Attempting registration for:', email);
 				
@@ -1990,7 +1990,7 @@
 					
 					if (response && response.user_id && response.token) {
 						// Store the JWT token
-						localStorage.setItem('auth_token', response.token);
+						localStorage.setItem('token', response.token);
 						console.log('JWT token stored after registration:', response.token.substring(0, 20) + '...');
 						
 						showNotification("Registration successful! Welcome aboard! <i class=\"fas fa-party-popper\"></i>", "success");
@@ -2011,7 +2011,7 @@
 						showNotification("Registration failed: " + (response.message || "Unknown error"), "error");
 						console.error('Invalid registration response:', response);
 						// Clear any existing token on registration failure
-						localStorage.removeItem('auth_token');
+						localStorage.removeItem('token');
 					}
 				}).catch((error) => {
 					console.error("Registration error:", error);
@@ -2022,7 +2022,7 @@
 						showNotification("Registration error: " + error.message, "error");
 					}
 					// Clear any existing token on registration failure
-					localStorage.removeItem('auth_token');
+					localStorage.removeItem('token');
 				});
 			});
 
@@ -2222,7 +2222,7 @@
 						storage.setCurrentUser(null);
 						tasks = [];
 						// Clear the JWT token on logout
-						localStorage.removeItem('auth_token');
+						localStorage.removeItem('token');
 						showPage("login");
 						showNotification("Logged out successfully", "success");
 					}).catch((error) => {
@@ -2232,7 +2232,7 @@
 						storage.setCurrentUser(null);
 						tasks = [];
 						// Clear the JWT token on logout
-						localStorage.removeItem('auth_token');
+						localStorage.removeItem('token');
 						showPage("login");
 					});
 				} else {
@@ -2240,7 +2240,7 @@
 					storage.setCurrentUser(null);
 					tasks = [];
 					// Clear the JWT token on logout
-					localStorage.removeItem('auth_token');
+					localStorage.removeItem('token');
 					showPage("login");
 				}
 			});
@@ -2357,7 +2357,7 @@
 				}
 				
 				// Ensure the JWT token is present
-				const token = localStorage.getItem('auth_token');
+				const token = localStorage.getItem('token');
 				if (!token) {
 					showNotification("Session expired. Please log in again.", "error");
 					console.error('No JWT token found');
@@ -2565,7 +2565,7 @@
 				const reflectionPayload = JSON.stringify({ learning, experience });
 				
 				// Ensure the JWT token is present
-				const token = localStorage.getItem('auth_token');
+				const token = localStorage.getItem('token');
 				if (!token) {
 					showNotification("Session expired. Please log in again.", "error");
 					console.error('No JWT token found');
@@ -2783,7 +2783,7 @@
 				}
 				
 				// Ensure the JWT token is present
-				const token = localStorage.getItem('auth_token');
+				const token = localStorage.getItem('token');
 				if (!token) {
 					showNotification("Session expired. Please log in again.", "error");
 					console.error('No JWT token found');

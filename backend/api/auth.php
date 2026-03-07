@@ -454,50 +454,7 @@ function sendPasswordResetEmail($email, $name, $code) {
     }
 }
 
-?>
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Invalid email format']);
-        return;
-    }
-    
-    // Check if user exists
-    $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
-    $stmt->execute([$email]);
-    if ($stmt->fetch()) {
-        http_response_code(409);
-        echo json_encode(['error' => 'Email already registered']);
-        return;
-    }
-    
-    // Hash password
-    $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
-    
-    // Insert user
-    try {
-        $stmt = $pdo->prepare("
-            INSERT INTO users (email, password, username) 
-            VALUES (?, ?, ?)
-        ");
-        $stmt->execute([$email, $hashedPassword, $username]);
-        
-        $userId = $pdo->lastInsertId();
-        
-        $_SESSION['user_id'] = $userId;
-        $tokenData = generateJWT($userId);
-        
-        http_response_code(201);
-        echo json_encode([
-            'message' => 'User registered successfully',
-            'user_id' => $userId,
-            'email' => $email,
-            'token' => $tokenData['token']
-        ]);
-    } catch (PDOException $e) {
-        http_response_code(500);
-        echo json_encode(['error' => 'Registration failed: ' . $e->getMessage()]);
-    }
-}
+
 
 /**
  * Login user

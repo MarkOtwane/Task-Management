@@ -133,6 +133,23 @@ CREATE TABLE IF NOT EXISTS analytics (
 -- ============================================
 -- Most indexes are already created in table definitions above
 
+-- Reminders Table (for storing reminder schedules)
+CREATE TABLE IF NOT EXISTS reminders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    task_id INT NOT NULL,
+    user_id INT NOT NULL,
+    reminder_type ENUM('none', '1day', '30min', 'custom') DEFAULT 'none',
+    reminder_time DATETIME NOT NULL,
+    sent BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_task_id (task_id),
+    INDEX idx_user_id (user_id),
+    INDEX idx_reminder_time (reminder_time),
+    INDEX idx_sent (sent)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Trigger to update task updated_at timestamp
 DELIMITER $$
 CREATE TRIGGER task_update_trigger

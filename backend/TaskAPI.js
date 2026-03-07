@@ -43,7 +43,7 @@ class TaskAPI {
 		};
 
 		// Add JWT token if available
-		const token = localStorage.getItem("auth_token");
+		const token = localStorage.getItem("token");
 		if (token) {
 			headers["Authorization"] = `Bearer ${token}`;
 			console.log("Using auth token:", token.substring(0, 20) + "...");
@@ -101,7 +101,7 @@ class TaskAPI {
 				// Handle specific authentication errors
 				if (response.status === 401) {
 					console.error("Authentication failed - clearing token");
-					localStorage.removeItem("auth_token");
+					localStorage.removeItem("token");
 				}
 
 				throw new Error(error || `HTTP ${response.status}`);
@@ -130,7 +130,7 @@ class TaskAPI {
 
 		// Store JWT token
 		if (result.token) {
-			localStorage.setItem("auth_token", result.token);
+			localStorage.setItem("token", result.token);
 		}
 
 		return result;
@@ -147,7 +147,7 @@ class TaskAPI {
 
 		// Store JWT token
 		if (result.token) {
-			localStorage.setItem("auth_token", result.token);
+			localStorage.setItem("token", result.token);
 		}
 
 		return result;
@@ -158,7 +158,7 @@ class TaskAPI {
 	 */
 	async logout() {
 		// Remove JWT token
-		localStorage.removeItem("auth_token");
+		localStorage.removeItem("token");
 
 		return this.request("/api/auth.php?action=logout", {
 			method: "POST",
