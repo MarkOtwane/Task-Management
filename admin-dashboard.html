@@ -911,37 +911,42 @@
 				return result;
 			}
 
-			// Load Dashboard Data
-			async function loadDashboardData() {
-				try {
-					document.getElementById("overviewCards").querySelector(".loading") || document.getElementById("recentSubmissionsLoading").classList.add("show");
+            // Load Dashboard Data
+            async function loadDashboardData() {
+                try {
+                    // Show loading indicators
+                    const overviewLoading = document.getElementById("overviewCards").querySelector(".loading");
+                    if (overviewLoading) {
+                        overviewLoading.classList.add("show");
+                    }
+                    document.getElementById("recentSubmissionsLoading").classList.add("show");
 
-					const overview = await apiCall("/dashboard/admin-overview");
+                    const overview = await apiCall("/dashboard/admin-overview");
 
-					document.getElementById("totalTasks").textContent = overview.data.total_tasks || 0;
-					document.getElementById("completedTasks").textContent = overview.data.completed_tasks || 0;
-					document.getElementById("pendingTasks").textContent = overview.data.pending_tasks || 0;
-					document.getElementById("totalEmployees").textContent = overview.data.total_employees || 0;
-					document.getElementById("totalSubmissions").textContent = overview.data.total_submissions || 0;
-					document.getElementById("avgCompletion").textContent = (overview.data.completion_rate || 0).toFixed(1) + "%";
-					document.getElementById("completionRate").textContent = (overview.data.completion_rate || 0).toFixed(1) + "% completed";
+                    document.getElementById("totalTasks").textContent = overview.data.total_tasks || 0;
+                    document.getElementById("completedTasks").textContent = overview.data.completed_tasks || 0;
+                    document.getElementById("pendingTasks").textContent = overview.data.pending_tasks || 0;
+                    document.getElementById("totalEmployees").textContent = overview.data.total_employees || 0;
+                    document.getElementById("totalSubmissions").textContent = overview.data.total_submissions || 0;
+                    document.getElementById("avgCompletion").textContent = (overview.data.completion_rate || 0).toFixed(1) + "%";
+                    document.getElementById("completionRate").textContent = (overview.data.completion_rate || 0).toFixed(1) + "% completed";
 
-					// Load recent submissions
-					const recentSubmissions = await apiCall("/dashboard/recent-submissions");
-					displayRecentSubmissions(recentSubmissions.data || []);
+                    // Load recent submissions
+                    const recentSubmissions = await apiCall("/dashboard/recent-submissions");
+                    displayRecentSubmissions(recentSubmissions.data || []);
 
-					// Load all tasks
-					const tasks = await apiCall("/tasks");
-					allTasks = tasks.data || [];
-					displayTasks(allTasks);
+                    // Load all tasks
+                    const tasks = await apiCall("/tasks");
+                    allTasks = tasks.data || [];
+                    displayTasks(allTasks);
 
-					// Load all submissions
-					const submissions = await apiCall("/submissions");
-					displaySubmissions(submissions.data || []);
-				} catch (error) {
-					showAlert("Error loading dashboard: " + error.message, "error");
-				}
-			}
+                    // Load all submissions
+                    const submissions = await apiCall("/submissions");
+                    displaySubmissions(submissions.data || []);
+                } catch (error) {
+                    showAlert("Error loading dashboard: " + error.message, "error");
+                }
+            }
 
 			// Load Employees List
 			async function loadEmployeesList() {
@@ -1257,22 +1262,26 @@
 				}
 			}
 
-			// Tab Switching
-			function switchTab(tabName) {
-				document.querySelectorAll(".tab-content").forEach((tab) => tab.classList.remove("active"));
-				document.getElementById(tabName).classList.add("active");
+            // Tab Switching
+            function switchTab(tabName) {
+                document.querySelectorAll(".tab-content").forEach((tab) => tab.classList.remove("active"));
+                document.getElementById(tabName).classList.add("active");
 
-				document.querySelectorAll(".tab-btn").forEach((btn) => btn.classList.remove("active"));
-				event.target.classList.add("active");
+                document.querySelectorAll(".tab-btn").forEach((btn) => btn.classList.remove("active"));
+                // Find the button that was clicked based on the tabName
+                const activeButton = document.querySelector(`.tab-btn[onclick*="${tabName}"]`);
+                if (activeButton) {
+                    activeButton.classList.add("active");
+                }
 
-				if (tabName === "employees") {
-					const loading = document.getElementById("employeesLoading");
-					loading && loading.classList.add("show");
-					loadEmployeesData();
-				} else if (tabName === "analytics") {
-					displayAnalytics();
-				}
-			}
+                if (tabName === "employees") {
+                    const loading = document.getElementById("employeesLoading");
+                    loading && loading.classList.add("show");
+                    loadEmployeesData();
+                } else if (tabName === "analytics") {
+                    displayAnalytics();
+                }
+            }
 
 			async function loadEmployeesData() {
 				try {
