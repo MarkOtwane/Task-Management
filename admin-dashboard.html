@@ -318,24 +318,47 @@
 			}
 
 			.status-pending {
-				background: #fff3cd;
-				color: #856404;
-			}
-
-			.status-approved {
-				background: #d4edda;
-				color: #155724;
-			}
-
-			.status-rejected {
-				background: #f8d7da;
-				color: #721c24;
-			}
-
-			.status-completed {
-				background: #d1ecf1;
-				color: #0c5460;
-			}
+   background: #fff3cd;
+   color: #856404;
+}
+.status-approved {
+   background: #d4edda;
+   color: #155724;
+}
+.status-rejected {
+   background: #f8d7da;
+   color: #721c24;
+}
+.status-completed {
+   background: #d1ecf1;
+   color: #0c5460;
+}
+/* Priority status classes */
+.status-low {
+   background: #d1ecf1;
+   color: #0c5460;
+}
+.status-medium {
+   background: #ffeaa7;
+   color: #635600;
+}
+.status-high {
+   background: #fd79a8;
+   color: #880e4f;
+}
+.status-urgent {
+   background: #e17055;
+   color: #7b241c;
+}
+/* Employee status classes */
+.status-active {
+   background: #d4edda;
+   color: #155724;
+}
+.status-inactive {
+   background: #f8d7da;
+   color: #721c24;
+}
 
 			/* Modal */
 			.modal {
@@ -1102,24 +1125,28 @@
 
 				body.innerHTML = "";
 				employees.forEach((emp) => {
-					const row = document.createElement("tr");
-					row.innerHTML = `
-                    <td>${emp.name}</td>
-                    <td>${emp.email}</td>
-                    <td>${emp.department || "-"}</td>
-                    <td>${emp.total_tasks_assigned || 0}</td>
-                    <td>${emp.total_completed || 0}</td>
-                    <td><span class="status-badge status-${emp.status === "active" ? "completed" : "pending"}">
-                        ${emp.status}
-                    </span></td>
-                    <td>
-                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;" 
-                            onclick="toggleEmployeeStatus(${emp.id}, '${emp.status}')">
-                            ${emp.status === "active" ? "Deactivate" : "Activate"}
-                        </button>
-                    </td>
-                `;
-					body.appendChild(row);
+        const row = document.createElement("tr");
+        row.innerHTML = `
+        <td>${emp.name}</td>
+        <td>${emp.email}</td>
+        <td>${emp.department || "-"}</td>
+        <td>${emp.total_tasks_assigned || 0}</td>
+        <td>${emp.total_completed || 0}</td>
+        <td><span class="status-badge status-${emp.status}">
+            ${emp.status}
+        </span></td>
+        <td>
+            <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px; margin-right: 8px;" 
+                onclick="editEmployee(${emp.id})">
+                Edit
+            </button>
+            <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;" 
+                onclick="toggleEmployeeStatus(${emp.id}, '${emp.status}')">
+                ${emp.status === "active" ? "Deactivate" : "Activate"}
+            </button>
+        </td>
+    `;
+        body.appendChild(row);
 				});
 
 				table.style.display = "table";
@@ -1187,26 +1214,43 @@
 				}
 			});
 
-			document.getElementById("createEmployeeForm").addEventListener("submit", async (e) => {
-				e.preventDefault();
+            document.getElementById("createEmployeeForm").addEventListener("submit", async (e) => {
+                e.preventDefault();
 
-				try {
-					const data = {
-						name: document.getElementById("empName").value,
-						email: document.getElementById("empEmail").value,
-						department: document.getElementById("empDepartment").value || null,
-						phone: document.getElementById("empPhone").value || null,
-					};
+                try {
+                    const data = {
+                        name: document.getElementById("empName").value,
+                        email: document.getElementById("empEmail").value,
+                        department: document.getElementById("empDepartment").value || null,
+                        phone: document.getElementById("empPhone").value || null,
+                    };
 
-					await apiCall("/users/create-employee", "POST", data);
-					showAlert("Employee added successfully!", "success");
-					document.getElementById("createEmployeeForm").reset();
-					loadEmployeesList();
-					loadDashboardData();
-				} catch (error) {
-					showAlert("Error adding employee: " + error.message, "error");
-				}
-			});
+                    const empId = document.getElementById("createEmployeeForm").dataset.empId;
+                    let result;
+                    
+                    if (empId) {
+                        // Update existing employee
+                        result = await apiCall(`/users?action=update&id=${empId}`, "POST", data);
+                        showAlert("Employee updated successfully!", "success");
+                        // Reset form to create mode
+                        document.getElementById("createEmployeeForm").reset();
+                        delete document.getElementById("createEmployeeForm").dataset.empId;
+                        document.querySelector("#createEmployeeForm .form-title").textContent = "Add New Employee";
+                        document.querySelector("#createEmployeeForm .btn-primary").textContent = "Add Employee";
+                    } else {
+                        // Create new employee
+                        result = await apiCall("/users/create-employee", "POST", data);
+                        showAlert("Employee added successfully!", "success");
+                        document.getElementById("createEmployeeForm").reset();
+                    }
+                    
+                    loadEmployeesList();
+                    loadEmployeesData(); // Refresh the employees table
+                    loadDashboardData();
+                } catch (error) {
+                    showAlert("Error processing employee: " + error.message, "error");
+                }
+            });
 
 			// Submission Modal
 			async function openSubmissionModal(submissionId) {
@@ -1292,34 +1336,121 @@
 				}
 			}
 
-			// Other Actions
-			async function deleteTask(taskId) {
-				const confirmed = await showConfirm("Are you sure you want to delete this task?", "Delete Task");
-				if (!confirmed) return;
+            // Other Actions
+            async function deleteTask(taskId) {
+                const confirmed = await showConfirm("Are you sure you want to delete this task?", "Delete Task");
+                if (!confirmed) return;
 
+                try {
+                    await apiCall(`/tasks?action=delete&id=${taskId}`, "DELETE");
+                    showAlert("Task deleted!", "success");
+                    allTasks = allTasks.filter((t) => t.id !== taskId);
+                    displayTasks(allTasks);
+                } catch (error) {
+                    showAlert("Error deleting task: " + error.message, "error");
+                }
+            }
+
+            async function toggleEmployeeStatus(empId, currentStatus) {
+                try {
+                    await apiCall(`/users?action=toggle-status&id=${empId}`, "POST", { status: currentStatus === "active" ? "inactive" : "active" });
+                    showAlert(`Employee ${currentStatus === "active" ? "deactivated" : "activated"}!`, "success");
+                    loadEmployeesData();
+                } catch (error) {
+                    showAlert("Error updating employee: " + error.message, "error");
+                }
+            }
+
+			// Edit Employee Functionality
+			async function editEmployee(empId) {
 				try {
-					await apiCall(`/tasks/${taskId}`, "DELETE");
-					showAlert("Task deleted!", "success");
-					allTasks = allTasks.filter((t) => t.id !== taskId);
-					displayTasks(allTasks);
+					// Find the employee
+					const employee = allEmployees.find(e => e.id === empId);
+					if (!employee) {
+						showAlert("Employee not found!", "error");
+						return;
+					}
+					
+					// Populate the form
+					document.getElementById("empName").value = employee.name;
+					document.getElementById("empEmail").value = employee.email;
+					document.getElementById("empDepartment").value = employee.department || "";
+					document.getElementById("empPhone").value = employee.phone || "";
+					
+					// Store the employee ID for update
+					document.getElementById("createEmployeeForm").dataset.empId = empId;
+					
+					// Change form title and button text
+					document.querySelector("#createEmployeeForm .form-title").textContent = "Edit Employee";
+					document.querySelector("#createEmployeeForm .btn-primary").textContent = "Update Employee";
+					
+					// Show the form (scroll to it if needed)
+					document.getElementById("createEmployeeForm").closest('.form-group').scrollIntoView({ behavior: 'smooth' });
 				} catch (error) {
-					showAlert("Error deleting task: " + error.message, "error");
+					showAlert("Error loading employee: " + error.message, "error");
 				}
 			}
 
-			async function toggleEmployeeStatus(empId, currentStatus) {
+			// Edit Task Functionality
+			async function editTask(taskId) {
 				try {
-					await apiCall(`/users/${empId}/toggle-status`, "PUT");
-					showAlert(`Employee ${currentStatus === "active" ? "deactivated" : "activated"}!`, "success");
-					loadEmployeesData();
+					// Find the task
+					const task = allTasks.find(t => t.id === taskId);
+					if (!task) {
+						showAlert("Task not found!", "error");
+						return;
+					}
+					
+					// Populate the form
+					document.getElementById("editTaskTitle").value = task.title;
+					document.getElementById("editTaskDescription").value = task.description || "";
+					document.getElementById("editTaskAssignee").value = task.assigned_to || "";
+					document.getElementById("editTaskDeadline").value = task.deadline;
+					document.getElementById("editTaskDueTime").value = task.due_time || "";
+					document.getElementById("editTaskPriority").value = task.priority || "medium";
+					document.getElementById("editTaskReminderType").value = task.reminder_type || "none";
+					
+					// Store the task ID for update
+					document.getElementById("editTaskForm").dataset.taskId = taskId;
+					
+					// Show the modal
+					document.getElementById("editTaskModal").classList.add("active");
 				} catch (error) {
-					showAlert("Error updating employee: " + error.message, "error");
+					showAlert("Error loading task: " + error.message, "error");
 				}
 			}
 
-			function editTask(taskId) {
-				showAlert("Edit functionality coming soon!", "info");
-			}
+			// Edit Task Form Handler
+			document.getElementById("editTaskForm").addEventListener("submit", async (e) => {
+				e.preventDefault();
+				
+				const taskId = document.getElementById("editTaskForm").dataset.taskId;
+				if (!taskId) {
+					showAlert("No task selected for editing!", "error");
+					return;
+				}
+				
+				try {
+					const data = {
+						title: document.getElementById("editTaskTitle").value,
+						description: document.getElementById("editTaskDescription").value,
+						assigned_to: parseInt(document.getElementById("editTaskAssignee").value),
+						deadline: document.getElementById("editTaskDeadline").value,
+						due_time: document.getElementById("editTaskDueTime").value || null,
+						priority: document.getElementById("editTaskPriority").value,
+						reminder_type: document.getElementById("editTaskReminderType").value,
+					};
+					
+					const result = await apiCall(`/tasks?action=update&id=${taskId}`, "POST", data);
+					showAlert("Task updated successfully!", "success");
+					closeModal("editTaskModal");
+					document.getElementById("editTaskForm").reset();
+					delete document.getElementById("editTaskForm").dataset.taskId;
+					loadDashboardData();
+				} catch (error) {
+					showAlert("Error updating task: " + error.message, "error");
+				}
+			});
 
 			// Modal helpers
 			function closeModal(modalId) {
@@ -1408,15 +1539,83 @@
 			});
 		</script>
 			<!-- Custom Confirmation Modal -->
-		<div id="confirmModal" class="modal" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
-			<div style="background-color: #fff; margin: 15% auto; padding: 25px; border-radius: 10px; max-width: 400px; text-align: center; box-shadow: 0 5px 20px rgba(0,0,0,0.3);">
-				<h3 id="confirmTitle" style="margin: 0 0 15px 0; color: #333;">Confirm Action</h3>
-				<p id="confirmMessage" style="margin: 0 0 20px 0; color: #666;">Are you sure?</p>
-				<div style="display: flex; gap: 10px; justify-content: center;">
-					<button id="confirmYes" style="padding: 10px 25px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">Yes</button>
-					<button id="confirmNo" style="padding: 10px 25px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">Cancel</button>
-				</div>
-			</div>
-		</div>
-	</body>
+<div id="confirmModal" class="modal" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+    <div style="background-color: #fff; margin: 15% auto; padding: 25px; border-radius: 10px; max-width: 400px; text-align: center; box-shadow: 0 5px 20px rgba(0,0,0,0.3);">
+        <h3 id="confirmTitle" style="margin: 0 0 15px 0; color: #333;">Confirm Action</h3>
+        <p id="confirmMessage" style="margin: 0 0 20px 0; color: #666;">Are you sure?</p>
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <button id="confirmYes" style="padding: 10px 25px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">Yes</button>
+            <button id="confirmNo" style="padding: 10px 25px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Task Modal -->
+<div id="editTaskModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Edit Task</h2>
+            <button class="close-btn" onclick="closeModal('editTaskModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="editTaskForm">
+                <div class="form-group">
+                    <div classform-title">Edit Task</div>
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label>Task Title *</label>
+                            <input type="text" id="editTaskTitle" required />
+                        </div>
+                        <div class="form-field">
+                            <label>Assign To *</label>
+                            <select id="editTaskAssignee" required>
+                                <option value="">Select employee...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label>Deadline *</label>
+                            <input type="date" id="editTaskDeadline" required />
+                        </div>
+                        <div class="form-field">
+                            <label>Due Time</label>
+                            <input type="time" id="editTaskDueTime" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label>Priority</label>
+                            <select id="editTaskPriority">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label>Reminder Type</label>
+                            <select id="editTaskReminderType">
+                                <option value="none">None</option>
+                                <option value="email">Email</option>
+                                <option value="both" selected>Both</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-field" style="grid-column: 1 / -1">
+                            <label>Task Description</label>
+                            <textarea id="editTaskDescription" placeholder="Detailed task description..."></textarea>
+                        </div>
+                    </div>
+                    <div class="btn-group">
+                        <button type="submit" class="btn btn-primary">Update Task</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('editTaskModal')">Cancel</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
 </html>
