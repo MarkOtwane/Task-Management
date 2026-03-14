@@ -13,6 +13,9 @@
 		recentSubmissions: [],
 		employees: [],
 		users: [],
+		projects: [],
+		designProjects: [],
+		settings: {},
 		analytics: [],
 	};
 
@@ -60,10 +63,15 @@
 
 	function bindEvents() {
 		document.getElementById("createTaskForm")?.addEventListener("submit", handleCreateTask);
+		document.getElementById("createProjectForm")?.addEventListener("submit", handleProjectSubmit);
+		document.getElementById("createDesignProjectForm")?.addEventListener("submit", handleDesignProjectSubmit);
 		document.getElementById("createEmployeeForm")?.addEventListener("submit", handleEmployeeSubmit);
 		document.getElementById("editTaskForm")?.addEventListener("submit", handleEditTaskSubmit);
+		document.getElementById("settingsForm")?.addEventListener("submit", handleSettingsSubmit);
 
 		document.getElementById("taskSearch")?.addEventListener("input", () => renderTasks());
+		document.getElementById("projectSearch")?.addEventListener("input", () => renderProjects());
+		document.getElementById("designProjectSearch")?.addEventListener("input", () => renderDesignProjects());
 		document.getElementById("submissionSearch")?.addEventListener("input", () => renderSubmissions());
 		document.getElementById("employeeSearch")?.addEventListener("input", () => renderEmployees());
 
@@ -83,6 +91,8 @@
 	async function loadDashboard() {
 		setLoading("recentSubmissions", true);
 		setLoading("tasks", true);
+		setLoading("projects", true);
+		setLoading("designProjects", true);
 		setLoading("submissions", true);
 		setLoading("employees", true);
 
@@ -183,9 +193,32 @@
 		}
 	}
 
+	async function fetchProjects() {
+		try {
+			const result = await apiCall("/projects/list");
+			state.projects = result.projects || [];
+			renderProjects();
+			return state.projects;
+		} finally {
+			setLoading("projects", false);
+		}
+	}
+
+	async function fetchDesignProjects() {
+		try {
+			const result = await apiCall("/design-projects/list");
+			state.designProjects = result.design_projects || [];
+			renderDesignProjects();
+			return state.designProjects;
+		} finally {
+			setLoading("designProjects", false);
+		}
+	}
+
 	async function fetchUsers() {
 		const result = await apiCall("/users/list");
 		state.users = result.users || [];
+		populateUserSelects();
 		return state.users;
 	}
 
@@ -295,6 +328,94 @@
 			emptyId: "submissionsEmpty",
 			includeReviewedOn: true,
 		});
+	}
+
+	function renderProjects() {
+		const query = document.getElementById("projectSearch")?.value.trim().toLowerCase() || "";
+		const rows = state.projects.filter((project) => {
+			if (!query) {
+				return true;
+			}
+			const haystack = [project.title, project.client_name, project.owner_name, project.status].join(" ").toLowerCase();
+			return haystack.includes(query);
+		});
+
+		const table = document.getElementById("projectsTable");
+		const body = document.getElementById("projectsBody");
+		const empty = document.getElementById("projectsEmpty");
+
+		if (!rows.length) {
+			body.innerHTML = "";
+			table.style.display = "none";
+			empty.style.display = "block";
+			return;
+		}
+
+		body.innerHTML = rows
+			.map(
+				(project) => `
+					<tr>
+						<td>${escapeHtml(project.title || "-")}</td>
+						<td>${escapeHtml(project.client_name || "-")}</td>
+						<td>${escapeHtml(project.owner_name || "-")}</td>
+						<td><span class="status-badge status-${escapeHtml(project.status || "planning")}">${escapeHtml(project.status || "planning")}</span></td>
+						<td>${formatDateOnly(project.end_date)}</td>
+						<td>${formatCurrency(project.budget)}</td>
+						<td>
+							<button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px; margin-right: 8px;" onclick="editProject(${Number(project.id)})">Edit</button>
+							<button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="deleteProject(${Number(project.id)})">Delete</button>
+						</td>
+					</tr>
+				`,
+			)
+			.join("");
+
+		table.style.display = "table";
+		empty.style.display = "none";
+	}
+
+	function renderDesignProjects() {
+		const query = document.getElementById("designProjectSearch")?.value.trim().toLowerCase() || "";
+		const rows = state.designProjects.filter((project) => {
+			if (!query) {
+				return true;
+			}
+			const haystack = [project.title, project.client_name, project.designer_name, project.status].join(" ").toLowerCase();
+			return haystack.includes(query);
+		});
+
+		const table = document.getElementById("designProjectsTable");
+		const body = document.getElementById("designProjectsBody");
+		const empty = document.getElementById("designProjectsEmpty");
+
+		if (!rows.length) {
+			body.innerHTML = "";
+			table.style.display = "none";
+			empty.style.display = "block";
+			return;
+		}
+
+		body.innerHTML = rows
+			.map(
+				(project) => `
+					<tr>
+						<td>${escapeHtml(project.title || "-")}</td>
+						<td>${escapeHtml(project.client_name || "-")}</td>
+						<td>${escapeHtml(project.designer_name || "-")}</td>
+						<td><span class="status-badge status-${escapeHtml(project.status || "concept")}">${escapeHtml(project.status || "concept")}</span></td>
+						<td>${formatDateOnly(project.due_date)}</td>
+						<td>${project.image_path ? `<a href="${escapeAttribute(buildAssetUrl(project.image_path))}" target="_blank" rel="noopener noreferrer">Preview</a>` : "-"}</td>
+						<td>
+							<button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px; margin-right: 8px;" onclick="editDesignProject(${Number(project.id)})">Edit</button>
+							<button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="deleteDesignProject(${Number(project.id)})">Delete</button>
+						</td>
+					</tr>
+				`,
+			)
+			.join("");
+
+		table.style.display = "table";
+		empty.style.display = "none";
 	}
 
 	function renderSubmissionTable({ rows, tableId, bodyId, emptyId, includeReviewedOn }) {
@@ -412,7 +533,7 @@
 	}
 
 	function populateEmployeeSelects() {
-		["taskAssignee", "editTaskAssignee"].forEach((selectId) => {
+		["taskAssignee", "editTaskAssignee", "designProjectDesigner"].forEach((selectId) => {
 			const select = document.getElementById(selectId);
 			if (!select) {
 				return;
@@ -430,6 +551,23 @@
 		});
 	}
 
+	function populateUserSelects() {
+		const select = document.getElementById("projectOwner");
+		if (!select) {
+			return;
+		}
+
+		const currentValue = select.value;
+		select.innerHTML = '<option value="">Select owner...</option>';
+		state.users.forEach((user) => {
+			const option = document.createElement("option");
+			option.value = user.id;
+			option.textContent = `${user.name} (${user.role})`;
+			select.appendChild(option);
+		});
+		select.value = currentValue;
+	}
+
 	async function handleCreateTask(event) {
 		event.preventDefault();
 
@@ -440,6 +578,72 @@
 			await refreshTaskViews();
 		} catch (error) {
 			showAlert(error.message || "Failed to create task", "error");
+		}
+	}
+
+	async function handleProjectSubmit(event) {
+		event.preventDefault();
+
+		const form = event.target;
+		const projectId = Number(form.dataset.projectId || 0);
+		const payload = readProjectFormValues();
+
+		try {
+			if (projectId) {
+				await updateProject(projectId, payload);
+				showAlert("Project updated successfully", "success");
+			} else {
+				await createProject(payload);
+				showAlert("Project created successfully", "success");
+			}
+
+			resetProjectForm();
+		} catch (error) {
+			showAlert(error.message || "Failed to save project", "error");
+		}
+	}
+
+	async function handleDesignProjectSubmit(event) {
+		event.preventDefault();
+
+		const form = event.target;
+		const projectId = Number(form.dataset.designProjectId || 0);
+		const payload = readDesignProjectFormValues();
+
+		try {
+			if (projectId) {
+				await updateDesignProject(projectId, payload);
+				showAlert("Design project updated successfully", "success");
+			} else {
+				await createDesignProject(payload);
+				showAlert("Design project created successfully", "success");
+			}
+
+			resetDesignProjectForm();
+		} catch (error) {
+			showAlert(error.message || "Failed to save design project", "error");
+		}
+	}
+
+	async function handleSettingsSubmit(event) {
+		event.preventDefault();
+
+		try {
+			let dashboardPreferences = {};
+			const rawPreferences = document.getElementById("settingDashboardPreferences").value.trim();
+			if (rawPreferences) {
+				dashboardPreferences = JSON.parse(rawPreferences);
+			}
+
+			await updateSettings({
+				company_name: document.getElementById("settingCompanyName").value.trim(),
+				default_task_priority: document.getElementById("settingDefaultTaskPriority").value,
+				email_notifications_enabled: document.getElementById("settingEmailNotificationsEnabled").value === "true",
+				dashboard_preferences: dashboardPreferences,
+			});
+			showAlert("Settings updated successfully", "success");
+		} catch (error) {
+			showAlert(error.message || "Failed to update settings", "error");
 		}
 	}
 
@@ -520,6 +724,45 @@
 		};
 	}
 
+	function readProjectFormValues() {
+		const ownerValue = document.getElementById("projectOwner").value;
+		const budgetValue = document.getElementById("projectBudget").value;
+
+		return {
+			title: document.getElementById("projectTitle").value.trim(),
+			description: document.getElementById("projectDescription").value.trim() || null,
+			client_name: document.getElementById("projectClient").value.trim() || null,
+			owner_id: ownerValue ? Number(ownerValue) : null,
+			status: document.getElementById("projectStatus").value,
+			priority: document.getElementById("projectPriority").value,
+			start_date: document.getElementById("projectStartDate").value || null,
+			end_date: document.getElementById("projectEndDate").value || null,
+			budget: budgetValue ? Number(budgetValue) : null,
+		};
+	}
+
+	function readDesignProjectFormValues() {
+		const formData = new FormData();
+		const designerValue = document.getElementById("designProjectDesigner").value;
+		const imageInput = document.getElementById("designProjectImage");
+
+		formData.append("title", document.getElementById("designProjectTitle").value.trim());
+		formData.append("description", document.getElementById("designProjectDescription").value.trim());
+		formData.append("client_name", document.getElementById("designProjectClient").value.trim());
+		formData.append("status", document.getElementById("designProjectStatus").value);
+		formData.append("due_date", document.getElementById("designProjectDueDate").value);
+		formData.append("notes", document.getElementById("designProjectNotes").value.trim());
+
+		if (designerValue) {
+			formData.append("designer_id", designerValue);
+		}
+		if (imageInput.files[0]) {
+			formData.append("image", imageInput.files[0]);
+		}
+
+		return formData;
+	}
+
 	function resetEmployeeForm() {
 		const form = document.getElementById("createEmployeeForm");
 		form.reset();
@@ -533,6 +776,36 @@
 		}
 		if (button) {
 			button.textContent = "Add Employee";
+		}
+	}
+
+	function resetProjectForm() {
+		const form = document.getElementById("createProjectForm");
+		form.reset();
+		delete form.dataset.projectId;
+
+		const title = document.querySelector("#projects .form-title");
+		const button = document.querySelector("#createProjectForm button[type='submit']");
+		if (title) {
+			title.textContent = "Manage Projects";
+		}
+		if (button) {
+			button.textContent = "Save Project";
+		}
+	}
+
+	function resetDesignProjectForm() {
+		const form = document.getElementById("createDesignProjectForm");
+		form.reset();
+		delete form.dataset.designProjectId;
+
+		const title = document.querySelector("#design-projects .form-title");
+		const button = document.querySelector("#createDesignProjectForm button[type='submit']");
+		if (title) {
+			title.textContent = "Manage Design Projects";
+		}
+		if (button) {
+			button.textContent = "Save Design Project";
 		}
 	}
 
@@ -762,10 +1035,163 @@
 		});
 	}
 
-	function unsupportedFeature(name) {
-		return async function () {
-			throw new Error(`${name} is not supported by the current backend API.`);
-		};
+	async function fetchProjects() {
+		const result = await apiCall("/projects/list");
+		state.projects = result.projects || [];
+		return state.projects;
+	}
+
+	async function createProject(payload) {
+		const result = await apiCall("/projects/create", {
+			method: "POST",
+			body: payload,
+		});
+		await fetchProjects();
+		return result;
+	}
+
+	async function updateProject(projectId, payload) {
+		const result = await apiCall(`/projects/update/${projectId}`, {
+			method: "POST",
+			body: payload,
+		});
+		await fetchProjects();
+		return result;
+	}
+
+	async function deleteProject(projectId) {
+		const confirmed = await showConfirm("Are you sure you want to delete this project?", "Delete Project");
+		if (!confirmed) {
+			return null;
+		}
+
+		const result = await apiCall(`/projects/delete/${projectId}`, {
+			method: "DELETE",
+		});
+		await fetchProjects();
+		showAlert("Project deleted successfully", "success");
+		return result;
+	}
+
+	async function fetchDesignProjects() {
+		const result = await apiCall("/design-projects/list");
+		state.designProjects = result.design_projects || [];
+		return state.designProjects;
+	}
+
+	async function createDesignProject(payload) {
+		const result = await apiCall("/design-projects/create", {
+			method: "POST",
+			body: payload,
+		});
+		await fetchDesignProjects();
+		return result;
+	}
+
+	async function updateDesignProject(projectId, payload) {
+		const result = await apiCall(`/design-projects/update/${projectId}`, {
+			method: "POST",
+			body: payload,
+		});
+		await fetchDesignProjects();
+		return result;
+	}
+
+	async function deleteDesignProject(projectId) {
+		const confirmed = await showConfirm("Are you sure you want to delete this design project?", "Delete Design Project");
+		if (!confirmed) {
+			return null;
+		}
+
+		const result = await apiCall(`/design-projects/delete/${projectId}`, {
+			method: "DELETE",
+		});
+		await fetchDesignProjects();
+		showAlert("Design project deleted successfully", "success");
+		return result;
+	}
+
+	async function loadSettings() {
+		const result = await apiCall("/settings/list");
+		state.settings = result.settings || {};
+		applySettingsToForm();
+		return state.settings;
+	}
+
+	async function updateSettings(payload) {
+		const result = await apiCall("/settings/update", {
+			method: "POST",
+			body: payload,
+		});
+		await loadSettings();
+		return result;
+	}
+
+	async function editProject(projectId) {
+		try {
+			const result = await apiCall(`/projects/get/${projectId}`);
+			const project = result.project;
+			const form = document.getElementById("createProjectForm");
+
+			document.getElementById("projectTitle").value = project.title || "";
+			document.getElementById("projectClient").value = project.client_name || "";
+			document.getElementById("projectOwner").value = project.owner_id || "";
+			document.getElementById("projectStatus").value = project.status || "planning";
+			document.getElementById("projectPriority").value = project.priority || "medium";
+			document.getElementById("projectBudget").value = project.budget || "";
+			document.getElementById("projectStartDate").value = project.start_date || "";
+			document.getElementById("projectEndDate").value = project.end_date || "";
+			document.getElementById("projectDescription").value = project.description || "";
+
+			form.dataset.projectId = String(projectId);
+			const title = document.querySelector("#projects .form-title");
+			const button = document.querySelector("#createProjectForm button[type='submit']");
+			if (title) {
+				title.textContent = "Edit Project";
+			}
+			if (button) {
+				button.textContent = "Update Project";
+			}
+			form.closest(".form-group")?.scrollIntoView({ behavior: "smooth", block: "start" });
+		} catch (error) {
+			showAlert(error.message || "Failed to load project", "error");
+		}
+	}
+
+	async function editDesignProject(projectId) {
+		try {
+			const result = await apiCall(`/design-projects/get/${projectId}`);
+			const project = result.design_project;
+			const form = document.getElementById("createDesignProjectForm");
+
+			document.getElementById("designProjectTitle").value = project.title || "";
+			document.getElementById("designProjectClient").value = project.client_name || "";
+			document.getElementById("designProjectDesigner").value = project.designer_id || "";
+			document.getElementById("designProjectStatus").value = project.status || "concept";
+			document.getElementById("designProjectDueDate").value = project.due_date || "";
+			document.getElementById("designProjectDescription").value = project.description || "";
+			document.getElementById("designProjectNotes").value = project.notes || "";
+
+			form.dataset.designProjectId = String(projectId);
+			const title = document.querySelector("#design-projects .form-title");
+			const button = document.querySelector("#createDesignProjectForm button[type='submit']");
+			if (title) {
+				title.textContent = "Edit Design Project";
+			}
+			if (button) {
+				button.textContent = "Update Design Project";
+			}
+			form.closest(".form-group")?.scrollIntoView({ behavior: "smooth", block: "start" });
+		} catch (error) {
+			showAlert(error.message || "Failed to load design project", "error");
+		}
+	}
+
+	function applySettingsToForm() {
+		document.getElementById("settingCompanyName").value = state.settings.company_name || "";
+		document.getElementById("settingDefaultTaskPriority").value = state.settings.default_task_priority || "medium";
+		document.getElementById("settingEmailNotificationsEnabled").value = String(state.settings.email_notifications_enabled ?? true);
+		document.getElementById("settingDashboardPreferences").value = JSON.stringify(state.settings.dashboard_preferences || {}, null, 2);
 	}
 
 	function switchTab(tabName) {
@@ -777,6 +1203,20 @@
 		const activeButton = Array.from(document.querySelectorAll(".tab-btn")).find((button) => (button.getAttribute("onclick") || "").includes(`'${tabName}'`));
 		activeButton?.classList.add("active");
 
+		if (tabName === "projects") {
+			setLoading("projects", true);
+			fetchProjects().catch((error) => showAlert(error.message || "Failed to load projects", "error"));
+		}
+
+		if (tabName === "design-projects") {
+			setLoading("designProjects", true);
+			fetchDesignProjects().catch((error) => showAlert(error.message || "Failed to load design projects", "error"));
+		}
+
+		if (tabName === "settings") {
+			loadSettings().catch((error) => showAlert(error.message || "Failed to load settings", "error"));
+		}
+
 		if (tabName === "analytics") {
 			fetchAnalytics().catch((error) => showAlert(error.message || "Failed to load analytics", "error"));
 		}
@@ -786,6 +1226,14 @@
 		document.getElementById(modalId)?.classList.remove("active");
 		if (modalId === "submissionModal") {
 			state.currentSubmissionId = null;
+			document.getElementById("adminComment").value = "";
+		}
+		if (modalId === "editTaskModal") {
+			const form = document.getElementById("editTaskForm");
+			form?.reset();
+			if (form?.dataset) {
+				delete form.dataset.taskId;
+			}
 		}
 	}
 
@@ -809,7 +1257,7 @@
 
 			titleEl.textContent = title;
 			messageEl.textContent = message;
-			modal.style.display = "block";
+			modal.style.display = "flex";
 
 			const cleanup = () => {
 				yesButton.removeEventListener("click", handleYes);
@@ -855,6 +1303,18 @@
 		return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString();
 	}
 
+	function formatCurrency(value) {
+		if (value === null || value === undefined || value === "") {
+			return "-";
+		}
+		const amount = Number(value);
+		return Number.isNaN(amount) ? String(value) : amount.toLocaleString(undefined, { style: "currency", currency: "USD" });
+	}
+
+	function buildAssetUrl(path) {
+		return `${BACKEND_ORIGIN}/${String(path || "").replace(/^\//, "")}`;
+	}
+
 	function formatDateTime(value) {
 		if (!value) {
 			return "-";
@@ -895,6 +1355,8 @@
 	window.deleteTask = deleteTask;
 	window.editEmployee = editEmployee;
 	window.toggleEmployeeStatus = toggleEmployeeStatus;
+	window.editProject = editProject;
+	window.editDesignProject = editDesignProject;
 
 	window.fetchUsers = fetchUsers;
 	window.createUser = createUser;
@@ -908,14 +1370,14 @@
 	window.createTeamMember = createTeamMember;
 	window.updateTeamMember = updateTeamMember;
 	window.deleteTeamMember = deleteTeamMember;
-	window.fetchProjects = unsupportedFeature("Projects CRUD");
-	window.createProject = unsupportedFeature("Projects CRUD");
-	window.updateProject = unsupportedFeature("Projects CRUD");
-	window.deleteProject = unsupportedFeature("Projects CRUD");
-	window.fetchDesignProjects = unsupportedFeature("Design project CRUD");
-	window.createDesignProject = unsupportedFeature("Design project CRUD");
-	window.updateDesignProject = unsupportedFeature("Design project CRUD");
-	window.deleteDesignProject = unsupportedFeature("Design project CRUD");
-	window.loadSettings = unsupportedFeature("Settings management");
-	window.updateSettings = unsupportedFeature("Settings management");
+	window.fetchProjects = fetchProjects;
+	window.createProject = createProject;
+	window.updateProject = updateProject;
+	window.deleteProject = deleteProject;
+	window.fetchDesignProjects = fetchDesignProjects;
+	window.createDesignProject = createDesignProject;
+	window.updateDesignProject = updateDesignProject;
+	window.deleteDesignProject = deleteDesignProject;
+	window.loadSettings = loadSettings;
+	window.updateSettings = updateSettings;
 })();

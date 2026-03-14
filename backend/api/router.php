@@ -62,6 +62,18 @@ try {
         case 'users':
             require_once __DIR__ . '/users.php';
             break;
+
+        case 'projects':
+            require_once __DIR__ . '/projects.php';
+            break;
+
+        case 'design-projects':
+            require_once __DIR__ . '/design-projects.php';
+            break;
+
+        case 'settings':
+            require_once __DIR__ . '/settings.php';
+            break;
         
         default:
             sendError('Endpoint not found', 404);

@@ -556,8 +556,11 @@
 			<div class="tabs">
 				<button class="tab-btn active" onclick="switchTab('overview')"><i class="fa-solid fa-chart-line" aria-hidden="true"></i> Overview</button>
 				<button class="tab-btn" onclick="switchTab('tasks')"><i class="fa-solid fa-list-check" aria-hidden="true"></i> Tasks</button>
+				<button class="tab-btn" onclick="switchTab('projects')"><i class="fa-solid fa-briefcase" aria-hidden="true"></i> Projects</button>
+				<button class="tab-btn" onclick="switchTab('design-projects')"><i class="fa-solid fa-pen-ruler" aria-hidden="true"></i> Design Projects</button>
 				<button class="tab-btn" onclick="switchTab('submissions')"><i class="fa-solid fa-file-arrow-up" aria-hidden="true"></i> Submissions</button>
 				<button class="tab-btn" onclick="switchTab('employees')"><i class="fa-solid fa-users" aria-hidden="true"></i> Employees</button>
+				<button class="tab-btn" onclick="switchTab('settings')"><i class="fa-solid fa-gear" aria-hidden="true"></i> Settings</button>
 				<button class="tab-btn" onclick="switchTab('analytics')"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i> Analytics</button>
 			</div>
 
@@ -741,6 +744,198 @@
 				</div>
 			</div>
 
+			<!-- PROJECTS TAB -->
+			<div id="projects" class="tab-content">
+				<div class="form-group">
+					<div class="form-title">Manage Projects</div>
+					<form id="createProjectForm">
+						<div class="form-row">
+							<div class="form-field">
+								<label>Project Title *</label>
+								<input type="text" id="projectTitle" required />
+							</div>
+							<div class="form-field">
+								<label>Client</label>
+								<input type="text" id="projectClient" placeholder="Client or internal stakeholder" />
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="form-field">
+								<label>Owner</label>
+								<select id="projectOwner">
+									<option value="">Select owner...</option>
+								</select>
+							</div>
+							<div class="form-field">
+								<label>Status</label>
+								<select id="projectStatus">
+									<option value="planning">Planning</option>
+									<option value="active">Active</option>
+									<option value="on_hold">On Hold</option>
+									<option value="completed">Completed</option>
+									<option value="archived">Archived</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="form-field">
+								<label>Priority</label>
+								<select id="projectPriority">
+									<option value="low">Low</option>
+									<option value="medium" selected>Medium</option>
+									<option value="high">High</option>
+									<option value="urgent">Urgent</option>
+								</select>
+							</div>
+							<div class="form-field">
+								<label>Budget</label>
+								<input type="number" id="projectBudget" min="0" step="0.01" placeholder="0.00" />
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="form-field">
+								<label>Start Date</label>
+								<input type="date" id="projectStartDate" />
+							</div>
+							<div class="form-field">
+								<label>End Date</label>
+								<input type="date" id="projectEndDate" />
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="form-field" style="grid-column: 1 / -1">
+								<label>Description</label>
+								<textarea id="projectDescription" placeholder="Project goals, scope, and notes..."></textarea>
+							</div>
+						</div>
+						<div class="btn-group">
+							<button type="submit" class="btn btn-primary">Save Project</button>
+							<button type="reset" class="btn btn-secondary">Clear</button>
+						</div>
+					</form>
+				</div>
+
+				<div class="table-container">
+					<div class="table-title">Projects</div>
+					<div class="search-box">
+						<input type="text" id="projectSearch" placeholder="Search projects by title or client..." />
+					</div>
+					<div id="projectsLoading" class="loading show">
+						<div class="spinner"></div>
+					</div>
+					<table id="projectsTable" style="display: none">
+						<thead>
+							<tr>
+								<th>Title</th>
+								<th>Client</th>
+								<th>Owner</th>
+								<th>Status</th>
+								<th>End Date</th>
+								<th>Budget</th>
+								<th>Actions</th>
+							</tr>
+						</thead>
+						<tbody id="projectsBody"></tbody>
+					</table>
+					<div id="projectsEmpty" class="empty-state" style="display: none">
+						<div class="empty-state-icon"><i class="fa-solid fa-briefcase" aria-hidden="true"></i></div>
+						<p>No projects yet</p>
+					</div>
+				</div>
+			</div>
+
+			<!-- DESIGN PROJECTS TAB -->
+			<div id="design-projects" class="tab-content">
+				<div class="form-group">
+					<div class="form-title">Manage Design Projects</div>
+					<form id="createDesignProjectForm">
+						<div class="form-row">
+							<div class="form-field">
+								<label>Design Project Title *</label>
+								<input type="text" id="designProjectTitle" required />
+							</div>
+							<div class="form-field">
+								<label>Client</label>
+								<input type="text" id="designProjectClient" />
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="form-field">
+								<label>Designer</label>
+								<select id="designProjectDesigner">
+									<option value="">Select designer...</option>
+								</select>
+							</div>
+							<div class="form-field">
+								<label>Status</label>
+								<select id="designProjectStatus">
+									<option value="concept">Concept</option>
+									<option value="in_progress">In Progress</option>
+									<option value="review">Review</option>
+									<option value="approved">Approved</option>
+									<option value="completed">Completed</option>
+									<option value="archived">Archived</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="form-field">
+								<label>Due Date</label>
+								<input type="date" id="designProjectDueDate" />
+							</div>
+							<div class="form-field">
+								<label>Preview Image</label>
+								<input type="file" id="designProjectImage" accept="image/*" />
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="form-field" style="grid-column: 1 / -1">
+								<label>Description</label>
+								<textarea id="designProjectDescription" placeholder="Design brief and deliverables..."></textarea>
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="form-field" style="grid-column: 1 / -1">
+								<label>Notes</label>
+								<textarea id="designProjectNotes" placeholder="Review notes, revision requests, and comments..."></textarea>
+							</div>
+						</div>
+						<div class="btn-group">
+							<button type="submit" class="btn btn-primary">Save Design Project</button>
+							<button type="reset" class="btn btn-secondary">Clear</button>
+						</div>
+					</form>
+				</div>
+
+				<div class="table-container">
+					<div class="table-title">Design Projects</div>
+					<div class="search-box">
+						<input type="text" id="designProjectSearch" placeholder="Search design projects by title or client..." />
+					</div>
+					<div id="designProjectsLoading" class="loading show">
+						<div class="spinner"></div>
+					</div>
+					<table id="designProjectsTable" style="display: none">
+						<thead>
+							<tr>
+								<th>Title</th>
+								<th>Client</th>
+								<th>Designer</th>
+								<th>Status</th>
+								<th>Due Date</th>
+								<th>Preview</th>
+								<th>Actions</th>
+							</tr>
+						</thead>
+						<tbody id="designProjectsBody"></tbody>
+					</table>
+					<div id="designProjectsEmpty" class="empty-state" style="display: none">
+						<div class="empty-state-icon"><i class="fa-solid fa-pen-ruler" aria-hidden="true"></i></div>
+						<p>No design projects yet</p>
+					</div>
+				</div>
+			</div>
+
 			<!-- EMPLOYEES TAB -->
 			<div id="employees" class="tab-content">
 				<!-- Create Employee Form -->
@@ -801,6 +996,46 @@
 						<div class="empty-state-icon"><i class="fa-solid fa-users" aria-hidden="true"></i></div>
 						<p>No employees yet</p>
 					</div>
+				</div>
+			</div>
+
+			<!-- SETTINGS TAB -->
+			<div id="settings" class="tab-content">
+				<div class="form-group">
+					<div class="form-title">Workspace Settings</div>
+					<form id="settingsForm">
+						<div class="form-row">
+							<div class="form-field">
+								<label>Company Name</label>
+								<input type="text" id="settingCompanyName" />
+							</div>
+							<div class="form-field">
+								<label>Default Task Priority</label>
+								<select id="settingDefaultTaskPriority">
+									<option value="low">Low</option>
+									<option value="medium">Medium</option>
+									<option value="high">High</option>
+									<option value="urgent">Urgent</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="form-field">
+								<label>Email Notifications</label>
+								<select id="settingEmailNotificationsEnabled">
+									<option value="true">Enabled</option>
+									<option value="false">Disabled</option>
+								</select>
+							</div>
+							<div class="form-field">
+								<label>Dashboard Preferences (JSON)</label>
+								<textarea id="settingDashboardPreferences" placeholder='{"showAnalytics":true,"showRecentSubmissions":true}'></textarea>
+							</div>
+						</div>
+						<div class="btn-group">
+							<button type="submit" class="btn btn-primary">Save Settings</button>
+						</div>
+					</form>
 				</div>
 			</div>
 

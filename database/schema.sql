@@ -128,6 +128,66 @@ CREATE TABLE IF NOT EXISTS analytics (
     INDEX idx_recorded_at (recorded_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Projects Table
+CREATE TABLE IF NOT EXISTS projects (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description LONGTEXT,
+    client_name VARCHAR(255),
+    owner_id INT NULL,
+    status ENUM('planning', 'active', 'on_hold', 'completed', 'archived') DEFAULT 'planning',
+    priority ENUM('low', 'medium', 'high', 'urgent') DEFAULT 'medium',
+    start_date DATE,
+    end_date DATE,
+    budget DECIMAL(12,2) DEFAULT NULL,
+    created_by INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_projects_owner_id (owner_id),
+    INDEX idx_projects_created_by (created_by),
+    INDEX idx_projects_status (status),
+    INDEX idx_projects_priority (priority)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Design Projects Table
+CREATE TABLE IF NOT EXISTS design_projects (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description LONGTEXT,
+    client_name VARCHAR(255),
+    designer_id INT NULL,
+    status ENUM('concept', 'in_progress', 'review', 'approved', 'completed', 'archived') DEFAULT 'concept',
+    due_date DATE,
+    image_path VARCHAR(500),
+    notes LONGTEXT,
+    created_by INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (designer_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_design_projects_designer_id (designer_id),
+    INDEX idx_design_projects_created_by (created_by),
+    INDEX idx_design_projects_status (status),
+    INDEX idx_design_projects_due_date (due_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Admin Settings Table
+CREATE TABLE IF NOT EXISTS settings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    admin_id INT NOT NULL,
+    setting_key VARCHAR(100) NOT NULL,
+    setting_value LONGTEXT,
+    setting_type ENUM('text', 'number', 'boolean', 'json') DEFAULT 'text',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_admin_setting (admin_id, setting_key),
+    INDEX idx_settings_admin_id (admin_id),
+    INDEX idx_settings_setting_key (setting_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ============================================
 -- Basic Indexes for Performance
 -- ============================================
@@ -164,6 +224,26 @@ DELIMITER ;
 DELIMITER $$
 CREATE TRIGGER submission_update_trigger
 BEFORE UPDATE ON submissions
+FOR EACH ROW
+BEGIN
+    SET NEW.updated_at = CURRENT_TIMESTAMP;
+END$$
+DELIMITER ;
+
+-- Trigger to update project updated_at timestamp
+DELIMITER $$
+CREATE TRIGGER project_update_trigger
+BEFORE UPDATE ON projects
+FOR EACH ROW
+BEGIN
+    SET NEW.updated_at = CURRENT_TIMESTAMP;
+END$$
+DELIMITER ;
+
+-- Trigger to update design project updated_at timestamp
+DELIMITER $$
+CREATE TRIGGER design_project_update_trigger
+BEFORE UPDATE ON design_projects
 FOR EACH ROW
 BEGIN
     SET NEW.updated_at = CURRENT_TIMESTAMP;
