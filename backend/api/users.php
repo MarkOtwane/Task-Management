@@ -256,8 +256,8 @@ function handleCreateEmployee() {
         
         // Insert employee
         $insertStmt = $pdo->prepare('
-            INSERT INTO users (name, email, password, role, department, status, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, NOW())
+            INSERT INTO users (name, email, password, role, department, phone, status, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
         ');
         
         $insertStmt->execute([
@@ -266,6 +266,7 @@ function handleCreateEmployee() {
             $hashedPassword,
             'employee',
             isset($input['department']) ? sanitizeString($input['department']) : null,
+            isset($input['phone']) ? sanitizeString($input['phone']) : null,
             'active'
         ]);
         
