@@ -63,7 +63,7 @@ function getDatabase() {
     
     if ($pdo === null) {
         try {
-            $dsn = 'mysql:host=' . DB_HOST . ':' . DB_PORT . ';dbname=' . DB_NAME . ';charset=' . DB_CHARSET;
+            $dsn = 'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=' . DB_CHARSET;
             
             $pdo = new PDO(
                 $dsn,

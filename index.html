@@ -1205,8 +1205,6 @@
 				navigation: auto;
 			}
 		</style>
-		<script src="/_sdk/data_sdk.js" type="text/javascript"></script>
-		<script src="/_sdk/element_sdk.js" type="text/javascript"></script>
 		<script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
 		<script>
 			// Ensure handleKeyDown function is defined safely
@@ -1233,9 +1231,108 @@
 			document.addEventListener('keydown', window.handleKeyDown);
 		</script>
 		<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css\">
-	</head>
 		<!-- Import TaskAPI for backend connectivity -->
 		<script>
+			function defineInlineTaskAPI() {
+				if (typeof window.TaskAPI !== "undefined") {
+					return;
+				}
+
+				class InlineTaskAPI {
+					constructor(baseURL = "https://task-management-bxpk.onrender.com/backend") {
+						this.baseURL = baseURL;
+					}
+
+					async request(endpoint, options = {}) {
+						const url = `${this.baseURL}${endpoint}`;
+						const headers = {
+							"Content-Type": "application/json",
+							"X-Requested-With": "XMLHttpRequest",
+							...options.headers,
+						};
+
+						const token = localStorage.getItem("token");
+						if (token) {
+							headers.Authorization = `Bearer ${token}`;
+						}
+
+						const config = {
+							method: options.method || "GET",
+							headers,
+							credentials: "include",
+							...options,
+						};
+
+						const response = await fetch(url, config);
+						const contentType = response.headers.get("content-type") || "";
+						const data = contentType.includes("application/json")
+							? await response.json()
+							: await response.text();
+
+						if (!response.ok) {
+							const errorMessage = typeof data === "object" && data
+								? data.error || data.message
+								: data;
+							throw new Error(errorMessage || `HTTP ${response.status}`);
+						}
+
+						return data;
+					}
+
+					async register(email, password, username = "") {
+						const result = await this.request("/api/auth.php?action=register", {
+							method: "POST",
+							body: JSON.stringify({ email, password, username }),
+						});
+						if (result && result.token) {
+							localStorage.setItem("token", result.token);
+						}
+						return result;
+					}
+
+					async login(email, password) {
+						const result = await this.request("/api/auth.php?action=login", {
+							method: "POST",
+							body: JSON.stringify({ email, password }),
+						});
+						if (result && result.token) {
+							localStorage.setItem("token", result.token);
+						}
+						return result;
+					}
+
+					async logout() {
+						localStorage.removeItem("token");
+						return this.request("/api/auth.php?action=logout", { method: "POST" });
+					}
+
+					async getTasks() {
+						return this.request("/api/tasks.php", { method: "GET" });
+					}
+
+					async createTask(taskData) {
+						return this.request("/api/tasks.php", {
+							method: "POST",
+							body: JSON.stringify(taskData),
+						});
+					}
+
+					async updateTask(id, taskData) {
+						return this.request("/api/tasks.php", {
+							method: "PUT",
+							body: JSON.stringify({ id, ...taskData }),
+						});
+					}
+
+					async deleteTask(id) {
+						return this.request(`/api/tasks.php?id=${id}`, { method: "DELETE" });
+					}
+				}
+
+				window.TaskAPI = InlineTaskAPI;
+				console.warn("Using inline TaskAPI fallback client");
+			}
+
 			// Dynamic script loading with fallback sources to avoid "API not initialized" race/failures.
 			const primaryTaskApi = window.location.hostname.includes("vercel.app")
 				? "https://task-management-bxpk.onrender.com/backend/TaskAPI.js"
@@ -1249,8 +1346,12 @@
 
 			function loadTaskApiScript() {
 				if (taskApiSourceIndex >= taskApiSources.length) {
-					window.taskApiLoaded = false;
-					console.error("Failed to load TaskAPI.js from all configured sources");
+					defineInlineTaskAPI();
+					window.taskApiLoaded = true;
+					console.warn("Failed to load external TaskAPI.js; switched to inline fallback");
+					if (typeof initializeAPI === "function") {
+						initializeAPI();
+					}
 					return;
 				}
 
@@ -1265,6 +1366,9 @@
 				script.src = source;
 				script.onload = function () {
 					console.log("TaskAPI.js loaded from", source);
+					if (typeof window.TaskAPI === "undefined") {
+						defineInlineTaskAPI();
+					}
 					window.taskApiLoaded = true;
 					if (typeof initializeAPI === "function") {
 						initializeAPI();
