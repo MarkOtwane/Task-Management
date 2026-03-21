@@ -92,5 +92,6 @@ function getDatabase() {
     return $pdo;
 }
 
-// Get database instance immediately for later use
-$pdo = getDatabase();
+// Do not open DB connection on file load.
+// Endpoints should call getDatabase() only when needed so OPTIONS preflight
+// requests can return CORS headers even if the DB is unavailable.

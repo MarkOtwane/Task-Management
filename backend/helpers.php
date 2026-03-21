@@ -218,9 +218,25 @@ function logAction($action, $userId = null, $details = []) {
  * Set up CORS headers
  */
 function setCorsHeaders() {
-    header('Access-Control-Allow-Origin: *');
-    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    $allowedOrigins = [
+        'https://task-management-neon-one.vercel.app',
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:5173',
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+    ];
+
+    if (!empty($origin) && in_array($origin, $allowedOrigins, true)) {
+        header('Access-Control-Allow-Origin: ' . $origin);
+        header('Access-Control-Allow-Credentials: true');
+        header('Vary: Origin');
+    }
+
+    header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Accept, Origin');
     header('Access-Control-Max-Age: 3600');
     header('Content-Type: application/json; charset=utf-8');
 }

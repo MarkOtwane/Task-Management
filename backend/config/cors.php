@@ -4,24 +4,26 @@
  */
 
 // Define allowed origins
-$allowedOrigins = [];
+$allowedOrigins = [
+    'https://task-management-neon-one.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:5173',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+];
 
 // Try to load FRONTEND_URL from environment
 if (getenv('FRONTEND_URL')) {
     $frontendUrl = rtrim(getenv('FRONTEND_URL'), '/');
     $allowedOrigins[] = $frontendUrl;
-    error_log("CORS: Adding FRONTEND_URL to allowed origins: " . $frontendUrl);
 } elseif (defined('FRONTEND_URL')) {
     $frontendUrl = rtrim(FRONTEND_URL, '/');
     $allowedOrigins[] = $frontendUrl;
-    error_log("CORS: Adding defined FRONTEND_URL to allowed origins: " . $frontendUrl);
 }
 
-// Always allow localhost for development
-$allowedOrigins[] = 'http://localhost:3000';
-$allowedOrigins[] = 'http://localhost:8000';
-$allowedOrigins[] = 'http://127.0.0.1:3000';
-$allowedOrigins[] = 'http://127.0.0.1:8000';
+$allowedOrigins = array_values(array_unique($allowedOrigins));
 
 // Get the request origin
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
@@ -29,20 +31,14 @@ $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 // Set the appropriate CORS header
 if (in_array($origin, $allowedOrigins, true)) {
     header('Access-Control-Allow-Origin: ' . $origin);
-    error_log("CORS: Allowing origin: " . $origin);
+    header('Access-Control-Allow-Credentials: true');
+    header('Vary: Origin');
 } elseif (empty($origin)) {
-    // No origin header (same-origin request)
-    error_log("CORS: No origin header detected");
-} else {
-    // Origin not in allowed list - log but still allow for development
-    error_log("CORS: Origin not in allowed list: " . $origin . ". Allowed origins: " . implode(', ', $allowedOrigins));
-    // Temporarily allow for debugging - in production, you might want to be more restrictive
-    header('Access-Control-Allow-Origin: ' . $origin);
+    // Same-origin request
 }
 
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
-header('Access-Control-Allow-Credentials: true');
+header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Accept, Origin');
 header('Access-Control-Max-Age: 86400');
 
 // Handle preflight requests
