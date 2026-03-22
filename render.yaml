@@ -17,6 +17,8 @@ services:
               value: ep-square-art-a8zobyl9-pooler.eastus2.azure.neon.tech
             - key: DB_PORT
               value: "5432"
+            - key: DB_DRIVER
+              value: pgsql
             - key: DB_NAME
               value: neondb
             - key: DB_USER
