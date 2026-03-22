@@ -3,6 +3,7 @@ FROM php:8.2-apache
 # Enable necessary extensions
 RUN apt-get update && apt-get install -y \
     libmariadb-dev \
+    libpq-dev \
     zlib1g-dev \
     libpng-dev \
     libjpeg-dev \
@@ -11,7 +12,7 @@ RUN apt-get update && apt-get install -y \
     git \
     unzip \
     && docker-php-ext-configure gd --with-jpeg \
-    && docker-php-ext-install -j$(nproc) gd mysqli pdo pdo_mysql \
+    && docker-php-ext-install -j$(nproc) gd mysqli pdo pdo_mysql pdo_pgsql \
     && rm -rf /var/lib/apt/lists/*
 
 # Enable Apache modules

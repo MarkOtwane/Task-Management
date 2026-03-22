@@ -10,6 +10,10 @@ require_once __DIR__ . '/../helpers.php';
 $method = $_SERVER['REQUEST_METHOD'];
 $action = isset($_GET['action']) ? $_GET['action'] : '';
 
+function getExpiryTimestamp($minutes) {
+    return gmdate('Y-m-d H:i:s', time() + ((int)$minutes * 60));
+}
+
 // Handle different authentication actions
 switch ($action) {
     case 'register':
@@ -132,16 +136,17 @@ function handleRegister() {
         
         // Generate session token
         $token = generateToken();
+        $sessionExpiresAt = getExpiryTimestamp(floor(SESSION_TIMEOUT / 60));
         $sessionStmt = $pdo->prepare('
             INSERT INTO sessions (user_id, token, ip_address, expires_at, created_at)
-            VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL ? MINUTE), NOW())
+            VALUES (?, ?, ?, ?, NOW())
         ');
         
         $sessionStmt->execute([
             $userId,
             $token,
             $_SERVER['REMOTE_ADDR'] ?? 'unknown',
-            floor(SESSION_TIMEOUT / 60)
+            $sessionExpiresAt
         ]);
         
         sendSuccess([
@@ -185,16 +190,17 @@ function handleLogin() {
         
         // Generate session token
         $token = generateToken();
+        $sessionExpiresAt = getExpiryTimestamp(floor(SESSION_TIMEOUT / 60));
         $sessionStmt = $pdo->prepare('
             INSERT INTO sessions (user_id, token, ip_address, expires_at, created_at)
-            VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL ? MINUTE), NOW())
+            VALUES (?, ?, ?, ?, NOW())
         ');
         
         $sessionStmt->execute([
             $user['id'],
             $token,
             $_SERVER['REMOTE_ADDR'] ?? 'unknown',
-            floor(SESSION_TIMEOUT / 60)
+            $sessionExpiresAt
         ]);
         
         // Update last login (optional)
@@ -270,14 +276,15 @@ function handleForgotPassword() {
         // Generate reset token and 6-digit code
         $token = generateToken();
         $code = generateOTP();
+        $resetExpiresAt = getExpiryTimestamp(10);
         
         // Store reset token (valid for 10 minutes)
         $resetStmt = $pdo->prepare('
             INSERT INTO password_reset_tokens (user_id, token, code, expires_at, created_at)
-            VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 10 MINUTE), NOW())
+            VALUES (?, ?, ?, ?, NOW())
         ');
         
-        $resetStmt->execute([$user['id'], $token, $code]);
+        $resetStmt->execute([$user['id'], $token, $code, $resetExpiresAt]);
         
         // Send email with reset code (using Resend API)
         sendPasswordResetEmail($user['email'], $user['name'], $code);

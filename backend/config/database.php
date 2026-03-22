@@ -1,6 +1,6 @@
 <?php
 /**
- * MySQL Database Configuration
+ * Database Configuration
  * TaskFlow Multi-User Application Backend
  */
 
@@ -39,10 +39,13 @@ define('DB_NAME', getenv('DB_NAME') ?: 'taskflow');
 define('DB_USER', getenv('DB_USER') ?: 'taskflow_user');
 define('DB_PASSWORD', getenv('DB_PASSWORD') ?: 'taskflow_password');
 define('DB_CHARSET', 'utf8mb4');
+define('DB_SSL_MODE', getenv('DB_SSL_MODE') ?: 'prefer');
+define('DB_DRIVER', getenv('DB_DRIVER') ?: (DB_PORT === '5432' ? 'pgsql' : 'mysql'));
 
 // Application configuration
 define('APP_ENV', getenv('APP_ENV') ?: 'development');
-define('APP_DEBUG', getenv('APP_DEBUG') ?: true);
+$appDebugEnv = getenv('APP_DEBUG');
+define('APP_DEBUG', $appDebugEnv === false ? true : filter_var($appDebugEnv, FILTER_VALIDATE_BOOLEAN));
 define('SESSION_TIMEOUT', getenv('SESSION_TIMEOUT') ?: 3600);
 define('RESEND_API_KEY', getenv('RESEND_API_KEY') ?: '');
 
@@ -63,7 +66,12 @@ function getDatabase() {
     
     if ($pdo === null) {
         try {
-            $dsn = 'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=' . DB_CHARSET;
+            $driver = strtolower(DB_DRIVER);
+            if ($driver === 'pgsql' || $driver === 'postgres' || $driver === 'postgresql') {
+                $dsn = 'pgsql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';sslmode=' . DB_SSL_MODE;
+            } else {
+                $dsn = 'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=' . DB_CHARSET;
+            }
             
             $pdo = new PDO(
                 $dsn,
@@ -77,11 +85,16 @@ function getDatabase() {
                 ]
             );
             
-            // Set timezone and charset
-            $pdo->exec("SET time_zone = '+00:00'");
-            $pdo->exec("SET NAMES utf8mb4");
-            
-            error_log('[Database] Connected to MySQL: ' . DB_NAME . ' on ' . DB_HOST);
+            // Set timezone and encoding
+            if ($driver === 'pgsql' || $driver === 'postgres' || $driver === 'postgresql') {
+                $pdo->exec("SET TIME ZONE 'UTC'");
+                $pdo->exec("SET client_encoding TO 'UTF8'");
+                error_log('[Database] Connected to PostgreSQL: ' . DB_NAME . ' on ' . DB_HOST);
+            } else {
+                $pdo->exec("SET time_zone = '+00:00'");
+                $pdo->exec("SET NAMES utf8mb4");
+                error_log('[Database] Connected to MySQL: ' . DB_NAME . ' on ' . DB_HOST);
+            }
         } catch (PDOException $e) {
             error_log('Database connection error: ' . $e->getMessage());
             http_response_code(500);
