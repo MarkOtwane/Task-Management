@@ -118,6 +118,25 @@ function initializeDatabase($pdo) {
             )
         ");
 
+        // Daily diary table (isolated from tasks module)
+        $pdo->exec(" 
+            CREATE TABLE IF NOT EXISTS diary_entries (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                entry_date DATE NOT NULL DEFAULT CURRENT_DATE,
+                title VARCHAR(255) NOT NULL,
+                content TEXT NOT NULL,
+                mood VARCHAR(50),
+                audio_file_path VARCHAR(500),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ");
+
+        $pdo->exec(" 
+            CREATE INDEX IF NOT EXISTS idx_diary_entries_user_date
+            ON diary_entries(user_id, entry_date DESC, created_at DESC)
+        ");
+
         // Password reset tokens table
         $pdo->exec("
             CREATE TABLE IF NOT EXISTS password_reset_tokens (

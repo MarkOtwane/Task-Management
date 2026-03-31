@@ -117,6 +117,52 @@ class TaskAPI {
 		}
 	}
 
+	/**
+	 * Make multipart/form-data API request
+	 * @param {string} endpoint - API endpoint
+	 * @param {FormData} formData - Multipart payload
+	 * @returns {Promise} - Response JSON
+	 */
+	async requestFormData(endpoint, formData) {
+		const url = `${this.baseURL}${endpoint}`;
+
+		const headers = {
+			"X-Requested-With": "XMLHttpRequest",
+		};
+
+		const token = localStorage.getItem("auth_token");
+		if (token) {
+			headers["Authorization"] = `Bearer ${token}`;
+		}
+
+		const config = {
+			method: "POST",
+			headers,
+			credentials: "include",
+			body: formData,
+		};
+
+		const response = await fetch(url, config);
+		const contentType = response.headers.get("content-type");
+		let data = null;
+
+		if (contentType && contentType.includes("application/json")) {
+			data = await response.json();
+		} else {
+			data = await response.text();
+		}
+
+		if (!response.ok) {
+			const error = typeof data === "object" ? data.error : data;
+			if (response.status === 401) {
+				localStorage.removeItem("auth_token");
+			}
+			throw new Error(error || `HTTP ${response.status}`);
+		}
+
+		return data;
+	}
+
 	// ===== AUTHENTICATION =====
 
 	/**
@@ -250,6 +296,51 @@ class TaskAPI {
 				task_id: taskId,
 				reminder_type: reminderType,
 				reminder_time: reminderTime,
+			}),
+		});
+	}
+
+	// ===== DIARY =====
+
+	/**
+	 * Get all diary entries for current user
+	 */
+	async getDiaryEntries() {
+		return this.request("/api/diary.php", {
+			method: "GET",
+		});
+	}
+
+	/**
+	 * Get a single diary entry by id
+	 */
+	async getDiaryEntry(id) {
+		return this.request(`/api/diary.php?id=${id}`, {
+			method: "GET",
+		});
+	}
+
+	/**
+	 * Create a diary entry, optionally with a voice note file/blob
+	 */
+	async createDiaryEntry({ title, content, entry_date, mood, audioBlob, audioFilename }) {
+		if (audioBlob) {
+			const formData = new FormData();
+			formData.append("title", title || "");
+			formData.append("content", content || "");
+			formData.append("entry_date", entry_date || "");
+			formData.append("mood", mood || "");
+			formData.append("audio_note", audioBlob, audioFilename || "voice-note.webm");
+			return this.requestFormData("/api/diary.php", formData);
+		}
+
+		return this.request("/api/diary.php", {
+			method: "POST",
+			body: JSON.stringify({
+				title,
+				content,
+				entry_date,
+				mood,
 			}),
 		});
 	}

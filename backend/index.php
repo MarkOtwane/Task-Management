@@ -222,6 +222,32 @@ header('Content-Type: text/html; charset=utf-8');
                     <div class="endpoint-description">Create a new reflection for a task</div>
                 </div>
             </div>
+
+            <!-- Daily Diary -->
+            <div class="section">
+                <h2>📓 Daily Diary</h2>
+
+                <div class="endpoint">
+                    <div class="endpoint-method method-get">GET</div>
+                    <span class="status">Authenticated</span>
+                    <div class="endpoint-path">/api/diary.php</div>
+                    <div class="endpoint-description">Get diary history for current user</div>
+                </div>
+
+                <div class="endpoint">
+                    <div class="endpoint-method method-get">GET</div>
+                    <span class="status">Authenticated</span>
+                    <div class="endpoint-path">/api/diary.php?id=1</div>
+                    <div class="endpoint-description">Get a single diary entry for current user</div>
+                </div>
+
+                <div class="endpoint">
+                    <div class="endpoint-method method-post">POST</div>
+                    <span class="status">Authenticated</span>
+                    <div class="endpoint-path">/api/diary.php</div>
+                    <div class="endpoint-description">Create diary entry (JSON or multipart with optional audio_note)</div>
+                </div>
+            </div>
             
             <!-- Reminders -->
             <div class="section">

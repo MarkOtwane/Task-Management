@@ -1066,6 +1066,133 @@
 				color: var(--text-tertiary);
 			}
 
+			/* ===== DIARY SECTION ===== */
+			.diary-layout {
+				display: grid;
+				grid-template-columns: 1.7fr 1fr;
+				gap: 20px;
+				align-items: start;
+				margin-bottom: 24px;
+			}
+
+			.diary-editor-card,
+			.diary-history-card,
+			.diary-detail-card {
+				background: var(--bg-card);
+				border: 1px solid var(--border-primary);
+				border-radius: 16px;
+				box-shadow: var(--shadow-card);
+			}
+
+			.diary-editor-card {
+				padding: 24px;
+				background-image: linear-gradient(180deg, rgba(16, 185, 129, 0.06) 0%, rgba(59, 130, 246, 0.04) 100%);
+			}
+
+			.diary-editor-card textarea {
+				min-height: 280px;
+				font-size: 16px;
+				line-height: 1.75;
+			}
+
+			.diary-history-card {
+				padding: 20px;
+			}
+
+			.diary-history-card h3 {
+				margin-bottom: 14px;
+				font-size: 18px;
+				color: var(--text-primary);
+			}
+
+			.diary-history-list {
+				display: flex;
+				flex-direction: column;
+				gap: 10px;
+				max-height: 540px;
+				overflow-y: auto;
+				padding-right: 4px;
+			}
+
+			.diary-history-item {
+				padding: 12px;
+				border-radius: 12px;
+				border: 1px solid var(--border-primary);
+				background: var(--bg-secondary);
+				cursor: pointer;
+				transition: all 0.2s ease;
+			}
+
+			.diary-history-item:hover {
+				transform: translateY(-2px);
+				border-color: var(--border-accent);
+			}
+
+			.diary-history-item .diary-item-title {
+				font-size: 14px;
+				font-weight: 700;
+				margin-bottom: 4px;
+				color: var(--text-primary);
+			}
+
+			.diary-history-item .diary-item-meta {
+				font-size: 12px;
+				color: var(--text-tertiary);
+			}
+
+			.diary-history-item .diary-item-preview {
+				font-size: 13px;
+				color: var(--text-secondary);
+				margin-top: 6px;
+				display: -webkit-box;
+				-webkit-line-clamp: 2;
+				-webkit-box-orient: vertical;
+				overflow: hidden;
+			}
+
+			.diary-recording-tools {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 10px;
+				align-items: center;
+			}
+
+			.diary-recording-status {
+				font-size: 13px;
+				color: var(--text-secondary);
+				font-weight: 600;
+			}
+
+			.diary-recording-status.recording {
+				color: #ef4444;
+			}
+
+			.diary-voice-preview {
+				width: 100%;
+				margin-top: 8px;
+			}
+
+			.diary-detail-card {
+				padding: 24px;
+			}
+
+			.diary-detail-title {
+				font-size: 24px;
+				margin-bottom: 8px;
+			}
+
+			.diary-detail-meta {
+				font-size: 13px;
+				color: var(--text-tertiary);
+				margin-bottom: 14px;
+			}
+
+			.diary-detail-content {
+				white-space: pre-wrap;
+				line-height: 1.8;
+				color: var(--text-secondary);
+			}
+
 			/* ===== NOTIFICATIONS ===== */
 			.notification {
 				position: fixed;
@@ -1145,6 +1272,10 @@
 				}
 
 				.tasks-grid {
+					grid-template-columns: 1fr;
+				}
+
+				.diary-layout {
 					grid-template-columns: 1fr;
 				}
 
@@ -1301,6 +1432,7 @@
 							<div class="nav-section-title">Main</div>
 							<a href="#" class="nav-link active" data-section="overview"> <span class="icon"><i class="fas fa-chart-bar"></i></span> Overview </a>
 							<a href="#" class="nav-link" data-section="tasks"> <span class="icon"><i class="fas fa-check"></i></span> All Tasks </a>
+							<a href="#" class="nav-link" data-section="diary"> <span class="icon"><i class="fas fa-book-open"></i></span> My Thoughts </a>
 							<a href="#" class="nav-link" data-section="analytics"> <span class="icon"><i class="fas fa-chart-line"></i></span> Analytics </a>
 						</div>
 						<div class="nav-section">
@@ -1430,6 +1562,56 @@
 							<h3>No tasks yet</h3>
 							<p>Create your first task to get started on your journey!</p>
 						</div>
+					</section>
+					<!-- Diary Section -->
+					<section id="diarySection" class="content-section hidden">
+						<div class="section-header">
+							<h1>Thought Canvas</h1>
+							<p>A calm, private place to write, feel, and reflect.</p>
+						</div>
+						<div class="diary-layout">
+							<div class="diary-editor-card">
+								<div class="form-group">
+									<label for="diaryDate">Date</label>
+									<input type="date" id="diaryDate" />
+								</div>
+								<div class="form-group">
+									<label for="diaryTitle">Title</label>
+									<input type="text" id="diaryTitle" placeholder="Today I felt..." />
+								</div>
+								<div class="form-group">
+									<label for="diaryMood">Mood (optional)</label>
+									<select id="diaryMood">
+										<option value="">Select your mood</option>
+										<option value="happy">Happy</option>
+										<option value="calm">Calm</option>
+										<option value="focused">Focused</option>
+										<option value="anxious">Anxious</option>
+										<option value="stressed">Stressed</option>
+										<option value="sad">Sad</option>
+									</select>
+								</div>
+								<div class="form-group">
+									<label for="diaryContent">Write your thoughts</label>
+									<textarea id="diaryContent" placeholder="Write anything on your mind..."></textarea>
+								</div>
+								<div class="form-group">
+									<label>Voice note (optional)</label>
+									<div class="diary-recording-tools">
+										<button class="btn btn-secondary btn-small" id="recordVoiceBtn" type="button">Record Voice</button>
+										<button class="btn btn-secondary btn-small" id="clearVoiceBtn" type="button">Clear Voice</button>
+										<span class="diary-recording-status" id="recordingStatus">Ready</span>
+									</div>
+									<audio id="diaryVoicePreview" class="diary-voice-preview hidden" controls></audio>
+								</div>
+								<button class="btn btn-primary" id="saveDiaryBtn" type="button">Save Diary Entry</button>
+							</div>
+							<div class="diary-history-card">
+								<h3>Previous Entries</h3>
+								<div id="diaryHistoryList" class="diary-history-list"></div>
+							</div>
+						</div>
+						<div id="diaryDetailCard" class="diary-detail-card hidden"></div>
 					</section>
 					<!-- Analytics Section -->
 					<section id="analyticsSection" class="content-section hidden">
@@ -1666,6 +1848,7 @@
 									console.log('No stored JWT token found');
 								}
 								loadTasks().catch((err) => console.warn('Failed to load tasks on init:', err));
+								loadDiaryEntries().catch((err) => console.warn('Failed to load diary on init:', err));
 							}
 						}
 			
@@ -1674,6 +1857,11 @@
 
 			let currentUser = storage.getCurrentUser();
 			let tasks = [];
+			let diaryEntries = [];
+			let diaryRecorder = null;
+			let diaryAudioChunks = [];
+			let diaryAudioBlob = null;
+			let diaryRecordingStream = null;
 			let editingTaskId = null;
 			let completingTaskId = null;
 
@@ -1822,6 +2010,7 @@
 				overview: document.getElementById("overviewSection"),
 				plans: document.getElementById("plansSection"),
 				tasks: document.getElementById("tasksSection"),
+				diary: document.getElementById("diarySection"),
 				analytics: document.getElementById("analyticsSection"),
 			};
 
@@ -1845,6 +2034,7 @@
 				if (sectionName === "overview") updateOverview();
 				if (sectionName === "plans") updatePlans();
 				if (sectionName === "tasks") renderTasks();
+				if (sectionName === "diary") renderDiaryHistory();
 				if (sectionName === "analytics") updateAnalytics();
 			}
 
@@ -1906,6 +2096,7 @@
 						showPage("dashboard");
 						showSection("overview");
 						loadTasks(); // Load tasks from backend
+									loadDiaryEntries(); // Load diary entries from backend
 						showNotification("Welcome back! 👋", "success");
 					} else {
 						showNotification("Login failed. Check credentials and try again.", "error");
@@ -2005,6 +2196,7 @@
 						showPage("dashboard");
 						showSection("overview");
 						loadTasks();
+									loadDiaryEntries();
 					} else {
 						showNotification("Registration failed: " + (response.message || "Unknown error"), "error");
 						console.error('Invalid registration response:', response);
@@ -2219,6 +2411,8 @@
 						currentUser = null;
 						storage.setCurrentUser(null);
 						tasks = [];
+						diaryEntries = [];
+						resetDiaryComposer();
 						// Clear the JWT token on logout
 						localStorage.removeItem('auth_token');
 						showPage("login");
@@ -2229,6 +2423,8 @@
 						currentUser = null;
 						storage.setCurrentUser(null);
 						tasks = [];
+						diaryEntries = [];
+						resetDiaryComposer();
 						// Clear the JWT token on logout
 						localStorage.removeItem('auth_token');
 						showPage("login");
@@ -2237,6 +2433,8 @@
 					currentUser = null;
 					storage.setCurrentUser(null);
 					tasks = [];
+					diaryEntries = [];
+					resetDiaryComposer();
 					// Clear the JWT token on logout
 					localStorage.removeItem('auth_token');
 					showPage("login");
@@ -2283,6 +2481,261 @@
 				if (!dueDate) return false;
 				return new Date(dueDate).getTime() < Date.now();
 			}
+
+			function getTodayDateValue() {
+				return new Date().toISOString().split("T")[0];
+			}
+
+			function formatDiaryDate(dateValue) {
+				if (!dateValue) return "Unknown date";
+				const parsed = new Date(`${dateValue}T00:00:00`);
+				return parsed.toLocaleDateString(undefined, {
+					year: "numeric",
+					month: "long",
+					day: "numeric",
+				});
+			}
+
+			function getDiaryAudioUrl(audioPath) {
+				if (!audioPath) return "";
+				if (audioPath.startsWith("http://") || audioPath.startsWith("https://")) return audioPath;
+				const root = API_URL.endsWith("/backend") ? API_URL.slice(0, -8) : API_URL;
+				return `${root}/${audioPath.replace(/^\/+/, "")}`;
+			}
+
+			function resetDiaryComposer() {
+				diaryAudioBlob = null;
+				diaryAudioChunks = [];
+				if (diaryRecorder && diaryRecorder.state === "recording") {
+					diaryRecorder.stop();
+				}
+				if (diaryRecordingStream) {
+					diaryRecordingStream.getTracks().forEach((track) => track.stop());
+					diaryRecordingStream = null;
+				}
+
+				const dateInput = document.getElementById("diaryDate");
+				const titleInput = document.getElementById("diaryTitle");
+				const moodInput = document.getElementById("diaryMood");
+				const contentInput = document.getElementById("diaryContent");
+				const status = document.getElementById("recordingStatus");
+				const preview = document.getElementById("diaryVoicePreview");
+				const recordBtn = document.getElementById("recordVoiceBtn");
+
+				if (!dateInput || !titleInput || !moodInput || !contentInput || !status || !preview || !recordBtn) return;
+
+				const today = getTodayDateValue();
+				dateInput.value = today;
+				titleInput.value = formatDiaryDate(today);
+				moodInput.value = "";
+				contentInput.value = "";
+				status.textContent = "Ready";
+				status.classList.remove("recording");
+				recordBtn.textContent = "Record Voice";
+				preview.classList.add("hidden");
+				preview.removeAttribute("src");
+			}
+
+			async function loadDiaryEntries() {
+				if (!api || !currentUser) return;
+
+				try {
+					const entries = await api.getDiaryEntries();
+					diaryEntries = Array.isArray(entries) ? entries : [];
+					renderDiaryHistory();
+				} catch (error) {
+					console.error("Error loading diary entries:", error);
+					diaryEntries = [];
+					renderDiaryHistory();
+				}
+			}
+
+			function renderDiaryHistory() {
+				const historyContainer = document.getElementById("diaryHistoryList");
+				if (!historyContainer) return;
+
+				if (!diaryEntries.length) {
+					historyContainer.innerHTML = '<div class="empty-state" style="padding:24px 12px;"><p>No diary entries yet. Start with your first thought today.</p></div>';
+					const detailCard = document.getElementById("diaryDetailCard");
+					if (detailCard) detailCard.classList.add("hidden");
+					return;
+				}
+
+				historyContainer.innerHTML = diaryEntries
+					.map((entry) => {
+						const previewText = (entry.content || "").slice(0, 110);
+						const mood = entry.mood ? ` | Mood: ${entry.mood}` : "";
+						return `
+							<div class="diary-history-item" data-entry-id="${entry.id}">
+								<div class="diary-item-title">${entry.title || formatDiaryDate(entry.entry_date)}</div>
+								<div class="diary-item-meta">${formatDiaryDate(entry.entry_date)}${mood}</div>
+								<div class="diary-item-preview">${previewText}${(entry.content || "").length > 110 ? "..." : ""}</div>
+							</div>
+						`;
+					})
+					.join("");
+
+				historyContainer.querySelectorAll(".diary-history-item").forEach((item) => {
+					item.addEventListener("click", () => {
+						const entryId = Number(item.dataset.entryId);
+						openDiaryEntry(entryId);
+					});
+				});
+			}
+
+			async function openDiaryEntry(entryId) {
+				if (!api) return;
+				try {
+					const entry = await api.getDiaryEntry(entryId);
+					renderDiaryEntryDetail(entry);
+				} catch (error) {
+					showNotification("Failed to load diary entry details", "error");
+					console.error("Failed to load diary entry", error);
+				}
+			}
+
+			function renderDiaryEntryDetail(entry) {
+				const detailCard = document.getElementById("diaryDetailCard");
+				if (!detailCard || !entry) return;
+
+				const mood = entry.mood ? ` | Mood: ${entry.mood}` : "";
+				const createdAtText = entry.created_at ? new Date(entry.created_at).toLocaleString() : "";
+				const audioHtml = entry.audio_file_path
+					? `<audio controls class="diary-voice-preview" src="${getDiaryAudioUrl(entry.audio_file_path)}"></audio>`
+					: "";
+
+				detailCard.innerHTML = `
+					<div class="diary-detail-title">${entry.title || formatDiaryDate(entry.entry_date)}</div>
+					<div class="diary-detail-meta">${formatDiaryDate(entry.entry_date)}${mood}${createdAtText ? ` | Saved: ${createdAtText}` : ""}</div>
+					<div class="diary-detail-content">${formatDescription(entry.content || "")}</div>
+					${audioHtml}
+				`;
+				detailCard.classList.remove("hidden");
+			}
+
+			async function toggleVoiceRecording() {
+				if (!("MediaRecorder" in window) || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+					showNotification("Voice recording is not supported in this browser", "warning");
+					return;
+				}
+
+				const recordBtn = document.getElementById("recordVoiceBtn");
+				const status = document.getElementById("recordingStatus");
+				const preview = document.getElementById("diaryVoicePreview");
+
+				if (diaryRecorder && diaryRecorder.state === "recording") {
+					diaryRecorder.stop();
+					if (diaryRecordingStream) {
+						diaryRecordingStream.getTracks().forEach((track) => track.stop());
+						diaryRecordingStream = null;
+					}
+					recordBtn.textContent = "Record Voice";
+					status.textContent = "Processing recording...";
+					status.classList.remove("recording");
+					return;
+				}
+
+				try {
+					diaryRecordingStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+					diaryAudioChunks = [];
+					diaryRecorder = new MediaRecorder(diaryRecordingStream);
+
+					diaryRecorder.ondataavailable = (event) => {
+						if (event.data && event.data.size > 0) {
+							diaryAudioChunks.push(event.data);
+						}
+					};
+
+					diaryRecorder.onstop = () => {
+						diaryAudioBlob = new Blob(diaryAudioChunks, { type: "audio/webm" });
+						preview.src = URL.createObjectURL(diaryAudioBlob);
+						preview.classList.remove("hidden");
+						status.textContent = "Voice note ready";
+					};
+
+					diaryRecorder.start();
+					recordBtn.textContent = "Stop Recording";
+					status.textContent = "Recording...";
+					status.classList.add("recording");
+				} catch (error) {
+					console.error("Failed to start recording", error);
+					showNotification("Microphone access denied or unavailable", "error");
+				}
+			}
+
+			function clearVoiceNote() {
+				diaryAudioBlob = null;
+				diaryAudioChunks = [];
+				const preview = document.getElementById("diaryVoicePreview");
+				const status = document.getElementById("recordingStatus");
+				if (preview) {
+					preview.classList.add("hidden");
+					preview.removeAttribute("src");
+				}
+				if (status) {
+					status.textContent = "Ready";
+					status.classList.remove("recording");
+				}
+			}
+
+			async function saveDiaryEntry() {
+				if (!api || !currentUser) {
+					showNotification("Please sign in to save diary entries", "error");
+					return;
+				}
+
+				const dateValue = document.getElementById("diaryDate").value || getTodayDateValue();
+				const titleValue = document.getElementById("diaryTitle").value.trim();
+				const moodValue = document.getElementById("diaryMood").value;
+				const contentValue = document.getElementById("diaryContent").value.trim();
+				const saveBtn = document.getElementById("saveDiaryBtn");
+
+				if (!contentValue) {
+					showNotification("Write your thoughts before saving", "warning");
+					return;
+				}
+
+				saveBtn.classList.add("loading");
+				saveBtn.textContent = "Saving...";
+
+				try {
+					const response = await api.createDiaryEntry({
+						title: titleValue || formatDiaryDate(dateValue),
+						content: contentValue,
+						entry_date: dateValue,
+						mood: moodValue,
+						audioBlob: diaryAudioBlob,
+						audioFilename: `voice-note-${Date.now()}.webm`,
+					});
+
+					if (response && response.entry) {
+						diaryEntries = [response.entry, ...diaryEntries];
+						renderDiaryHistory();
+						renderDiaryEntryDetail(response.entry);
+					}
+
+					showNotification("Diary entry saved", "success");
+					resetDiaryComposer();
+				} catch (error) {
+					console.error("Failed to save diary entry", error);
+					showNotification("Failed to save diary entry: " + error.message, "error");
+				} finally {
+					saveBtn.classList.remove("loading");
+					saveBtn.textContent = "Save Diary Entry";
+				}
+			}
+
+			document.getElementById("recordVoiceBtn").addEventListener("click", toggleVoiceRecording);
+			document.getElementById("clearVoiceBtn").addEventListener("click", clearVoiceNote);
+			document.getElementById("saveDiaryBtn").addEventListener("click", saveDiaryEntry);
+			document.getElementById("diaryDate").addEventListener("change", (event) => {
+				const titleInput = document.getElementById("diaryTitle");
+				if (!titleInput.value.trim()) {
+					titleInput.value = formatDiaryDate(event.target.value);
+				}
+			});
+
+			resetDiaryComposer();
 
 			// ===== TASK MODAL =====
 			const taskModal = document.getElementById("taskModal");
@@ -3163,6 +3616,7 @@
 				document.getElementById("userNameDisplay").textContent = `Welcome, ${currentUser.name}!`;
 				showPage("dashboard");
 				showSection("overview");
+				loadDiaryEntries();
 
 				// Initialize timer and reminder systems
 				updateCountdownTimers();
