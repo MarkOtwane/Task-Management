@@ -345,6 +345,31 @@ class TaskAPI {
 		});
 	}
 
+	/**
+	 * Update a diary entry by id
+	 */
+	async updateDiaryEntry(id, { title, content, entry_date, mood }) {
+		return this.request("/api/diary.php", {
+			method: "PUT",
+			body: JSON.stringify({
+				id,
+				title,
+				content,
+				entry_date,
+				mood,
+			}),
+		});
+	}
+
+	/**
+	 * Delete a diary entry by id
+	 */
+	async deleteDiaryEntry(id) {
+		return this.request(`/api/diary.php?id=${id}`, {
+			method: "DELETE",
+		});
+	}
+
 	// ===== PASSWORD RESET =====
 
 	/**

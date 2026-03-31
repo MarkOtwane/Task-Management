@@ -5,6 +5,8 @@
  * - GET /api/diary.php           -> list entries for current user
  * - GET /api/diary.php?id=123    -> single entry for current user
  * - POST /api/diary.php          -> create entry (JSON or multipart/form-data)
+ * - PUT /api/diary.php           -> update entry (JSON)
+ * - DELETE /api/diary.php?id=123 -> delete entry
  */
 
 require_once '../config/cors.php';
@@ -18,6 +20,10 @@ if ($method === 'GET') {
     getDiaryEntries($pdo, $userId);
 } elseif ($method === 'POST') {
     createDiaryEntry($pdo, $userId);
+} elseif ($method === 'PUT') {
+    updateDiaryEntry($pdo, $userId);
+} elseif ($method === 'DELETE') {
+    deleteDiaryEntry($pdo, $userId);
 } else {
     http_response_code(405);
     echo json_encode(['error' => 'Method not allowed']);
@@ -140,6 +146,128 @@ function createDiaryEntry($pdo, $userId) {
     } catch (PDOException $e) {
         http_response_code(500);
         echo json_encode(['error' => 'Failed to save diary entry: ' . $e->getMessage()]);
+    }
+}
+
+function updateDiaryEntry($pdo, $userId) {
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (!is_array($input)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Invalid request body']);
+        return;
+    }
+
+    $entryId = (int)($input['id'] ?? 0);
+    $title = trim($input['title'] ?? '');
+    $content = trim($input['content'] ?? '');
+    $entryDate = trim($input['entry_date'] ?? '');
+    $mood = trim($input['mood'] ?? '');
+
+    if ($entryId <= 0) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Valid diary entry id is required']);
+        return;
+    }
+
+    if ($content === '') {
+        http_response_code(400);
+        echo json_encode(['error' => 'Diary content is required']);
+        return;
+    }
+
+    if ($entryDate === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $entryDate)) {
+        $entryDate = date('Y-m-d');
+    }
+
+    if ($title === '') {
+        $title = date('F j, Y', strtotime($entryDate));
+    }
+
+    if ($mood === '') {
+        $mood = null;
+    }
+
+    try {
+        $updateStmt = $pdo->prepare(
+            'UPDATE diary_entries
+             SET entry_date = ?, title = ?, content = ?, mood = ?
+             WHERE id = ? AND user_id = ?'
+        );
+        $updateStmt->execute([$entryDate, $title, $content, $mood, $entryId, $userId]);
+
+        if ($updateStmt->rowCount() === 0) {
+            $existsStmt = $pdo->prepare('SELECT id FROM diary_entries WHERE id = ? AND user_id = ?');
+            $existsStmt->execute([$entryId, $userId]);
+            if (!$existsStmt->fetch()) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Diary entry not found']);
+                return;
+            }
+        }
+
+        $fetchStmt = $pdo->prepare(
+            'SELECT id, user_id, entry_date, title, content, mood, audio_file_path, created_at
+             FROM diary_entries
+             WHERE id = ? AND user_id = ?'
+        );
+        $fetchStmt->execute([$entryId, $userId]);
+        $entry = $fetchStmt->fetch();
+
+        echo json_encode([
+            'message' => 'Diary entry updated successfully',
+            'entry' => $entry,
+        ]);
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Failed to update diary entry: ' . $e->getMessage()]);
+    }
+}
+
+function deleteDiaryEntry($pdo, $userId) {
+    $entryId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+
+    if ($entryId <= 0) {
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (is_array($input)) {
+            $entryId = (int)($input['id'] ?? 0);
+        }
+    }
+
+    if ($entryId <= 0) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Valid diary entry id is required']);
+        return;
+    }
+
+    try {
+        $entryStmt = $pdo->prepare('SELECT audio_file_path FROM diary_entries WHERE id = ? AND user_id = ?');
+        $entryStmt->execute([$entryId, $userId]);
+        $entry = $entryStmt->fetch();
+
+        if (!$entry) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Diary entry not found']);
+            return;
+        }
+
+        $deleteStmt = $pdo->prepare('DELETE FROM diary_entries WHERE id = ? AND user_id = ?');
+        $deleteStmt->execute([$entryId, $userId]);
+
+        $audioPath = $entry['audio_file_path'] ?? null;
+        if (!empty($audioPath)) {
+            $fullAudioPath = __DIR__ . '/../../' . ltrim($audioPath, '/');
+            if (is_file($fullAudioPath)) {
+                @unlink($fullAudioPath);
+            }
+        }
+
+        echo json_encode([
+            'message' => 'Diary entry deleted successfully',
+            'id' => $entryId,
+        ]);
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Failed to delete diary entry: ' . $e->getMessage()]);
     }
 }
 

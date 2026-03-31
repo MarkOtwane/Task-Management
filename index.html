@@ -1123,6 +1123,11 @@
 				transition: all 0.2s ease;
 			}
 
+			.diary-history-item.editing {
+				border-color: var(--border-accent);
+				box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+			}
+
 			.diary-history-item:hover {
 				transform: translateY(-2px);
 				border-color: var(--border-accent);
@@ -1148,6 +1153,36 @@
 				-webkit-line-clamp: 2;
 				-webkit-box-orient: vertical;
 				overflow: hidden;
+			}
+
+			.diary-item-actions {
+				display: flex;
+				gap: 8px;
+				margin-top: 10px;
+			}
+
+			.diary-item-actions .btn {
+				padding: 6px 10px;
+				font-size: 12px;
+			}
+
+			.diary-edit-indicator {
+				display: inline-flex;
+				align-items: center;
+				font-size: 12px;
+				font-weight: 700;
+				color: var(--text-tertiary);
+				margin-bottom: 8px;
+			}
+
+			.diary-edit-indicator.active {
+				color: #3b82f6;
+			}
+
+			.diary-composer-actions {
+				display: flex;
+				gap: 10px;
+				flex-wrap: wrap;
 			}
 
 			.diary-recording-tools {
@@ -1675,6 +1710,7 @@
 									<label for="diaryContent">Write your thoughts</label>
 									<textarea id="diaryContent" placeholder="Write anything on your mind..."></textarea>
 								</div>
+								<div id="diaryEditIndicator" class="diary-edit-indicator hidden">Editing entry...</div>
 								<div class="form-group">
 									<label>Voice note (optional)</label>
 									<div class="diary-recording-tools">
@@ -1706,7 +1742,10 @@
 										</div>
 									</div>
 								</div>
-								<button class="btn btn-primary" id="saveDiaryBtn" type="button">Save Diary Entry</button>
+								<div class="diary-composer-actions">
+									<button class="btn btn-primary" id="saveDiaryBtn" type="button">Save Diary Entry</button>
+									<button class="btn btn-secondary hidden" id="cancelDiaryEditBtn" type="button">Cancel</button>
+								</div>
 							</div>
 							<div class="diary-history-card">
 								<h3>Previous Entries</h3>
@@ -1960,6 +1999,7 @@
 			let currentUser = storage.getCurrentUser();
 			let tasks = [];
 			let diaryEntries = [];
+			let editingDiaryEntryId = null;
 			let diaryRecorder = null;
 			let diaryAudioChunks = [];
 			let diaryAudioBlob = null;
@@ -2605,7 +2645,36 @@
 				return `${root}/${audioPath.replace(/^\/+/, "")}`;
 			}
 
-			function resetDiaryComposer() {
+			function setDiaryEditMode(entryId = null) {
+				editingDiaryEntryId = entryId;
+				const saveBtn = document.getElementById("saveDiaryBtn");
+				const cancelBtn = document.getElementById("cancelDiaryEditBtn");
+				const indicator = document.getElementById("diaryEditIndicator");
+
+				if (saveBtn) {
+					saveBtn.textContent = entryId ? "Update Diary Entry" : "Save Diary Entry";
+				}
+
+				if (cancelBtn) {
+					cancelBtn.classList.toggle("hidden", !entryId);
+				}
+
+				if (indicator) {
+					if (entryId) {
+						indicator.textContent = "Editing entry...";
+						indicator.classList.remove("hidden");
+						indicator.classList.add("active");
+					} else {
+						indicator.textContent = "Editing entry...";
+						indicator.classList.add("hidden");
+						indicator.classList.remove("active");
+					}
+				}
+
+				renderDiaryHistory();
+			}
+
+			function resetDiaryComposer(resetEditMode = true) {
 				diaryAudioBlob = null;
 				diaryAudioChunks = [];
 				if (diaryRecorder && diaryRecorder.state === "recording") {
@@ -2636,6 +2705,10 @@
 				recordBtn.textContent = "Record Voice";
 				preview.classList.add("hidden");
 				preview.removeAttribute("src");
+
+				if (resetEditMode) {
+					setDiaryEditMode(null);
+				}
 			}
 
 			async function loadDiaryEntries() {
@@ -2667,11 +2740,16 @@
 					.map((entry) => {
 						const previewText = (entry.content || "").slice(0, 110);
 						const mood = entry.mood ? ` | Mood: ${entry.mood}` : "";
+						const editingClass = Number(editingDiaryEntryId) === Number(entry.id) ? "editing" : "";
 						return `
-							<div class="diary-history-item" data-entry-id="${entry.id}">
+							<div class="diary-history-item ${editingClass}" data-entry-id="${entry.id}">
 								<div class="diary-item-title">${entry.title || formatDiaryDate(entry.entry_date)}</div>
 								<div class="diary-item-meta">${formatDiaryDate(entry.entry_date)}${mood}</div>
 								<div class="diary-item-preview">${previewText}${(entry.content || "").length > 110 ? "..." : ""}</div>
+								<div class="diary-item-actions">
+									<button class="btn btn-secondary btn-small diary-edit-btn" data-entry-id="${entry.id}" type="button">Edit</button>
+									<button class="btn btn-secondary btn-small diary-delete-btn" data-entry-id="${entry.id}" type="button">Delete</button>
+								</div>
 							</div>
 						`;
 					})
@@ -2683,6 +2761,112 @@
 						openDiaryEntry(entryId);
 					});
 				});
+
+				historyContainer.querySelectorAll(".diary-edit-btn").forEach((button) => {
+					button.addEventListener("click", (event) => {
+						event.stopPropagation();
+						const entryId = Number(button.dataset.entryId);
+						const entry = diaryEntries.find((item) => Number(item.id) === entryId);
+						if (entry) {
+							handleEdit(entry);
+						}
+					});
+				});
+
+				historyContainer.querySelectorAll(".diary-delete-btn").forEach((button) => {
+					button.addEventListener("click", (event) => {
+						event.stopPropagation();
+						const entryId = Number(button.dataset.entryId);
+						handleDelete(entryId);
+					});
+				});
+			}
+
+			function handleEdit(entry) {
+				if (!entry) return;
+				document.getElementById("diaryDate").value = entry.entry_date || getTodayDateValue();
+				document.getElementById("diaryTitle").value = entry.title || formatDiaryDate(entry.entry_date);
+				document.getElementById("diaryMood").value = entry.mood || "";
+				document.getElementById("diaryContent").value = entry.content || "";
+				clearVoiceNote();
+				setDiaryEditMode(Number(entry.id));
+				renderDiaryEntryDetail(entry);
+			}
+
+			async function handleUpdate() {
+				if (!api || !currentUser || !editingDiaryEntryId) {
+					return;
+				}
+
+				const dateValue = document.getElementById("diaryDate").value || getTodayDateValue();
+				const titleValue = document.getElementById("diaryTitle").value.trim();
+				const moodValue = document.getElementById("diaryMood").value;
+				const contentValue = document.getElementById("diaryContent").value.trim();
+				const saveBtn = document.getElementById("saveDiaryBtn");
+
+				if (!contentValue) {
+					showNotification("Write your thoughts before updating", "warning");
+					return;
+				}
+
+				saveBtn.classList.add("loading");
+				saveBtn.textContent = "Updating...";
+
+				try {
+					const response = await api.updateDiaryEntry(editingDiaryEntryId, {
+						title: titleValue || formatDiaryDate(dateValue),
+						content: contentValue,
+						entry_date: dateValue,
+						mood: moodValue,
+					});
+
+					if (response && response.entry) {
+						diaryEntries = diaryEntries.map((entry) =>
+							Number(entry.id) === Number(response.entry.id) ? response.entry : entry
+						);
+						renderDiaryHistory();
+						renderDiaryEntryDetail(response.entry);
+					}
+
+					showNotification("Diary entry updated", "success");
+					resetDiaryComposer();
+				} catch (error) {
+					console.error("Failed to update diary entry", error);
+					showNotification("Failed to update diary entry: " + error.message, "error");
+				} finally {
+					saveBtn.classList.remove("loading");
+					saveBtn.textContent = editingDiaryEntryId ? "Update Diary Entry" : "Save Diary Entry";
+				}
+			}
+
+			function cancelDiaryEdit() {
+				if (!editingDiaryEntryId) return;
+				resetDiaryComposer();
+				showNotification("Edit canceled", "info");
+			}
+
+			async function handleDelete(id) {
+				if (!api || !currentUser || !id) return;
+				if (!confirm("Are you sure you want to delete this diary entry?")) return;
+
+				try {
+					await api.deleteDiaryEntry(id);
+					diaryEntries = diaryEntries.filter((entry) => Number(entry.id) !== Number(id));
+					renderDiaryHistory();
+					if (Number(editingDiaryEntryId) === Number(id)) {
+						resetDiaryComposer();
+					}
+
+					const detailCard = document.getElementById("diaryDetailCard");
+					if (detailCard) {
+						detailCard.classList.add("hidden");
+					}
+
+					showNotification("Diary entry deleted", "success");
+				} catch (error) {
+					console.error("Failed to delete diary entry", error);
+					showNotification("Failed to delete diary entry: " + error.message, "error");
+				}
 			}
 
 			async function openDiaryEntry(entryId) {
@@ -2786,6 +2970,11 @@
 					return;
 				}
 
+				if (editingDiaryEntryId) {
+					await handleUpdate();
+					return;
+				}
+
 				const dateValue = document.getElementById("diaryDate").value || getTodayDateValue();
 				const titleValue = document.getElementById("diaryTitle").value.trim();
 				const moodValue = document.getElementById("diaryMood").value;
@@ -2830,6 +3019,7 @@
 			document.getElementById("recordVoiceBtn").addEventListener("click", toggleVoiceRecording);
 			document.getElementById("clearVoiceBtn").addEventListener("click", clearVoiceNote);
 			document.getElementById("saveDiaryBtn").addEventListener("click", saveDiaryEntry);
+			document.getElementById("cancelDiaryEditBtn").addEventListener("click", cancelDiaryEdit);
 			document.getElementById("diaryDate").addEventListener("change", (event) => {
 				const titleInput = document.getElementById("diaryTitle");
 				if (!titleInput.value.trim()) {
