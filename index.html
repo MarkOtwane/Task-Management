@@ -1105,6 +1105,13 @@
 				color: var(--text-primary);
 			}
 
+			.diary-current-date {
+				font-size: 13px;
+				font-weight: 600;
+				color: var(--text-tertiary);
+				margin-bottom: 10px;
+			}
+
 			.diary-history-list {
 				display: flex;
 				flex-direction: column;
@@ -1306,6 +1313,10 @@
 			.transcription-actions button:disabled {
 				opacity: 0.5;
 				cursor: not-allowed;
+			}
+
+			.transcription-controls .btn i {
+				margin-right: 6px;
 			}
 
 			/* ===== NOTIFICATIONS ===== */
@@ -1686,6 +1697,7 @@
 						</div>
 						<div class="diary-layout">
 							<div class="diary-editor-card">
+								<div id="diaryCurrentDateHeader" class="diary-current-date"></div>
 								<div class="form-group">
 									<label for="diaryDate">Date</label>
 									<input type="date" id="diaryDate" />
@@ -1730,8 +1742,8 @@
 												<option value="sw-TZ">Swahili (Tanzania)</option>
 												<option value="sw-KE">Swahili (Kenya)</option>
 											</select>
-											<button class="btn btn-secondary btn-small" id="startTranscriptionBtn" type="button">🎤 Start Listening</button>
-											<button class="btn btn-secondary btn-small" id="stopTranscriptionBtn" type="button" disabled>⏹️ Stop</button>
+											<button class="btn btn-secondary btn-small" id="startTranscriptionBtn" type="button"><i class="fas fa-microphone"></i>Start Listening</button>
+											<button class="btn btn-secondary btn-small" id="stopTranscriptionBtn" type="button" disabled><i class="fas fa-stop"></i>Stop</button>
 											<span class="transcription-status" id="transcriptionStatus">Ready</span>
 										</div>
 										<div id="transcriptionLiveDisplay" class="transcription-live-display hidden"></div>
@@ -2631,11 +2643,25 @@
 			function formatDiaryDate(dateValue) {
 				if (!dateValue) return "Unknown date";
 				const parsed = new Date(`${dateValue}T00:00:00`);
-				return parsed.toLocaleDateString(undefined, {
-					year: "numeric",
-					month: "long",
-					day: "numeric",
-				});
+				const day = parsed.getDate();
+				const month = parsed.toLocaleString("en-US", { month: "long" });
+				const year = parsed.getFullYear();
+
+				const mod100 = day % 100;
+				let suffix = "th";
+				if (mod100 < 11 || mod100 > 13) {
+					if (day % 10 === 1) suffix = "st";
+					else if (day % 10 === 2) suffix = "nd";
+					else if (day % 10 === 3) suffix = "rd";
+				}
+
+				return `${day}${suffix} ${month} ${year}`;
+			}
+
+			function syncDiaryDateHeader(dateValue) {
+				const header = document.getElementById("diaryCurrentDateHeader");
+				if (!header) return;
+				header.textContent = `Entry Date: ${formatDiaryDate(dateValue || getTodayDateValue())}`;
 			}
 
 			function getDiaryAudioUrl(audioPath) {
@@ -2698,6 +2724,7 @@
 				const today = getTodayDateValue();
 				dateInput.value = today;
 				titleInput.value = formatDiaryDate(today);
+				syncDiaryDateHeader(today);
 				moodInput.value = "";
 				contentInput.value = "";
 				status.textContent = "Ready";
@@ -2788,6 +2815,7 @@
 				document.getElementById("diaryTitle").value = entry.title || formatDiaryDate(entry.entry_date);
 				document.getElementById("diaryMood").value = entry.mood || "";
 				document.getElementById("diaryContent").value = entry.content || "";
+				syncDiaryDateHeader(entry.entry_date || getTodayDateValue());
 				clearVoiceNote();
 				setDiaryEditMode(Number(entry.id));
 				renderDiaryEntryDetail(entry);
@@ -3021,6 +3049,7 @@
 			document.getElementById("saveDiaryBtn").addEventListener("click", saveDiaryEntry);
 			document.getElementById("cancelDiaryEditBtn").addEventListener("click", cancelDiaryEdit);
 			document.getElementById("diaryDate").addEventListener("change", (event) => {
+				syncDiaryDateHeader(event.target.value);
 				const titleInput = document.getElementById("diaryTitle");
 				if (!titleInput.value.trim()) {
 					titleInput.value = formatDiaryDate(event.target.value);
