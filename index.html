@@ -1193,6 +1193,86 @@
 				color: var(--text-secondary);
 			}
 
+			/* ===== SPEECH TRANSCRIPTION ===== */
+			.transcription-container {
+				background: var(--bg-tertiary);
+				border: 1px solid var(--border-primary);
+				border-radius: 12px;
+				padding: 16px;
+				margin-top: 8px;
+			}
+
+			.transcription-controls {
+				display: flex;
+				gap: 10px;
+				align-items: center;
+				margin-bottom: 12px;
+				flex-wrap: wrap;
+			}
+
+			.transcription-language-select {
+				padding: 8px 12px;
+				border: 1px solid var(--border-primary);
+				border-radius: 6px;
+				font-size: 14px;
+				background: var(--bg-input);
+				color: var(--text-primary);
+				cursor: pointer;
+			}
+
+			.transcription-language-select:focus {
+				outline: none;
+				border-color: var(--border-accent);
+			}
+
+			.transcription-status {
+				font-size: 12px;
+				font-weight: 600;
+				color: var(--text-secondary);
+			}
+
+			.transcription-status.listening {
+				color: #3b82f6;
+				animation: pulse 1s infinite;
+			}
+
+			.transcription-status.error {
+				color: #ef4444;
+			}
+
+			@keyframes pulse {
+				0% { opacity: 1; }
+				50% { opacity: 0.6; }
+				100% { opacity: 1; }
+			}
+
+			.transcription-live-display {
+				background: var(--bg-input);
+				border: 2px solid var(--border-accent);
+				border-radius: 8px;
+				padding: 12px;
+				margin: 12px 0;
+				min-height: 50px;
+				color: var(--text-primary);
+				font-style: italic;
+				line-height: 1.5;
+			}
+
+			.transcription-live-display.hidden {
+				display: none;
+			}
+
+			.transcription-actions {
+				display: flex;
+				gap: 10px;
+				flex-wrap: wrap;
+			}
+
+			.transcription-actions button:disabled {
+				opacity: 0.5;
+				cursor: not-allowed;
+			}
+
 			/* ===== NOTIFICATIONS ===== */
 			.notification {
 				position: fixed;
@@ -1603,6 +1683,28 @@
 										<span class="diary-recording-status" id="recordingStatus">Ready</span>
 									</div>
 									<audio id="diaryVoicePreview" class="diary-voice-preview hidden" controls></audio>
+								</div>
+								<!-- Speech Transcription Component -->
+								<div class="form-group">
+									<label>Speech-to-Text Transcription</label>
+									<div class="transcription-container">
+										<div class="transcription-controls">
+											<select id="transcriptionLanguage" class="transcription-language-select">
+												<option value="en-US">English</option>
+												<option value="sw-TZ">Swahili (Tanzania)</option>
+												<option value="sw-KE">Swahili (Kenya)</option>
+											</select>
+											<button class="btn btn-secondary btn-small" id="startTranscriptionBtn" type="button">🎤 Start Listening</button>
+											<button class="btn btn-secondary btn-small" id="stopTranscriptionBtn" type="button" disabled>⏹️ Stop</button>
+											<span class="transcription-status" id="transcriptionStatus">Ready</span>
+										</div>
+										<div id="transcriptionLiveDisplay" class="transcription-live-display hidden"></div>
+										<div class="transcription-actions">
+											<button class="btn btn-secondary btn-small" id="appendTranscriptionBtn" type="button" disabled>Append to Text</button>
+											<button class="btn btn-secondary btn-small" id="replaceTranscriptionBtn" type="button" disabled>Replace Text</button>
+											<button class="btn btn-secondary btn-small" id="clearTranscriptionBtn" type="button" disabled>Clear</button>
+										</div>
+									</div>
 								</div>
 								<button class="btn btn-primary" id="saveDiaryBtn" type="button">Save Diary Entry</button>
 							</div>
@@ -2736,6 +2838,141 @@
 			});
 
 			resetDiaryComposer();
+
+			// ===== SPEECH TRANSCRIPTION ===== 
+			let transcriptionRecognition = null;
+			let transcriptionText = "";
+			let isTranscribing = false;
+
+			function initializeTranscription() {
+				if (transcriptionRecognition) return;
+
+				const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+				if (!SpeechRecognition) {
+					showNotification("Speech Recognition not supported in this browser", "warning");
+					return false;
+				}
+
+				transcriptionRecognition = new SpeechRecognition();
+				transcriptionRecognition.continuous = true;
+				transcriptionRecognition.interimResults = true;
+				transcriptionRecognition.lang = document.getElementById("transcriptionLanguage").value;
+
+				transcriptionRecognition.onstart = () => {
+					isTranscribing = true;
+					transcriptionText = "";
+					document.getElementById("startTranscriptionBtn").disabled = true;
+					document.getElementById("stopTranscriptionBtn").disabled = false;
+					const status = document.getElementById("transcriptionStatus");
+					status.textContent = "🎤 Listening...";
+					status.classList.add("listening");
+					document.getElementById("transcriptionLiveDisplay").classList.remove("hidden");
+				};
+
+				transcriptionRecognition.onresult = (event) => {
+					let interimTranscript = "";
+
+					for (let i = event.resultIndex; i < event.results.length; i++) {
+						const transcript = event.results[i][0].transcript;
+
+						if (event.results[i].isFinal) {
+							transcriptionText += transcript + " ";
+						} else {
+							interimTranscript += transcript;
+						}
+					}
+
+					const liveDisplay = document.getElementById("transcriptionLiveDisplay");
+					liveDisplay.textContent = (transcriptionText + interimTranscript).trim();
+				};
+
+				transcriptionRecognition.onerror = (event) => {
+					console.error("Transcription error:", event.error);
+					const status = document.getElementById("transcriptionStatus");
+					status.textContent = "❌ Error: " + event.error;
+					status.classList.add("error");
+					showNotification("Transcription error: " + event.error, "error");
+				};
+
+				transcriptionRecognition.onend = () => {
+					isTranscribing = false;
+					document.getElementById("startTranscriptionBtn").disabled = false;
+					document.getElementById("stopTranscriptionBtn").disabled = true;
+					const status = document.getElementById("transcriptionStatus");
+					status.classList.remove("listening", "error");
+					status.textContent = "Ready";
+
+					if (transcriptionText.trim()) {
+						document.getElementById("appendTranscriptionBtn").disabled = false;
+						document.getElementById("replaceTranscriptionBtn").disabled = false;
+						document.getElementById("clearTranscriptionBtn").disabled = false;
+					}
+				};
+
+				return true;
+			}
+
+			// Transcription Controls
+			document.getElementById("transcriptionLanguage").addEventListener("change", (e) => {
+				if (transcriptionRecognition) {
+					transcriptionRecognition.lang = e.target.value;
+				}
+			});
+
+			document.getElementById("startTranscriptionBtn").addEventListener("click", (e) => {
+				e.preventDefault();
+				if (!initializeTranscription()) return;
+				
+				transcriptionText = "";
+				document.getElementById("transcriptionLiveDisplay").textContent = "";
+				transcriptionRecognition.start();
+			});
+
+			document.getElementById("stopTranscriptionBtn").addEventListener("click", (e) => {
+				e.preventDefault();
+				if (transcriptionRecognition && isTranscribing) {
+					transcriptionRecognition.stop();
+				}
+			});
+
+			document.getElementById("appendTranscriptionBtn").addEventListener("click", (e) => {
+				e.preventDefault();
+				if (!transcriptionText.trim()) return;
+				
+				const textArea = document.getElementById("diaryContent");
+				const currentText = textArea.value.trim();
+				textArea.value = currentText ? currentText + "\n\n" + transcriptionText.trim() : transcriptionText.trim();
+				showNotification("Transcription appended to your diary", "success");
+				transcriptionText = "";
+				document.getElementById("transcriptionLiveDisplay").classList.add("hidden");
+				document.getElementById("appendTranscriptionBtn").disabled = true;
+				document.getElementById("replaceTranscriptionBtn").disabled = true;
+				document.getElementById("clearTranscriptionBtn").disabled = true;
+			});
+
+			document.getElementById("replaceTranscriptionBtn").addEventListener("click", (e) => {
+				e.preventDefault();
+				if (!transcriptionText.trim()) return;
+				
+				document.getElementById("diaryContent").value = transcriptionText.trim();
+				showNotification("Diary text replaced with transcription", "success");
+				transcriptionText = "";
+				document.getElementById("transcriptionLiveDisplay").classList.add("hidden");
+				document.getElementById("appendTranscriptionBtn").disabled = true;
+				document.getElementById("replaceTranscriptionBtn").disabled = true;
+				document.getElementById("clearTranscriptionBtn").disabled = true;
+			});
+
+			document.getElementById("clearTranscriptionBtn").addEventListener("click", (e) => {
+				e.preventDefault();
+				transcriptionText = "";
+				document.getElementById("transcriptionLiveDisplay").textContent = "";
+				document.getElementById("transcriptionLiveDisplay").classList.add("hidden");
+				document.getElementById("appendTranscriptionBtn").disabled = true;
+				document.getElementById("replaceTranscriptionBtn").disabled = true;
+				document.getElementById("clearTranscriptionBtn").disabled = true;
+				showNotification("Transcription cleared", "info");
+			});
 
 			// ===== TASK MODAL =====
 			const taskModal = document.getElementById("taskModal");
