@@ -114,7 +114,7 @@ function createDiaryEntry($pdo, $userId) {
     }
 
     if ($title === '') {
-        $title = date('F j, Y', strtotime($entryDate));
+        $title = formatHumanDiaryDate($entryDate);
     }
 
     if ($mood === '') {
@@ -180,7 +180,7 @@ function updateDiaryEntry($pdo, $userId) {
     }
 
     if ($title === '') {
-        $title = date('F j, Y', strtotime($entryDate));
+        $title = formatHumanDiaryDate($entryDate);
     }
 
     if ($mood === '') {
@@ -269,6 +269,30 @@ function deleteDiaryEntry($pdo, $userId) {
         http_response_code(500);
         echo json_encode(['error' => 'Failed to delete diary entry: ' . $e->getMessage()]);
     }
+}
+
+function formatHumanDiaryDate($dateValue) {
+    $timestamp = strtotime($dateValue);
+    if ($timestamp === false) {
+        $timestamp = time();
+    }
+
+    $day = (int)date('j', $timestamp);
+    $month = date('F', $timestamp);
+    $year = date('Y', $timestamp);
+
+    $suffix = 'th';
+    if ($day % 100 < 11 || $day % 100 > 13) {
+        if ($day % 10 === 1) {
+            $suffix = 'st';
+        } elseif ($day % 10 === 2) {
+            $suffix = 'nd';
+        } elseif ($day % 10 === 3) {
+            $suffix = 'rd';
+        }
+    }
+
+    return $day . $suffix . ' ' . $month . ' ' . $year;
 }
 
 function processAudioUpload($audioFile, $userId) {
