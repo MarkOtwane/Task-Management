@@ -1,0 +1,24 @@
+{
+	"name": "task-management",
+	"version": "1.0.0",
+	"description": "## [rocket] Feature Implementation Complete",
+	"main": "MIGRATE_LOCAL_TO_BACKEND.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"sync:fontawesome": "mkdir -p assets/vendor/fontawesome/css assets/vendor/fontawesome/webfonts && cp node_modules/@fortawesome/fontawesome-free/css/all.min.css assets/vendor/fontawesome/css/all.min.css && cp node_modules/@fortawesome/fontawesome-free/webfonts/* assets/vendor/fontawesome/webfonts/"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/MarkOtwane/Task-Management.git"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/MarkOtwane/Task-Management/issues"
+	},
+	"homepage": "https://github.com/MarkOtwane/Task-Management#readme",
+	"dependencies": {
+		"@fortawesome/fontawesome-free": "^7.2.0"
+	}
+}

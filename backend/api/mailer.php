@@ -214,10 +214,9 @@ function sendTaskReminderEmail($toEmail, $taskTitle, $reminderTime) {
     $subject = "Task Reminder: $taskTitle - TaskFlow";
     
     $htmlBody = <<<HTML
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="text-align: center; border-bottom: 2px solid #667eea; padding-bottom: 20px; margin-bottom: 30px;">
-            <h2 style="color: #667eea; margin: 0;"><i class="fas fa-bell"></i> Task Reminder</h2>
+            <h2 style="color: #667eea; margin: 0;">🔔 Task Reminder</h2>
         </div>
         
         <p>Hello,</p>
@@ -250,10 +249,9 @@ function sendMeetingInvitationEmail($toEmail, $taskTitle, $meetingLink, $dueDate
     $meetingDateTime = $dueDate && $dueTime ? date('F j, Y \a\t g:i A', strtotime("$dueDate $dueTime")) : 'TBD';
     
     $htmlBody = <<<HTML
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="text-align: center; border-bottom: 2px solid #667eea; padding-bottom: 20px; margin-bottom: 30px;">
-            <h2 style="color: #667eea; margin: 0;"><i class="fas fa-calendar"></i> Meeting Invitation</h2>
+            <h2 style="color: #667eea; margin: 0;">📅 Meeting Invitation</h2>
         </div>
         
         <p>Hello,</p>
@@ -262,12 +260,12 @@ function sendMeetingInvitationEmail($toEmail, $taskTitle, $meetingLink, $dueDate
         
         <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="margin: 0 0 15px 0; color: #333;">${taskTitle}</h3>
-            <p style="margin: 5px 0; color: #666;"><strong><i class="fas fa-calendar"></i> Date & Time:</strong> ${meetingDateTime}</p>
-            <p style="margin: 5px 0; color: #666;"><strong><i class="fas fa-user"></i> Organizer:</strong> ${inviterName}</p>
+            <p style="margin: 5px 0; color: #666;"><strong>📅 Date & Time:</strong> ${meetingDateTime}</p>
+            <p style="margin: 5px 0; color: #666;"><strong>👤 Organizer:</strong> ${inviterName}</p>
         </div>
         
         <div style="text-align: center; margin: 30px 0;">
-            <a href="${meetingLink}" style="background-color: #667eea; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;"><i class="fas fa-link"></i> Join Meeting</a>
+            <a href="${meetingLink}" style="background-color: #667eea; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">🔗 Join Meeting</a>
         </div>
         
         <p style="color: #666; font-size: 14px;">Meeting Link: <a href="${meetingLink}" style="color: #667eea;">${meetingLink}</a></p>
@@ -289,10 +287,9 @@ function sendTaskDeadlineEmail($toEmail, $taskTitle, $dueDate) {
     $subject = "Task Deadline Alert: $taskTitle - TaskFlow";
     
     $htmlBody = <<<HTML
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="text-align: center; border-bottom: 2px solid #ef4444; padding-bottom: 20px; margin-bottom: 30px;">
-            <h2 style="color: #ef4444; margin: 0;"><i class="fas fa-exclamation-triangle"></i> Task Deadline Alert</h2>
+            <h2 style="color: #ef4444; margin: 0;">⚠️ Task Deadline Alert</h2>
         </div>
         
         <p>Hello,</p>
