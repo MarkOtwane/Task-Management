@@ -4,6 +4,8 @@
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Task Manager Pro - Reflective Task Management</title>
+		<link rel="preload" href="assets/fonts/material-icons/material-icons.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+		<link rel="stylesheet" href="assets/styles/material-icons.css" />
 
 		<style>
 			/* ===== CSS CUSTOM PROPERTIES ===== */
@@ -392,6 +394,9 @@
 			}
 
 			.sidebar-header h2 {
+				display: flex;
+				align-items: center;
+				gap: 8px;
 				font-size: 24px;
 				margin-bottom: 5px;
 			}
@@ -1550,7 +1555,7 @@
 				<!-- Sidebar -->
 				<aside class="sidebar" id="sidebar">
 					<div class="sidebar-header">
-						<h2><i class="fas fa-list-check"></i> TaskFlow</h2>
+						<h2><span class="material-icons icon-24" aria-hidden="true">task_alt</span> TaskFlow</h2>
 						<p id="userNameDisplay">Welcome!</p>
 					</div>
 					<nav class="sidebar-nav">
