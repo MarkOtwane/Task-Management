@@ -370,6 +370,70 @@ class TaskAPI {
 		});
 	}
 
+	// ===== PREACHING =====
+
+	/**
+	 * Get all preaching entries for current user
+	 */
+	async getPreachingEntries(filters = {}) {
+		const searchParams = new URLSearchParams();
+		if (filters.search) searchParams.set("search", filters.search);
+		if (filters.tag) searchParams.set("tag", filters.tag);
+		const query = searchParams.toString();
+		return this.request(`/api/preaching.php${query ? `?${query}` : ""}`, {
+			method: "GET",
+		});
+	}
+
+	/**
+	 * Get a single preaching entry by id
+	 */
+	async getPreachingEntry(id) {
+		return this.request(`/api/preaching.php?id=${id}`, {
+			method: "GET",
+		});
+	}
+
+	/**
+	 * Create a preaching entry
+	 */
+	async createPreachingEntry({ title, preacher, content, tags = "" }) {
+		return this.request("/api/preaching.php", {
+			method: "POST",
+			body: JSON.stringify({
+				title,
+				preacher,
+				content,
+				tags,
+			}),
+		});
+	}
+
+	/**
+	 * Update a preaching entry by id
+	 */
+	async updatePreachingEntry(id, { title, preacher, content, tags = "" }) {
+		return this.request("/api/preaching.php", {
+			method: "PUT",
+			body: JSON.stringify({
+				id,
+				title,
+				preacher,
+				content,
+				tags,
+			}),
+		});
+	}
+
+	/**
+	 * Delete a preaching entry by id
+	 */
+	async deletePreachingEntry(id) {
+		return this.request(`/api/preaching.php?id=${id}`, {
+			method: "DELETE",
+		});
+	}
+
 	// ===== PASSWORD RESET =====
 
 	/**

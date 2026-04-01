@@ -137,6 +137,30 @@ function initializeDatabase($pdo) {
             ON diary_entries(user_id, entry_date DESC, created_at DESC)
         ");
 
+        // Preaching notes table (isolated from tasks and diary modules)
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS preaching_entries (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                title VARCHAR(255) NOT NULL,
+                preacher VARCHAR(255) NOT NULL,
+                content TEXT NOT NULL,
+                tags TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ");
+
+        $pdo->exec("
+            CREATE INDEX IF NOT EXISTS idx_preaching_entries_user_updated
+            ON preaching_entries(user_id, updated_at DESC, created_at DESC)
+        ");
+
+        $pdo->exec("
+            CREATE INDEX IF NOT EXISTS idx_preaching_entries_user_title
+            ON preaching_entries(user_id, title)
+        ");
+
         // Password reset tokens table
         $pdo->exec("
             CREATE TABLE IF NOT EXISTS password_reset_tokens (

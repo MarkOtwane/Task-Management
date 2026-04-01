@@ -1240,6 +1240,282 @@
 				color: var(--text-secondary);
 			}
 
+			/* ===== PREACHING SECTION ===== */
+			.preaching-layout {
+				display: grid;
+				grid-template-columns: minmax(0, 1.65fr) minmax(300px, 0.95fr);
+				gap: 20px;
+				align-items: start;
+				margin-bottom: 24px;
+			}
+
+			.preaching-editor-card,
+			.preaching-history-card,
+			.preaching-detail-card {
+				background: var(--bg-card);
+				border: 1px solid var(--border-primary);
+				border-radius: 16px;
+				box-shadow: var(--shadow-card);
+			}
+
+			.preaching-editor-card {
+				padding: 24px;
+				background-image: linear-gradient(180deg, rgba(59, 130, 246, 0.06) 0%, rgba(16, 185, 129, 0.04) 100%);
+			}
+
+			.preaching-editor-shell {
+				border: 1px solid var(--border-primary);
+				border-radius: 12px;
+				overflow: hidden;
+				background: var(--bg-input);
+			}
+
+			.preaching-editor-toolbar {
+				border-bottom: 1px solid var(--border-primary);
+				background: var(--bg-secondary);
+			}
+
+			.preaching-editor-toolbar .ql-toolbar.ql-snow {
+				border: none;
+				padding: 10px 12px;
+			}
+
+			.preaching-editor-toolbar .ql-toolbar button,
+			.preaching-editor-toolbar .ql-toolbar .ql-picker {
+				color: var(--text-primary);
+			}
+
+			.preaching-editor-toolbar .ql-toolbar .ql-stroke {
+				stroke: var(--text-secondary);
+			}
+
+			.preaching-editor-toolbar .ql-toolbar .ql-fill {
+				fill: var(--text-secondary);
+			}
+
+			.preaching-editor-toolbar .ql-toolbar .ql-active .ql-stroke,
+			.preaching-editor-toolbar .ql-toolbar .ql-active .ql-fill,
+			.preaching-editor-toolbar .ql-toolbar button:hover .ql-stroke,
+			.preaching-editor-toolbar .ql-toolbar button:hover .ql-fill {
+				stroke: var(--text-accent);
+				fill: var(--text-accent);
+			}
+
+			.preaching-editor {
+				min-height: 360px;
+				font-size: 16px;
+				line-height: 1.8;
+			}
+
+			.preaching-editor .ql-container.ql-snow {
+				border: none;
+				font-family: inherit;
+				color: var(--text-primary);
+			}
+
+			.preaching-editor .ql-editor {
+				min-height: 360px;
+				padding: 18px 18px 22px;
+			}
+
+			.preaching-editor .ql-editor.ql-blank::before {
+				color: var(--text-tertiary);
+				font-style: normal;
+				left: 18px;
+			}
+
+			.preaching-meta-row {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				gap: 12px;
+				margin-bottom: 14px;
+				flex-wrap: wrap;
+			}
+
+			.preaching-edit-indicator {
+				display: inline-flex;
+				align-items: center;
+				gap: 8px;
+				font-size: 12px;
+				font-weight: 700;
+				text-transform: uppercase;
+				letter-spacing: 0.08em;
+				color: var(--text-tertiary);
+			}
+
+			.preaching-edit-indicator.active {
+				color: var(--text-accent);
+			}
+
+			.preaching-autosave {
+				font-size: 13px;
+				color: var(--text-secondary);
+			}
+
+			.preaching-autosave.saving {
+				color: var(--notification-warning);
+			}
+
+			.preaching-autosave.saved {
+				color: var(--notification-success);
+			}
+
+			.preaching-composer-actions {
+				display: flex;
+				gap: 10px;
+				flex-wrap: wrap;
+				margin-top: 18px;
+			}
+
+			.preaching-history-card {
+				padding: 20px;
+			}
+
+			.preaching-history-card h3 {
+				margin-bottom: 6px;
+				font-size: 18px;
+				color: var(--text-primary);
+			}
+
+			.preaching-history-subtitle {
+				font-size: 13px;
+				color: var(--text-tertiary);
+				margin-bottom: 14px;
+			}
+
+			.preaching-list {
+				display: flex;
+				flex-direction: column;
+				gap: 10px;
+				max-height: 540px;
+				overflow-y: auto;
+				padding-right: 4px;
+			}
+
+			.preaching-item {
+				padding: 14px;
+				border-radius: 12px;
+				border: 1px solid var(--border-primary);
+				background: var(--bg-secondary);
+				cursor: pointer;
+				transition: all 0.2s ease;
+			}
+
+			.preaching-item:hover {
+				transform: translateY(-2px);
+				border-color: var(--border-accent);
+			}
+
+			.preaching-item.active {
+				border-color: var(--border-accent);
+				box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.14);
+			}
+
+			.preaching-item-title {
+				font-size: 15px;
+				font-weight: 700;
+				margin-bottom: 4px;
+				color: var(--text-primary);
+			}
+
+			.preaching-item-meta {
+				font-size: 12px;
+				color: var(--text-tertiary);
+				margin-bottom: 8px;
+			}
+
+			.preaching-item-preview {
+				font-size: 13px;
+				color: var(--text-secondary);
+				display: -webkit-box;
+				-webkit-line-clamp: 3;
+				-webkit-box-orient: vertical;
+				overflow: hidden;
+			}
+
+			.preaching-tags {
+				display: flex;
+				gap: 6px;
+				flex-wrap: wrap;
+				margin-top: 10px;
+			}
+
+			.preaching-tag {
+				display: inline-flex;
+				align-items: center;
+				padding: 4px 10px;
+				border-radius: 999px;
+				font-size: 11px;
+				font-weight: 700;
+				background: rgba(102, 126, 234, 0.12);
+				color: var(--text-accent);
+			}
+
+			.preaching-detail-card {
+				padding: 24px;
+				margin-top: 20px;
+			}
+
+			.preaching-detail-header {
+				display: flex;
+				justify-content: space-between;
+				align-items: flex-start;
+				gap: 12px;
+				margin-bottom: 14px;
+				flex-wrap: wrap;
+			}
+
+			.preaching-detail-title {
+				font-size: 24px;
+				font-weight: 700;
+				margin-bottom: 6px;
+				color: var(--text-primary);
+			}
+
+			.preaching-detail-meta {
+				font-size: 13px;
+				color: var(--text-tertiary);
+				margin-bottom: 12px;
+			}
+
+			.preaching-detail-content {
+				white-space: normal;
+				line-height: 1.8;
+				color: var(--text-secondary);
+			}
+
+			.preaching-detail-content h1,
+			.preaching-detail-content h2,
+			.preaching-detail-content h3,
+			.preaching-detail-content h4,
+			.preaching-detail-content h5,
+			.preaching-detail-content h6 {
+				color: var(--text-primary);
+				margin: 18px 0 10px;
+			}
+
+			.preaching-detail-content p,
+			.preaching-detail-content ul,
+			.preaching-detail-content ol,
+			.preaching-detail-content blockquote {
+				margin-bottom: 12px;
+			}
+
+			.preaching-detail-content blockquote {
+				padding-left: 16px;
+				border-left: 4px solid var(--text-accent);
+				color: var(--text-primary);
+				font-style: italic;
+			}
+
+			.preaching-detail-actions {
+				display: flex;
+				gap: 10px;
+				flex-wrap: wrap;
+				justify-content: flex-end;
+			}
+
 			/* ===== SPEECH TRANSCRIPTION ===== */
 			.transcription-container {
 				background: var(--bg-tertiary);
@@ -1410,6 +1686,20 @@
 					grid-template-columns: 1fr;
 				}
 
+				.preaching-layout {
+					grid-template-columns: 1fr;
+				}
+
+				.preaching-detail-actions,
+				.preaching-composer-actions {
+					flex-direction: column;
+				}
+
+				.preaching-detail-actions .btn,
+				.preaching-composer-actions .btn {
+					width: 100%;
+				}
+
 				.modal {
 					padding: 24px;
 				}
@@ -1468,6 +1758,7 @@
 		<script src="/_sdk/data_sdk.js" type="text/javascript"></script>
 		<script src="/_sdk/element_sdk.js" type="text/javascript"></script>
 		<script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
+		<script src="https://cdn.quilljs.com/1.3.7/quill.min.js" type="text/javascript"></script>
 		<script>
 			// Ensure handleKeyDown function is defined safely
 			window.handleKeyDown = function(event) {
@@ -1493,6 +1784,7 @@
 			document.addEventListener('keydown', window.handleKeyDown);
 		</script>
 		<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css\">
+		<link rel="stylesheet" href="https://cdn.quilljs.com/1.3.7/quill.snow.css" />
 	</head>
 		<!-- Import TaskAPI for backend connectivity -->
 		<script>
@@ -1564,6 +1856,7 @@
 							<a href="#" class="nav-link active" data-section="overview"> <span class="icon"><i class="fas fa-chart-bar"></i></span> Overview </a>
 							<a href="#" class="nav-link" data-section="tasks"> <span class="icon"><i class="fas fa-check"></i></span> All Tasks </a>
 							<a href="#" class="nav-link" data-section="diary"> <span class="icon"><i class="fas fa-book-open"></i></span> My Thoughts </a>
+							<a href="#" class="nav-link" data-section="preaching"> <span class="icon"><i class="fas fa-bible"></i></span> Preaching </a>
 							<a href="#" class="nav-link" data-section="analytics"> <span class="icon"><i class="fas fa-chart-line"></i></span> Analytics </a>
 						</div>
 						<div class="nav-section">
@@ -1770,6 +2063,57 @@
 							</div>
 						</div>
 						<div id="diaryDetailCard" class="diary-detail-card hidden"></div>
+					</section>
+					<!-- Preaching Section -->
+					<section id="preachingSection" class="content-section hidden">
+						<div class="section-header">
+							<h1>Preaching Notes</h1>
+							<p>Capture sermons, outlines, and scripture-led notes in one place.</p>
+						</div>
+						<div class="controls-bar" style="margin-bottom: 20px;">
+							<div class="search-box">
+								<input type="text" id="preachingSearchInput" placeholder="Search preachings by title, preacher, or tag" />
+							</div>
+							<button class="btn btn-secondary" id="newPreachingBtn" type="button">New Note</button>
+						</div>
+						<div class="preaching-layout">
+							<div class="preaching-editor-card">
+								<div class="preaching-meta-row">
+									<div id="preachingEditIndicator" class="preaching-edit-indicator">Draft ready</div>
+									<div id="preachingAutosaveStatus" class="preaching-autosave">Autosave idle</div>
+								</div>
+								<div class="form-group">
+									<label for="preachingTitle">Preaching Title</label>
+									<input type="text" id="preachingTitle" placeholder="Sermon title" />
+								</div>
+								<div class="form-group">
+									<label for="preachingPreacher">Preacher Name</label>
+									<input type="text" id="preachingPreacher" placeholder="Preacher or speaker" />
+								</div>
+								<div class="form-group">
+									<label for="preachingTags">Tags (optional)</label>
+									<input type="text" id="preachingTags" placeholder="Faith, Grace, Discipline" />
+								</div>
+								<div class="form-group">
+									<label>Rich Text Canvas</label>
+									<div class="preaching-editor-shell">
+										<div id="preachingEditorToolbar" class="preaching-editor-toolbar"></div>
+										<div id="preachingEditor" class="preaching-editor"></div>
+									</div>
+								</div>
+								<div class="preaching-composer-actions">
+									<button class="btn btn-primary" id="savePreachingBtn" type="button">Save Preaching</button>
+									<button class="btn btn-secondary hidden" id="cancelPreachingEditBtn" type="button">Cancel</button>
+									<button class="btn btn-secondary" id="exportPreachingTxtBtn" type="button">Export TXT</button>
+								</div>
+							</div>
+							<div class="preaching-history-card">
+								<h3>Saved preachings</h3>
+								<div class="preaching-history-subtitle">Search, open, edit, or delete a message note.</div>
+								<div id="preachingHistoryList" class="preaching-list"></div>
+							</div>
+						</div>
+						<div id="preachingDetailCard" class="preaching-detail-card hidden"></div>
 					</section>
 					<!-- Analytics Section -->
 					<section id="analyticsSection" class="content-section hidden">
@@ -2007,6 +2351,7 @@
 								}
 								loadTasks().catch((err) => console.warn('Failed to load tasks on init:', err));
 								loadDiaryEntries().catch((err) => console.warn('Failed to load diary on init:', err));
+								loadPreachingEntries().catch((err) => console.warn('Failed to load preaching on init:', err));
 							}
 						}
 			
@@ -2016,11 +2361,17 @@
 			let currentUser = storage.getCurrentUser();
 			let tasks = [];
 			let diaryEntries = [];
+			let preachingEntries = [];
 			let editingDiaryEntryId = null;
+			let editingPreachingEntryId = null;
 			let diaryRecorder = null;
 			let diaryAudioChunks = [];
 			let diaryAudioBlob = null;
 			let diaryRecordingStream = null;
+			let preachingEditor = null;
+			let preachingAutoSaveTimer = null;
+			let preachingAutoSaveInProgress = false;
+			let preachingContentSnapshot = "";
 			let editingTaskId = null;
 			let completingTaskId = null;
 
@@ -2170,6 +2521,7 @@
 				plans: document.getElementById("plansSection"),
 				tasks: document.getElementById("tasksSection"),
 				diary: document.getElementById("diarySection"),
+				preaching: document.getElementById("preachingSection"),
 				analytics: document.getElementById("analyticsSection"),
 			};
 
@@ -2194,6 +2546,7 @@
 				if (sectionName === "plans") updatePlans();
 				if (sectionName === "tasks") renderTasks();
 				if (sectionName === "diary") renderDiaryHistory();
+				if (sectionName === "preaching") renderPreachingList();
 				if (sectionName === "analytics") updateAnalytics();
 			}
 
@@ -2256,6 +2609,7 @@
 						showSection("overview");
 						loadTasks(); // Load tasks from backend
 									loadDiaryEntries(); // Load diary entries from backend
+								loadPreachingEntries(); // Load preaching entries from backend
 						showNotification("Welcome back! <i class=\"fas fa-hand\"></i>", "success");
 					} else {
 						showNotification("Login failed. Check credentials and try again.", "error");
@@ -2356,6 +2710,7 @@
 						showSection("overview");
 						loadTasks();
 									loadDiaryEntries();
+								loadPreachingEntries();
 					} else {
 						showNotification("Registration failed: " + (response.message || "Unknown error"), "error");
 						console.error('Invalid registration response:', response);
@@ -2571,7 +2926,9 @@
 						storage.setCurrentUser(null);
 						tasks = [];
 						diaryEntries = [];
+							preachingEntries = [];
 						resetDiaryComposer();
+							resetPreachingComposer();
 						// Clear the JWT token on logout
 						localStorage.removeItem('auth_token');
 						showPage("login");
@@ -2583,7 +2940,9 @@
 						storage.setCurrentUser(null);
 						tasks = [];
 						diaryEntries = [];
+							preachingEntries = [];
 						resetDiaryComposer();
+							resetPreachingComposer();
 						// Clear the JWT token on logout
 						localStorage.removeItem('auth_token');
 						showPage("login");
@@ -2593,7 +2952,9 @@
 					storage.setCurrentUser(null);
 					tasks = [];
 					diaryEntries = [];
+							preachingEntries = [];
 					resetDiaryComposer();
+							resetPreachingComposer();
 					// Clear the JWT token on logout
 					localStorage.removeItem('auth_token');
 					showPage("login");
@@ -3062,6 +3423,454 @@
 			});
 
 			resetDiaryComposer();
+
+			// ===== PREACHING NOTES =====
+			function initializePreachingModule() {
+				if (preachingEditor || typeof Quill === "undefined") {
+					return Boolean(preachingEditor);
+				}
+
+				const toolbarElement = document.getElementById("preachingEditorToolbar");
+				if (!toolbarElement) {
+					return false;
+				}
+
+				toolbarElement.innerHTML = `
+					<span class="ql-formats">
+						<select class="ql-header">
+							<option selected></option>
+							<option value="1">Heading 1</option>
+							<option value="2">Heading 2</option>
+							<option value="3">Heading 3</option>
+						</select>
+					</span>
+					<span class="ql-formats">
+						<button class="ql-bold" type="button"></button>
+						<button class="ql-italic" type="button"></button>
+						<button class="ql-underline" type="button"></button>
+						<button class="ql-blockquote" type="button"></button>
+					</span>
+					<span class="ql-formats">
+						<button class="ql-list" value="ordered" type="button"></button>
+						<button class="ql-list" value="bullet" type="button"></button>
+					</span>
+					<span class="ql-formats">
+						<button class="ql-link" type="button"></button>
+						<button class="ql-clean" type="button"></button>
+					</span>
+				`;
+
+				preachingEditor = new Quill("#preachingEditor", {
+					theme: "snow",
+					placeholder: "Write your sermon outline, scripture references, and application notes...",
+					modules: {
+						toolbar: "#preachingEditorToolbar",
+					},
+				});
+
+				preachingEditor.on("text-change", (delta, oldDelta, source) => {
+					if (source !== "user") {
+						return;
+					}
+					schedulePreachingAutosave();
+				});
+
+				return true;
+			}
+
+			function getPreachingSnapshot() {
+				const title = document.getElementById("preachingTitle")?.value.trim() || "";
+				const preacher = document.getElementById("preachingPreacher")?.value.trim() || "";
+				const tags = document.getElementById("preachingTags")?.value.trim() || "";
+				const content = preachingEditor ? preachingEditor.root.innerHTML.trim() : "";
+				return { title, preacher, tags, content };
+			}
+
+			function getPlainTextFromHtml(html) {
+				if (!html) return "";
+				const container = document.createElement("div");
+				container.innerHTML = html;
+				return (container.textContent || container.innerText || "").replace(/\s+/g, " ").trim();
+			}
+
+			function parsePreachingTags(tagsValue) {
+				return (tagsValue || "")
+					.split(",")
+					.map((tag) => tag.trim())
+					.filter(Boolean);
+			}
+
+			function formatPreachingDate(dateValue) {
+				if (!dateValue) return "Unknown date";
+				return new Date(dateValue).toLocaleString();
+			}
+
+			function updatePreachingStatus(text, stateClass = "") {
+				const status = document.getElementById("preachingAutosaveStatus");
+				if (!status) return;
+				status.textContent = text;
+				status.classList.remove("saving", "saved");
+				if (stateClass) {
+					status.classList.add(stateClass);
+				}
+			}
+
+			function setPreachingEditMode(entryId = null) {
+				editingPreachingEntryId = entryId;
+				const saveBtn = document.getElementById("savePreachingBtn");
+				const cancelBtn = document.getElementById("cancelPreachingEditBtn");
+				const indicator = document.getElementById("preachingEditIndicator");
+
+				if (saveBtn) {
+					saveBtn.textContent = entryId ? "Update Preaching" : "Save Preaching";
+				}
+
+				if (cancelBtn) {
+					cancelBtn.classList.toggle("hidden", !entryId);
+				}
+
+				if (indicator) {
+					if (entryId) {
+						indicator.textContent = "Editing preaching note";
+						indicator.classList.add("active");
+					} else {
+						indicator.textContent = "Draft ready";
+						indicator.classList.remove("active");
+					}
+				}
+
+				renderPreachingList();
+			}
+
+			function resetPreachingComposer(resetEditMode = true) {
+				clearTimeout(preachingAutoSaveTimer);
+				preachingAutoSaveTimer = null;
+				preachingAutoSaveInProgress = false;
+				preachingContentSnapshot = "";
+
+				const titleInput = document.getElementById("preachingTitle");
+				const preacherInput = document.getElementById("preachingPreacher");
+				const tagsInput = document.getElementById("preachingTags");
+				if (titleInput) titleInput.value = "";
+				if (preacherInput) preacherInput.value = "";
+				if (tagsInput) tagsInput.value = "";
+
+				if (preachingEditor) {
+					preachingEditor.setText("");
+				}
+
+				updatePreachingStatus("Autosave idle");
+				if (resetEditMode) {
+					setPreachingEditMode(null);
+				}
+			}
+
+			function renderPreachingList() {
+				const listContainer = document.getElementById("preachingHistoryList");
+				if (!listContainer) return;
+
+				const searchTerm = (document.getElementById("preachingSearchInput")?.value || "").trim().toLowerCase();
+				const filteredEntries = preachingEntries.filter((entry) => {
+					const tagsText = (entry.tags || "").toLowerCase();
+					return (
+						(entry.title || "").toLowerCase().includes(searchTerm) ||
+						(entry.preacher || "").toLowerCase().includes(searchTerm) ||
+						(tagsText.includes(searchTerm) && searchTerm.length > 0) ||
+						searchTerm === ""
+					);
+				});
+
+				if (!filteredEntries.length) {
+					listContainer.innerHTML = '<div class="empty-state" style="padding:24px 12px;"><p>No preaching notes yet. Create your first note to get started.</p></div>';
+					const detailCard = document.getElementById("preachingDetailCard");
+					if (detailCard) detailCard.classList.add("hidden");
+					return;
+				}
+
+				listContainer.innerHTML = filteredEntries
+					.map((entry) => {
+						const previewText = getPlainTextFromHtml(entry.content || "").slice(0, 140);
+						const tags = parsePreachingTags(entry.tags);
+						const isActive = Number(editingPreachingEntryId) === Number(entry.id) ? "active" : "";
+						const tagMarkup = tags.length
+							? `<div class="preaching-tags">${tags.map((tag) => `<span class="preaching-tag">${tag}</span>`).join("")}</div>`
+							: "";
+						return `
+							<div class="preaching-item ${isActive}" data-entry-id="${entry.id}">
+								<div class="preaching-item-title">${entry.title || "Untitled preaching"}</div>
+								<div class="preaching-item-meta">${entry.preacher || "Unknown preacher"} • ${formatPreachingDate(entry.updated_at || entry.created_at)}</div>
+								<div class="preaching-item-preview">${previewText}${getPlainTextFromHtml(entry.content || "").length > 140 ? "..." : ""}</div>
+								${tagMarkup}
+								<div class="diary-item-actions" style="margin-top: 12px;">
+									<button class="btn btn-secondary btn-small preaching-edit-btn" data-entry-id="${entry.id}" type="button">Edit</button>
+									<button class="btn btn-secondary btn-small preaching-delete-btn" data-entry-id="${entry.id}" type="button">Delete</button>
+								</div>
+							</div>
+						`;
+					})
+					.join("");
+
+				listContainer.querySelectorAll(".preaching-item").forEach((item) => {
+					item.addEventListener("click", () => {
+						openPreachingEntry(Number(item.dataset.entryId));
+					});
+				});
+
+				listContainer.querySelectorAll(".preaching-edit-btn").forEach((button) => {
+					button.addEventListener("click", (event) => {
+						event.stopPropagation();
+						const entryId = Number(button.dataset.entryId);
+						const entry = preachingEntries.find((item) => Number(item.id) === entryId);
+						if (entry) {
+							loadPreachingIntoEditor(entry);
+						}
+					});
+				});
+
+				listContainer.querySelectorAll(".preaching-delete-btn").forEach((button) => {
+					button.addEventListener("click", (event) => {
+						event.stopPropagation();
+						deletePreachingEntry(Number(button.dataset.entryId));
+					});
+				});
+			}
+
+			async function loadPreachingEntries() {
+				if (!api || !currentUser) return;
+
+				try {
+					const searchTerm = document.getElementById("preachingSearchInput")?.value.trim() || "";
+					const entries = await api.getPreachingEntries(searchTerm ? { search: searchTerm } : {});
+					preachingEntries = Array.isArray(entries) ? entries : [];
+					renderPreachingList();
+				} catch (error) {
+					console.error("Error loading preaching entries:", error);
+					preachingEntries = [];
+					renderPreachingList();
+				}
+			}
+
+			function loadPreachingIntoEditor(entry) {
+				if (!entry) return;
+				const titleInput = document.getElementById("preachingTitle");
+				const preacherInput = document.getElementById("preachingPreacher");
+				const tagsInput = document.getElementById("preachingTags");
+
+				if (titleInput) titleInput.value = entry.title || "";
+				if (preacherInput) preacherInput.value = entry.preacher || "";
+				if (tagsInput) tagsInput.value = entry.tags || "";
+				if (preachingEditor) {
+					preachingEditor.clipboard.dangerouslyPasteHTML(entry.content || "<p><br></p>");
+				}
+
+				preachingContentSnapshot = getPreachingSnapshot().content;
+				setPreachingEditMode(Number(entry.id));
+				renderPreachingDetail(entry);
+				updatePreachingStatus("Loaded for editing", "saved");
+			}
+
+			function schedulePreachingAutosave() {
+				if (preachingAutoSaveInProgress) {
+					return;
+				}
+
+				clearTimeout(preachingAutoSaveTimer);
+				updatePreachingStatus("Autosaving...", "saving");
+				preachingAutoSaveTimer = setTimeout(() => {
+					performPreachingSave(false).catch((error) => {
+						console.error("Preaching autosave failed:", error);
+						updatePreachingStatus("Autosave failed", "saving");
+					});
+				}, 1200);
+			}
+
+			async function performPreachingSave(isManual = false) {
+				if (!api || !currentUser) {
+					if (isManual) showNotification("Please sign in to save preaching notes", "error");
+					return;
+				}
+
+				const payload = getPreachingSnapshot();
+				if (!payload.title || !payload.preacher || !payload.content || payload.content === "<p><br></p>") {
+					if (isManual) {
+						showNotification("Add a title, preacher name, and note content before saving", "warning");
+					}
+					updatePreachingStatus("Autosave idle");
+					return;
+				}
+
+				preachingAutoSaveInProgress = true;
+				clearTimeout(preachingAutoSaveTimer);
+				updatePreachingStatus(isManual ? "Saving..." : "Autosaving...", "saving");
+
+				try {
+					const wasEditing = Boolean(editingPreachingEntryId);
+					const contentChanged = payload.content !== preachingContentSnapshot;
+					let response = null;
+
+					if (editingPreachingEntryId) {
+						response = await api.updatePreachingEntry(editingPreachingEntryId, payload);
+					} else if (contentChanged || payload.title || payload.preacher) {
+						response = await api.createPreachingEntry(payload);
+					}
+
+					if (response && response.entry) {
+						const savedEntry = response.entry;
+						const existingIndex = preachingEntries.findIndex((entry) => Number(entry.id) === Number(savedEntry.id));
+						if (existingIndex === -1) {
+							preachingEntries = [savedEntry, ...preachingEntries];
+						} else {
+							preachingEntries[existingIndex] = savedEntry;
+						}
+						preachingContentSnapshot = savedEntry.content || payload.content;
+						setPreachingEditMode(Number(savedEntry.id));
+						renderPreachingList();
+						renderPreachingDetail(savedEntry);
+						updatePreachingStatus("Saved", "saved");
+						if (isManual) {
+							showNotification(wasEditing ? "Preaching updated successfully" : "Preaching saved successfully", "success");
+						}
+					}
+				} catch (error) {
+					console.error("Failed to save preaching entry", error);
+					updatePreachingStatus("Save failed", "saving");
+					if (isManual) {
+						showNotification("Failed to save preaching note: " + error.message, "error");
+					}
+				} finally {
+					preachingAutoSaveInProgress = false;
+					if (!isManual) {
+						updatePreachingStatus("Autosave ready");
+					}
+				}
+			}
+
+			function savePreachingEntry() {
+				performPreachingSave(true);
+			}
+
+			function cancelPreachingEdit() {
+				if (!editingPreachingEntryId) return;
+				resetPreachingComposer();
+				const detailCard = document.getElementById("preachingDetailCard");
+				if (detailCard) {
+					detailCard.classList.add("hidden");
+				}
+				showNotification("Preaching edit canceled", "info");
+			}
+
+			async function openPreachingEntry(entryId) {
+				if (!api || !entryId) return;
+				try {
+					const entry = await api.getPreachingEntry(entryId);
+					renderPreachingDetail(entry);
+				} catch (error) {
+					console.error("Failed to load preaching entry:", error);
+					showNotification("Failed to load preaching entry details", "error");
+				}
+			}
+
+			function renderPreachingDetail(entry) {
+				const detailCard = document.getElementById("preachingDetailCard");
+				if (!detailCard || !entry) return;
+
+				const tags = parsePreachingTags(entry.tags);
+				const tagMarkup = tags.length
+					? `<div class="preaching-tags">${tags.map((tag) => `<span class="preaching-tag">${tag}</span>`).join("")}</div>`
+					: "";
+
+				detailCard.innerHTML = `
+					<div class="preaching-detail-header">
+						<div>
+							<div class="preaching-detail-title">${entry.title || "Untitled preaching"}</div>
+							<div class="preaching-detail-meta">${entry.preacher || "Unknown preacher"} • Created ${formatPreachingDate(entry.created_at)}${entry.updated_at ? ` • Updated ${formatPreachingDate(entry.updated_at)}` : ""}</div>
+						</div>
+						<div class="preaching-detail-actions">
+							<button class="btn btn-secondary btn-small" id="detailExportPreachingTxtBtn" type="button">Export TXT</button>
+							<button class="btn btn-secondary btn-small" id="detailEditPreachingBtn" type="button">Edit</button>
+							<button class="btn btn-danger btn-small" id="detailDeletePreachingBtn" type="button">Delete</button>
+						</div>
+					</div>
+					${tagMarkup}
+					<div class="preaching-detail-content">${entry.content || "<p>No content available.</p>"}</div>
+				`;
+				detailCard.classList.remove("hidden");
+
+				document.getElementById("detailExportPreachingTxtBtn")?.addEventListener("click", () => exportPreachingAsText(entry));
+				document.getElementById("detailEditPreachingBtn")?.addEventListener("click", () => {
+					loadPreachingIntoEditor(entry);
+					window.scrollTo({ top: 0, behavior: "smooth" });
+				});
+				document.getElementById("detailDeletePreachingBtn")?.addEventListener("click", () => deletePreachingEntry(Number(entry.id)));
+			}
+
+			function exportPreachingAsText(entry = null) {
+				const source = entry || getPreachingSnapshot();
+				const title = source.title || "Preaching Note";
+				const preacher = source.preacher || "Unknown preacher";
+				const tags = source.tags || "";
+				const contentHtml = source.content || "";
+				const contentText = getPlainTextFromHtml(contentHtml);
+				const exportText = [
+					`Title: ${title}`,
+					`Preacher: ${preacher}`,
+					tags ? `Tags: ${tags}` : null,
+					"",
+					contentText,
+				].filter(Boolean).join("\n");
+
+				const blob = new Blob([exportText], { type: "text/plain;charset=utf-8" });
+				const url = URL.createObjectURL(blob);
+				const link = document.createElement("a");
+				link.href = url;
+				link.download = `${title.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "") || "preaching-note"}.txt`;
+				document.body.appendChild(link);
+				link.click();
+				link.remove();
+				URL.revokeObjectURL(url);
+			}
+
+			async function deletePreachingEntry(entryId) {
+				if (!api || !currentUser || !entryId) return;
+				if (!confirm("Are you sure you want to delete this preaching note?")) return;
+
+				try {
+					await api.deletePreachingEntry(entryId);
+					preachingEntries = preachingEntries.filter((entry) => Number(entry.id) !== Number(entryId));
+					renderPreachingList();
+					const detailCard = document.getElementById("preachingDetailCard");
+					if (detailCard) {
+						detailCard.classList.add("hidden");
+					}
+					if (Number(editingPreachingEntryId) === Number(entryId)) {
+						resetPreachingComposer();
+					}
+					showNotification("Preaching entry deleted", "success");
+				} catch (error) {
+					console.error("Failed to delete preaching entry", error);
+					showNotification("Failed to delete preaching entry: " + error.message, "error");
+				}
+			}
+
+			if (initializePreachingModule()) {
+				resetPreachingComposer();
+			}
+
+			document.getElementById("newPreachingBtn")?.addEventListener("click", () => {
+				resetPreachingComposer();
+				const titleInput = document.getElementById("preachingTitle");
+				if (titleInput) {
+					titleInput.focus();
+				}
+			});
+
+			document.getElementById("savePreachingBtn")?.addEventListener("click", savePreachingEntry);
+			document.getElementById("cancelPreachingEditBtn")?.addEventListener("click", cancelPreachingEdit);
+			document.getElementById("exportPreachingTxtBtn")?.addEventListener("click", () => exportPreachingAsText());
+			document.getElementById("preachingSearchInput")?.addEventListener("input", () => renderPreachingList());
+			document.getElementById("preachingTitle")?.addEventListener("input", () => schedulePreachingAutosave());
+			document.getElementById("preachingPreacher")?.addEventListener("input", () => schedulePreachingAutosave());
+			document.getElementById("preachingTags")?.addEventListener("input", () => schedulePreachingAutosave());
 
 			// ===== SPEECH TRANSCRIPTION ===== 
 			let transcriptionRecognition = null;
