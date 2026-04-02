@@ -2576,6 +2576,58 @@
 				}, 3000);
 			}
 
+			function showConfirmMessage(message, confirmText = "Confirm", cancelText = "Cancel") {
+				return new Promise((resolve) => {
+					const overlay = document.createElement("div");
+					overlay.style.cssText =
+						"position: fixed; inset: 0; background: rgba(17, 24, 39, 0.45); display: flex; align-items: center; justify-content: center; z-index: 12000; padding: 16px;";
+
+					const card = document.createElement("div");
+					card.style.cssText =
+						"width: min(460px, 100%); background: #ffffff; border-radius: 14px; border: 1px solid rgba(17, 24, 39, 0.08); box-shadow: 0 24px 45px rgba(17, 24, 39, 0.22); padding: 18px;";
+
+					const text = document.createElement("p");
+					text.style.cssText = "margin: 0 0 14px; color: #111827; font-size: 15px; line-height: 1.5; font-weight: 600;";
+					text.textContent = message;
+
+					const actions = document.createElement("div");
+					actions.style.cssText = "display: flex; justify-content: flex-end; gap: 10px;";
+
+					const cancelBtn = document.createElement("button");
+					cancelBtn.type = "button";
+					cancelBtn.className = "btn btn-secondary";
+					cancelBtn.textContent = cancelText;
+
+					const confirmBtn = document.createElement("button");
+					confirmBtn.type = "button";
+					confirmBtn.className = "btn btn-danger";
+					confirmBtn.textContent = confirmText;
+
+					const cleanup = (result) => {
+						document.removeEventListener("keydown", onKeydown);
+						overlay.remove();
+						resolve(result);
+					};
+
+					const onKeydown = (event) => {
+						if (event.key === "Escape") cleanup(false);
+					};
+
+					cancelBtn.addEventListener("click", () => cleanup(false));
+					confirmBtn.addEventListener("click", () => cleanup(true));
+					overlay.addEventListener("click", (event) => {
+						if (event.target === overlay) cleanup(false);
+					});
+					document.addEventListener("keydown", onKeydown);
+
+					actions.append(cancelBtn, confirmBtn);
+					card.append(text, actions);
+					overlay.appendChild(card);
+					document.body.appendChild(overlay);
+					confirmBtn.focus();
+				});
+			}
+
 			// ===== AUTH FUNCTIONS =====
 			document.getElementById("showRegister").addEventListener("click", (e) => {
 				e.preventDefault();
@@ -3254,7 +3306,11 @@
 
 			async function handleDelete(id) {
 				if (!api || !currentUser || !id) return;
-				if (!confirm("Are you sure you want to delete this diary entry?")) return;
+				const shouldDelete = await showConfirmMessage("Delete this diary entry permanently?", "Delete", "Keep");
+				if (!shouldDelete) {
+					showNotification("Diary entry kept", "info");
+					return;
+				}
 
 				try {
 					await api.deleteDiaryEntry(id);
@@ -3845,7 +3901,11 @@
 
 			async function deletePreachingEntry(entryId) {
 				if (!api || !currentUser || !entryId) return;
-				if (!confirm("Are you sure you want to delete this preaching note?")) return;
+				const shouldDelete = await showConfirmMessage("Delete this preaching note permanently?", "Delete", "Keep");
+				if (!shouldDelete) {
+					showNotification("Preaching entry kept", "info");
+					return;
+				}
 
 				try {
 					await api.deletePreachingEntry(entryId);

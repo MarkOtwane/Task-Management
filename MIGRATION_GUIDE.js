@@ -374,9 +374,60 @@ const app = {
 		}
 	},
 
+	// Show in-page confirmation dialog
+	showConfirm(message, confirmText = "Delete", cancelText = "Cancel") {
+		return new Promise((resolve) => {
+			const overlay = document.createElement("div");
+			overlay.style.cssText = "position: fixed; inset: 0; background: rgba(17, 24, 39, 0.45); display: flex; align-items: center; justify-content: center; z-index: 12000; padding: 16px;";
+
+			const card = document.createElement("div");
+			card.style.cssText =
+				"width: min(420px, 100%); background: #fff; border-radius: 12px; border: 1px solid rgba(17, 24, 39, 0.08); box-shadow: 0 20px 36px rgba(17, 24, 39, 0.22); padding: 16px;";
+
+			const text = document.createElement("p");
+			text.style.cssText = "margin: 0 0 12px; color: #111827; font-size: 15px; font-weight: 600;";
+			text.textContent = message;
+
+			const actions = document.createElement("div");
+			actions.style.cssText = "display: flex; justify-content: flex-end; gap: 8px;";
+
+			const cancelBtn = document.createElement("button");
+			cancelBtn.type = "button";
+			cancelBtn.textContent = cancelText;
+
+			const confirmBtn = document.createElement("button");
+			confirmBtn.type = "button";
+			confirmBtn.textContent = confirmText;
+
+			const cleanup = (result) => {
+				document.removeEventListener("keydown", onKeydown);
+				overlay.remove();
+				resolve(result);
+			};
+
+			const onKeydown = (event) => {
+				if (event.key === "Escape") cleanup(false);
+			};
+
+			cancelBtn.addEventListener("click", () => cleanup(false));
+			confirmBtn.addEventListener("click", () => cleanup(true));
+			overlay.addEventListener("click", (event) => {
+				if (event.target === overlay) cleanup(false);
+			});
+			document.addEventListener("keydown", onKeydown);
+
+			actions.append(cancelBtn, confirmBtn);
+			card.append(text, actions);
+			overlay.appendChild(card);
+			document.body.appendChild(overlay);
+			confirmBtn.focus();
+		});
+	},
+
 	// Delete task
 	async deleteTask(taskId) {
-		if (!confirm("Are you sure?")) return;
+		const shouldDelete = await this.showConfirm("Delete this task permanently?", "Delete", "Keep");
+		if (!shouldDelete) return;
 		try {
 			await this.api.deleteTask(taskId);
 			await this.loadTasks();
