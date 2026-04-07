@@ -1445,6 +1445,27 @@
 				overflow: hidden;
 			}
 
+			.preaching-item-preview.expanded {
+				display: block;
+				-webkit-line-clamp: initial;
+				overflow: visible;
+			}
+
+			.preaching-read-toggle {
+				margin-top: 8px;
+				padding: 0;
+				border: none;
+				background: transparent;
+				color: var(--text-accent);
+				font-size: 12px;
+				font-weight: 700;
+				cursor: pointer;
+			}
+
+			.preaching-read-toggle:hover {
+				text-decoration: underline;
+			}
+
 			.preaching-tags {
 				display: flex;
 				gap: 6px;
@@ -2375,6 +2396,7 @@
 			let tasks = [];
 			let diaryEntries = [];
 			let preachingEntries = [];
+			let expandedPreachingEntryIds = new Set();
 			let editingDiaryEntryId = null;
 			let editingPreachingEntryId = null;
 			let diaryRecorder = null;
@@ -2710,7 +2732,10 @@
 										reminder: 'none',
 										customReminder: '',
 										completed: (t.status || '').toLowerCase() === 'completed',
-										createdAt: t.created_at ? new Date(t.created_at).getTime() : Date.now(),
+										createdAt: (() => {
+											const createdAtDate = parseBackendTimestamp(t.created_at);
+											return createdAtDate ? createdAtDate.getTime() : Date.now();
+										})(),
 										reflection: null,
 										reminderSent: false,
 										deadlineSent: false
@@ -3071,6 +3096,28 @@
 				return new Date().toISOString().split("T")[0];
 			}
 
+			function parseBackendTimestamp(dateValue) {
+				if (!dateValue) return null;
+
+				const rawValue = String(dateValue).trim();
+				if (!rawValue) return null;
+
+				const hasExplicitTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(rawValue);
+				if (hasExplicitTimezone) {
+					const explicitDate = new Date(rawValue);
+					return Number.isNaN(explicitDate.getTime()) ? null : explicitDate;
+				}
+
+				const normalized = rawValue.includes("T") ? rawValue : rawValue.replace(" ", "T");
+				const utcDate = new Date(`${normalized}Z`);
+				if (!Number.isNaN(utcDate.getTime())) {
+					return utcDate;
+				}
+
+				const fallbackDate = new Date(rawValue);
+				return Number.isNaN(fallbackDate.getTime()) ? null : fallbackDate;
+			}
+
 			function formatDiaryDate(dateValue) {
 				if (!dateValue) return "Unknown date";
 				const parsed = new Date(`${dateValue}T00:00:00`);
@@ -3348,7 +3395,8 @@
 				if (!detailCard || !entry) return;
 
 				const mood = entry.mood ? ` | Mood: ${entry.mood}` : "";
-				const createdAtText = entry.created_at ? new Date(entry.created_at).toLocaleString() : "";
+				const createdAtDate = parseBackendTimestamp(entry.created_at);
+				const createdAtText = createdAtDate ? createdAtDate.toLocaleString() : "";
 				const audioHtml = entry.audio_file_path
 					? `<audio controls class="diary-voice-preview" src="${getDiaryAudioUrl(entry.audio_file_path)}"></audio>`
 					: "";
@@ -3569,9 +3617,14 @@
 					.filter(Boolean);
 			}
 
+			function parsePreachingTimestamp(dateValue) {
+				return parseBackendTimestamp(dateValue);
+			}
+
 			function formatPreachingDate(dateValue) {
 				if (!dateValue) return "Unknown date";
-				return new Date(dateValue).toLocaleString();
+				const parsedDate = parsePreachingTimestamp(dateValue);
+				return parsedDate ? parsedDate.toLocaleString() : "Unknown date";
 			}
 
 			function updatePreachingStatus(text, stateClass = "") {
@@ -3637,6 +3690,7 @@
 			function renderPreachingList() {
 				const listContainer = document.getElementById("preachingHistoryList");
 				if (!listContainer) return;
+				const previewCharLimit = 220;
 
 				const searchTerm = (document.getElementById("preachingSearchInput")?.value || "").trim().toLowerCase();
 				const filteredEntries = preachingEntries.filter((entry) => {
@@ -3658,17 +3712,25 @@
 
 				listContainer.innerHTML = filteredEntries
 					.map((entry) => {
-						const previewText = getPlainTextFromHtml(entry.content || "").slice(0, 140);
+						const plainContent = getPlainTextFromHtml(entry.content || "");
+						const isExpanded = expandedPreachingEntryIds.has(Number(entry.id));
+						const isLongContent = plainContent.length > previewCharLimit;
+						const previewText = isExpanded || !isLongContent ? plainContent : plainContent.slice(0, previewCharLimit) + "...";
 						const tags = parsePreachingTags(entry.tags);
 						const isActive = Number(editingPreachingEntryId) === Number(entry.id) ? "active" : "";
+						const previewClass = isExpanded ? "preaching-item-preview expanded" : "preaching-item-preview";
 						const tagMarkup = tags.length
 							? `<div class="preaching-tags">${tags.map((tag) => `<span class="preaching-tag">${tag}</span>`).join("")}</div>`
+							: "";
+						const readToggleMarkup = isLongContent
+							? `<button class="preaching-read-toggle preaching-toggle-btn" data-entry-id="${entry.id}" type="button">${isExpanded ? "Read less" : "Read more"}</button>`
 							: "";
 						return `
 							<div class="preaching-item ${isActive}" data-entry-id="${entry.id}">
 								<div class="preaching-item-title">${entry.title || "Untitled preaching"}</div>
 								<div class="preaching-item-meta">${entry.preacher || "Unknown preacher"} • ${formatPreachingDate(entry.updated_at || entry.created_at)}</div>
-								<div class="preaching-item-preview">${previewText}${getPlainTextFromHtml(entry.content || "").length > 140 ? "..." : ""}</div>
+								<div class="${previewClass}">${previewText}</div>
+								${readToggleMarkup}
 								${tagMarkup}
 								<div class="diary-item-actions" style="margin-top: 12px;">
 									<button class="btn btn-secondary btn-small preaching-edit-btn" data-entry-id="${entry.id}" type="button">Edit</button>
@@ -3702,6 +3764,19 @@
 						deletePreachingEntry(Number(button.dataset.entryId));
 					});
 				});
+
+				listContainer.querySelectorAll(".preaching-toggle-btn").forEach((button) => {
+					button.addEventListener("click", (event) => {
+						event.stopPropagation();
+						const entryId = Number(button.dataset.entryId);
+						if (expandedPreachingEntryIds.has(entryId)) {
+							expandedPreachingEntryIds.delete(entryId);
+						} else {
+							expandedPreachingEntryIds.add(entryId);
+						}
+						renderPreachingList();
+					});
+				});
 			}
 
 			async function loadPreachingEntries() {
@@ -3711,10 +3786,16 @@
 					const searchTerm = document.getElementById("preachingSearchInput")?.value.trim() || "";
 					const entries = await api.getPreachingEntries(searchTerm ? { search: searchTerm } : {});
 					preachingEntries = Array.isArray(entries) ? entries : [];
+					expandedPreachingEntryIds = new Set(
+						[...expandedPreachingEntryIds].filter((entryId) =>
+							preachingEntries.some((entry) => Number(entry.id) === Number(entryId))
+						)
+					);
 					renderPreachingList();
 				} catch (error) {
 					console.error("Error loading preaching entries:", error);
 					preachingEntries = [];
+					expandedPreachingEntryIds.clear();
 					renderPreachingList();
 				}
 			}
@@ -3910,6 +3991,7 @@
 				try {
 					await api.deletePreachingEntry(entryId);
 					preachingEntries = preachingEntries.filter((entry) => Number(entry.id) !== Number(entryId));
+					expandedPreachingEntryIds.delete(Number(entryId));
 					renderPreachingList();
 					const detailCard = document.getElementById("preachingDetailCard");
 					if (detailCard) {
@@ -4300,7 +4382,10 @@
 								reminder: 'none',
 								customReminder: null,
 								completed: response.task.status === 'completed',
-								createdAt: new Date(response.task.created_at).getTime(),
+								createdAt: (() => {
+									const createdAtDate = parseBackendTimestamp(response.task.created_at);
+									return createdAtDate ? createdAtDate.getTime() : Date.now();
+								})(),
 								reflection: null,
 								reminderSent: false,
 								deadlineSent: false,
