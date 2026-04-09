@@ -10,6 +10,7 @@ require_once '../middleware/auth.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 $user = getCurrentUser($pdo);
+$action = $_GET['action'] ?? null;
 
 function logTaskDebug($event, $user, $organizationId = null, $payload = null) {
 	error_log('[tasks] ' . $event . ' userId=' . ($user['id'] ?? 'unknown') . ' role=' . ($user['role'] ?? 'unknown') . ' orgId=' . ($organizationId ?? 'null') . ' payload=' . json_encode($payload));
@@ -17,11 +18,18 @@ function logTaskDebug($event, $user, $organizationId = null, $payload = null) {
 
 logTaskDebug('request', $user, $_GET['organization_id'] ?? null, [
 	'method' => $method,
+	'action' => $action,
 	'query' => $_GET,
 ]);
 
 if ($method === 'GET') {
-	getTasks($pdo, $user);
+	if (!empty($_GET['id'])) {
+		getTaskById($pdo, $user, (int) $_GET['id']);
+	} else {
+		getTasks($pdo, $user);
+	}
+} elseif ($method === 'POST' && $action === 'meet-link') {
+	attachTaskMeetLink($pdo, $user);
 } elseif ($method === 'POST') {
 	createTask($pdo, $user);
 } elseif ($method === 'PUT') {
@@ -51,6 +59,38 @@ function parseJsonInput() {
 	return is_array($input) ? $input : [];
 }
 
+function normalizeMeetLink($value, &$error = null) {
+	if ($value === null) {
+		return null;
+	}
+
+	$link = trim((string) $value);
+	if ($link === '') {
+		return null;
+	}
+
+	if (!filter_var($link, FILTER_VALIDATE_URL)) {
+		$error = 'Meet link must be a valid URL';
+		return false;
+	}
+
+	$parts = parse_url($link);
+	$host = strtolower($parts['host'] ?? '');
+	$scheme = strtolower($parts['scheme'] ?? '');
+
+	if (!in_array($scheme, ['http', 'https'], true)) {
+		$error = 'Meet link must use http or https';
+		return false;
+	}
+
+	if ($host !== 'meet.google.com') {
+		$error = 'Meet link must be from meet.google.com';
+		return false;
+	}
+
+	return $link;
+}
+
 function getTaskRecord($pdo, $taskId) {
 	$stmt = $pdo->prepare("
 		SELECT t.*, o.name AS organization_name,
@@ -72,6 +112,45 @@ function userCanAccessTaskOrganization($pdo, $user, $organizationId) {
 	}
 
 	return userCanAccessOrganization($pdo, $user, $organizationId);
+}
+
+function canUserViewTask($pdo, $user, $task) {
+	if ((int) $task['organization_id'] > 0) {
+		if (!userCanAccessOrganization($pdo, $user, $task['organization_id'])) {
+			return false;
+		}
+
+		if (userCanManageOrganizationTasks($pdo, $user, $task['organization_id'])) {
+			return true;
+		}
+
+		return (int) $task['assigned_to'] === (int) $user['id'];
+	}
+
+	return (int) $task['user_id'] === (int) $user['id'];
+}
+
+function getTaskById($pdo, $user, $taskId) {
+	if ($taskId <= 0) {
+		http_response_code(400);
+		echo json_encode(['error' => 'Task ID is required']);
+		return;
+	}
+
+	$task = getTaskRecord($pdo, $taskId);
+	if (!$task) {
+		http_response_code(404);
+		echo json_encode(['error' => 'Task not found']);
+		return;
+	}
+
+	if (!canUserViewTask($pdo, $user, $task)) {
+		http_response_code(403);
+		echo json_encode(['error' => 'Unauthorized']);
+		return;
+	}
+
+	echo json_encode($task);
 }
 
 function getTasks($pdo, $user) {
@@ -172,6 +251,14 @@ function createTask($pdo, $user) {
 	$assignedBy = (int) $user['id'];
 	$status = $input['status'] ?? 'pending';
 	$dueDate = normalizeDateTimeValue($input['due_date'] ?? null);
+	$rawMeetLink = $input['meet_link'] ?? ($input['meetLink'] ?? null);
+	$meetLinkError = null;
+	$meetLink = normalizeMeetLink($rawMeetLink, $meetLinkError);
+	if ($meetLink === false) {
+		http_response_code(400);
+		echo json_encode(['error' => $meetLinkError]);
+		return;
+	}
 
 	if ($organizationId) {
 		if (!userCanManageOrganizationTasks($pdo, $user, $organizationId)) {
@@ -210,6 +297,7 @@ function createTask($pdo, $user) {
 		$organizationId = null;
 		$assignedTo = (int) $user['id'];
 		$assignedBy = (int) $user['id'];
+		$meetLink = null;
 	}
 
 	try {
@@ -224,8 +312,9 @@ function createTask($pdo, $user) {
 				category,
 				priority,
 				status,
-				due_date
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				due_date,
+				meet_link
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		");
 		$stmt->execute([
 			$user['id'],
@@ -238,6 +327,7 @@ function createTask($pdo, $user) {
 			$input['priority'] ?? 'medium',
 			$status,
 			$dueDate,
+			$meetLink,
 		]);
 
 		$taskId = $pdo->lastInsertId();
@@ -298,11 +388,21 @@ function updateTask($pdo, $user) {
 
 		if ((int) $task['organization_id'] > 0) {
 			if (userCanManageOrganizationTasks($pdo, $user, $task['organization_id'])) {
-				$allowedFields = ['title', 'description', 'category', 'priority', 'status', 'due_date', 'assigned_to'];
+				$allowedFields = ['title', 'description', 'category', 'priority', 'status', 'due_date', 'assigned_to', 'meet_link'];
 				foreach ($allowedFields as $field) {
 					if (array_key_exists($field, $input)) {
 						if ($field === 'due_date') {
 							$values[] = normalizeDateTimeValue($input[$field]);
+						} elseif ($field === 'meet_link') {
+							$meetLinkError = null;
+							$meetLink = normalizeMeetLink($input[$field], $meetLinkError);
+							if ($meetLink === false) {
+								http_response_code(400);
+								echo json_encode(['error' => $meetLinkError]);
+								return;
+							}
+
+							$values[] = $meetLink;
 						} elseif ($field === 'assigned_to') {
 							$assignedTo = !empty($input[$field]) ? (int) $input[$field] : null;
 							if ($assignedTo) {
@@ -393,6 +493,78 @@ function updateTask($pdo, $user) {
 		]);
 		http_response_code(500);
 		echo json_encode(['error' => 'Failed to update task: ' . $exception->getMessage()]);
+	}
+}
+
+function attachTaskMeetLink($pdo, $user) {
+	$input = parseJsonInput();
+	$taskId = !empty($input['id']) ? (int) $input['id'] : (!empty($_GET['id']) ? (int) $_GET['id'] : 0);
+	$meetLinkError = null;
+	$meetLink = normalizeMeetLink($input['meet_link'] ?? ($input['meetLink'] ?? null), $meetLinkError);
+
+	logTaskDebug('taskMeetLink.attach.attempt', $user, null, [
+		'task_id' => $taskId,
+		'meet_link' => $input['meet_link'] ?? ($input['meetLink'] ?? null),
+	]);
+
+	if ($taskId <= 0) {
+		http_response_code(400);
+		echo json_encode(['error' => 'Task ID is required']);
+		return;
+	}
+
+	if ($meetLink === false || !$meetLink) {
+		http_response_code(400);
+		echo json_encode(['error' => $meetLinkError ?: 'Meet link is required']);
+		return;
+	}
+
+	$task = getTaskRecord($pdo, $taskId);
+	if (!$task) {
+		http_response_code(404);
+		echo json_encode(['error' => 'Task not found']);
+		return;
+	}
+
+	if ((int) $task['organization_id'] <= 0) {
+		http_response_code(400);
+		echo json_encode(['error' => 'Meet links are only supported for organization tasks']);
+		return;
+	}
+
+	if (!userCanAccessOrganization($pdo, $user, $task['organization_id'])) {
+		http_response_code(403);
+		echo json_encode(['error' => 'Unauthorized']);
+		return;
+	}
+
+	if (!userCanManageOrganizationTasks($pdo, $user, $task['organization_id'])) {
+		http_response_code(403);
+		echo json_encode(['error' => 'Only organization admins can attach a meet link']);
+		return;
+	}
+
+	try {
+		$stmt = $pdo->prepare("UPDATE tasks SET meet_link = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+		$stmt->execute([$meetLink, $taskId]);
+
+		$updatedTask = getTaskRecord($pdo, $taskId);
+		logTaskDebug('taskMeetLink.attach.success', $user, $task['organization_id'], [
+			'task_id' => $taskId,
+			'meet_link' => $meetLink,
+		]);
+
+		echo json_encode([
+			'message' => 'Meet link attached successfully',
+			'task' => $updatedTask,
+		]);
+	} catch (PDOException $exception) {
+		logTaskDebug('taskMeetLink.attach.error', $user, $task['organization_id'], [
+			'task_id' => $taskId,
+			'error' => $exception->getMessage(),
+		]);
+		http_response_code(500);
+		echo json_encode(['error' => 'Failed to attach meet link: ' . $exception->getMessage()]);
 	}
 }
 

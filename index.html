@@ -2245,9 +2245,10 @@
 								<option value="Asia/Tokyo">Tokyo</option>
 							</select>
 						</div>
-						<div class="form-group">
-							<label for="taskMeetingLink">Meeting Link (Optional)</label>
-							<input type="url" id="taskMeetingLink" placeholder="https://zoom.us/j/123456789" />
+						<div class="form-group" id="taskMeetLinkGroup">
+							<label for="taskMeetingLink">Add Google Meet Link</label>
+							<input type="url" id="taskMeetingLink" placeholder="https://meet.google.com/abc-defg-hij" />
+							<small style="color: var(--text-tertiary); font-size: 12px;">Only organization admins can set this in Organizational Mode</small>
 						</div>
 						<div class="form-group">
 							<label for="taskInvitees">Invite People (Optional)</label>
@@ -2708,6 +2709,7 @@
 				const addOrganizationMemberBtn = document.getElementById("addOrganizationMemberBtn");
 				const taskOrganizationGroup = document.getElementById("taskOrganizationGroup");
 				const taskAssigneeGroup = document.getElementById("taskAssigneeGroup");
+				const taskMeetLinkGroup = document.getElementById("taskMeetLinkGroup");
 				const taskOrganizationSelect = document.getElementById("taskOrganizationId");
 				const taskAssignedToSelect = document.getElementById("taskAssignedTo");
 
@@ -2733,6 +2735,11 @@
 
 				if (taskAssigneeGroup) {
 					taskAssigneeGroup.classList.toggle("hidden", organizationMode !== "organization");
+				}
+
+				if (taskMeetLinkGroup) {
+					const canManageMeetLink = organizationMode !== "organization" || isCurrentUserOrganizationAdmin();
+					taskMeetLinkGroup.classList.toggle("hidden", !canManageMeetLink);
 				}
 
 				if (organizationSelector) {
@@ -2847,6 +2854,7 @@
 							organizationId: t.organization_id ? Number(t.organization_id) : null,
 							assignedTo: t.assigned_to ? Number(t.assigned_to) : null,
 							assignedBy: t.assigned_by ? Number(t.assigned_by) : null,
+							meetLink: t.meet_link || "",
 							organizationName: t.organization_name || '',
 							assignedToName: t.assigned_to_name || '',
 							assignedByName: t.assigned_by_name || '',
@@ -4443,6 +4451,7 @@
 				document.getElementById("taskPlan").value = "day";
 				document.getElementById("taskOrganizationId").value = selectedOrganizationId || "";
 				document.getElementById("taskAssignedTo").value = currentUser ? String(currentUser.id) : "";
+				document.getElementById("taskMeetingLink").value = "";
 				document.getElementById("taskDueDate").value = "";
 				document.getElementById("taskDueTime").value = "";
 				document.getElementById("taskReminder").value = "none";
@@ -4569,6 +4578,11 @@
 					return;
 				}
 
+				if (requestContext.mode === "organization" && taskData.meetingLink && !taskData.meetingLink.includes("meet.google.com")) {
+					showNotification("Please provide a valid Google Meet link", "error");
+					return;
+				}
+
 				console.log("[task-form] submit payload", {
 					userId: currentUser ? currentUser.id : null,
 					role: currentUser ? currentUser.role : null,
@@ -4616,6 +4630,7 @@
 						category: taskData.plan,
 							organization_id: taskData.organizationId,
 							assigned_to: taskData.assignedTo ? Number(taskData.assignedTo) : null,
+							meet_link: requestContext.mode === "organization" ? (taskData.meetingLink || null) : null,
 						due_date: dueDateIso
 					}).then((response) => {
 						// Update local tasks array with all new data
@@ -4627,6 +4642,7 @@
 									id: editingTaskId,
 									organizationId: taskData.organizationId ? Number(taskData.organizationId) : null,
 									assignedTo: taskData.assignedTo ? Number(taskData.assignedTo) : null,
+									meetLink: taskData.meetingLink || "",
 									status: response.status || tasks[taskIndex].status || 'pending'
 								};
 						}
@@ -4653,6 +4669,7 @@
 						category: taskData.plan,
 								organization_id: taskData.organizationId,
 								assigned_to: taskData.assignedTo ? Number(taskData.assignedTo) : null,
+							meet_link: requestContext.mode === "organization" ? (taskData.meetingLink || null) : null,
 						due_date: dueDateIso
 					}).then((response) => {
 						console.log('Task creation response:', response);
@@ -4679,6 +4696,7 @@
 									organizationId: response.task.organization_id ? Number(response.task.organization_id) : (taskData.organizationId ? Number(taskData.organizationId) : null),
 									assignedTo: response.task.assigned_to ? Number(response.task.assigned_to) : (taskData.assignedTo ? Number(taskData.assignedTo) : null),
 									assignedBy: response.task.assigned_by ? Number(response.task.assigned_by) : currentUser.id,
+									meetLink: response.task.meet_link || (taskData.meetingLink || ""),
 									organizationName: response.task.organization_name || '',
 									assignedToName: response.task.assigned_to_name || '',
 									assignedByName: response.task.assigned_by_name || '',
@@ -4707,6 +4725,7 @@
 									organizationId: taskData.organizationId ? Number(taskData.organizationId) : null,
 									assignedTo: taskData.assignedTo ? Number(taskData.assignedTo) : currentUser.id,
 									assignedBy: currentUser.id,
+									meetLink: taskData.meetingLink || "",
 									organizationName: getSelectedOrganization() ? getSelectedOrganization().name : '',
 									assignedToName: (() => {
 										const activeOrganization = getSelectedOrganization();
@@ -4956,6 +4975,7 @@
 							const canSubmitOrganizationTask = isOrganizationTask && isAssignedToCurrentUser && task.status !== "submitted" && task.status !== "completed";
 							const canReviewOrganizationTask = isOrganizationTask && organizationAdmin && task.status === "submitted";
 							const canEditOrganizationTask = isOrganizationTask && organizationAdmin;
+							const hasMeetLink = Boolean(task.meetLink);
 
 						return `
           <div class="task-card ${task.plan} ${task.completed ? "completed" : ""}" data-task-id="${task.id}">
@@ -4996,6 +5016,7 @@
 				  ${canSubmitOrganizationTask ? `<button class="btn btn-small btn-success" onclick="submitTaskAction('${task.id}')">Submit Task</button>` : ""}
 				  ${canReviewOrganizationTask ? `<button class="btn btn-small btn-success" onclick="reviewTaskAction('${task.id}', 'approve')">Approve</button><button class="btn btn-small btn-secondary" onclick="reviewTaskAction('${task.id}', 'reject')">Reject</button>` : ""}
 				  ${canEditOrganizationTask ? `<button class="btn btn-small btn-primary" onclick="editTask('${task.id}')">✏️ Edit</button>` : ""}
+							${hasMeetLink ? `<button class="btn btn-small btn-secondary" onclick="joinMeetLink('${task.meetLink.replace(/'/g, "\\'")}')">Join Meeting</button>` : ""}
               <button class="btn btn-small btn-danger" onclick="deleteTask('${task.id}')">
                 🗑️ Delete
               </button>
@@ -5031,6 +5052,7 @@
 				document.getElementById("taskDueTime").value = task.dueTime || "";
 				document.getElementById("taskOrganizationId").value = task.organizationId || selectedOrganizationId || "";
 				document.getElementById("taskAssignedTo").value = task.assignedTo || currentUser.id || "";
+				document.getElementById("taskMeetingLink").value = task.meetLink || "";
 				document.getElementById("taskReminder").value = task.reminder || "none";
 				document.getElementById("customReminder").value = task.customReminder || "";
 
@@ -5146,6 +5168,11 @@
 				}).catch((error) => {
 					showNotification("Failed to review task: " + error.message, "error");
 				});
+			};
+
+			window.joinMeetLink = (url) => {
+				if (!url) return;
+				window.open(url, "_blank", "noopener,noreferrer");
 			};
 
 			// ===== SEARCH & FILTER =====

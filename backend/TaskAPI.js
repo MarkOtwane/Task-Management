@@ -229,6 +229,15 @@ class TaskAPI {
 	}
 
 	/**
+	 * Get a single task by id
+	 */
+	async getTaskById(id) {
+		return this.request(`/api/tasks.php?id=${id}`, {
+			method: "GET",
+		});
+	}
+
+	/**
 	 * Create a new task
 	 */
 	async createTask(taskData) {
@@ -268,6 +277,16 @@ class TaskAPI {
 		return this.request("/api/tasks.php", {
 			method: "PUT",
 			body: JSON.stringify({ id, action: "review", reviewAction }),
+		});
+	}
+
+	async attachTaskMeetLink(id, meetLink) {
+		return this.request("/api/tasks.php?action=meet-link", {
+			method: "POST",
+			body: JSON.stringify({
+				id,
+				meet_link: meetLink,
+			}),
 		});
 	}
 

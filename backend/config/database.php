@@ -119,6 +119,7 @@ function initializeDatabase($pdo) {
                 priority VARCHAR(50),
                 status VARCHAR(50) DEFAULT 'pending',
                 due_date TIMESTAMP,
+                    meet_link TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -128,6 +129,7 @@ function initializeDatabase($pdo) {
         $pdo->exec("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS assigned_to INTEGER REFERENCES users(id) ON DELETE SET NULL");
         $pdo->exec("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS assigned_by INTEGER REFERENCES users(id) ON DELETE SET NULL");
         $pdo->exec("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'pending'");
+            $pdo->exec("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS meet_link TEXT");
 
         $pdo->exec("CREATE INDEX IF NOT EXISTS idx_tasks_organization_id ON tasks(organization_id)");
         $pdo->exec("CREATE INDEX IF NOT EXISTS idx_tasks_assigned_to ON tasks(assigned_to)");
