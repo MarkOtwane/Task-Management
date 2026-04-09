@@ -298,6 +298,12 @@ class TaskAPI {
 		});
 	}
 
+	async getUserOrganizations() {
+		return this.request("/organizations/user", {
+			method: "GET",
+		});
+	}
+
 	async createOrganization(name) {
 		return this.request("/api/organizations.php", {
 			method: "POST",
