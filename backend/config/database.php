@@ -73,8 +73,35 @@ function initializeDatabase($pdo) {
                 email VARCHAR(255) UNIQUE NOT NULL,
                 password VARCHAR(255) NOT NULL,
                 username VARCHAR(100),
+                role VARCHAR(50) NOT NULL DEFAULT 'member',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ");
+
+        $pdo->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) NOT NULL DEFAULT 'member'");
+        $pdo->exec("UPDATE users SET role = 'member' WHERE role IS NULL OR role = ''");
+        $pdo->exec("UPDATE users SET role = 'super_admin' WHERE email = 'autonemac003@gmail.com'");
+
+        // Organizations table
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS organizations (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ");
+
+        // Organization members table
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS organization_members (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                organization_id INTEGER REFERENCES organizations(id) ON DELETE CASCADE,
+                role VARCHAR(50) NOT NULL DEFAULT 'member',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, organization_id)
             )
         ");
 
@@ -83,6 +110,9 @@ function initializeDatabase($pdo) {
             CREATE TABLE IF NOT EXISTS tasks (
                 id SERIAL PRIMARY KEY,
                 user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                organization_id INTEGER REFERENCES organizations(id) ON DELETE SET NULL,
+                assigned_to INTEGER REFERENCES users(id) ON DELETE SET NULL,
+                assigned_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
                 title VARCHAR(255) NOT NULL,
                 description TEXT,
                 category VARCHAR(100),
@@ -93,6 +123,17 @@ function initializeDatabase($pdo) {
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ");
+
+        $pdo->exec("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id) ON DELETE SET NULL");
+        $pdo->exec("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS assigned_to INTEGER REFERENCES users(id) ON DELETE SET NULL");
+        $pdo->exec("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS assigned_by INTEGER REFERENCES users(id) ON DELETE SET NULL");
+        $pdo->exec("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'pending'");
+
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_tasks_organization_id ON tasks(organization_id)");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_tasks_assigned_to ON tasks(assigned_to)");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_tasks_assigned_by ON tasks(assigned_by)");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_organization_members_user_id ON organization_members(user_id)");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_organization_members_organization_id ON organization_members(organization_id)");
 
         // Task reflections table
         $pdo->exec("

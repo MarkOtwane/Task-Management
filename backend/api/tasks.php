@@ -9,205 +9,400 @@ require_once '../config/database.php';
 require_once '../middleware/auth.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
-
-// Log the request method and headers for debugging
-$headers = getallheaders();
-error_log('Request method: ' . $method);
-error_log('Request headers: ' . json_encode($headers));
-
-$userId = requireAuth();
-
-// Log the user ID for debugging
-if ($userId) {
-	error_log('Authenticated user ID: ' . $userId);
-} else {
-	error_log('No authenticated user ID');
-	// Return a more detailed error message
-	http_response_code(401);
-	echo json_encode(['error' => 'Unauthorized - No valid authentication found']);
-	exit;
-}
+$user = getCurrentUser($pdo);
 
 if ($method === 'GET') {
-	getTasks($pdo, $userId);
+	getTasks($pdo, $user);
 } elseif ($method === 'POST') {
-	createTask($pdo, $userId);
+	createTask($pdo, $user);
 } elseif ($method === 'PUT') {
-	updateTask($pdo, $userId);
+	updateTask($pdo, $user);
 } elseif ($method === 'DELETE') {
-	deleteTask($pdo, $userId);
+	deleteTask($pdo, $user);
 } else {
 	http_response_code(405);
 	echo json_encode(['error' => 'Method not allowed']);
 }
 
-/**
- * Get all tasks for user
- */
-function getTasks($pdo, $userId) {
-    try {
-        $stmt = $pdo->prepare("SELECT * FROM tasks WHERE user_id = ? ORDER BY created_at DESC");
-        $stmt->execute([$userId]);
-        $tasks = $stmt->fetchAll();
-        
-        echo json_encode($tasks);
-    } catch (PDOException $e) {
-        http_response_code(500);
-        echo json_encode(['error' => 'Failed to fetch tasks: ' . $e->getMessage()]);
-    }
+function normalizeDateTimeValue($value) {
+	if (empty($value)) {
+		return null;
+	}
+
+	try {
+		$dt = new DateTime($value);
+		return $dt->format('Y-m-d H:i:s');
+	} catch (Exception $exception) {
+		return null;
+	}
 }
 
-/**
- * Create new task
- */
-function createTask($pdo, $userId) {
-    $input = json_decode(file_get_contents('php://input'), true);
-    
-    // Log the input for debugging
-    error_log('Create task input: ' . json_encode($input));
-    error_log('User ID: ' . $userId);
-    
-    if (!isset($input['title'])) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Title is required']);
-        return;
-    }
-    
-    try {
-        $stmt = $pdo->prepare("INSERT INTO tasks (user_id, title, description, category, priority, status, due_date) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        
-        // Normalize due_date to SQL datetime string if provided
-        $due_date = null;
-        if (isset($input['due_date']) && !empty($input['due_date'])) {
-            try {
-                $dt = new DateTime($input['due_date']);
-                $due_date = $dt->format('Y-m-d H:i:s');
-            } catch (Exception $e) {
-                $due_date = null;
-            }
-        }
-
-        $stmt->execute([
-            $userId,
-            $input['title'],
-            $input['description'] ?? null,
-            $input['category'] ?? null,
-            $input['priority'] ?? 'medium',
-            $input['status'] ?? 'pending',
-            $due_date
-        ]);
-        
-        $taskId = $pdo->lastInsertId();
-        
-        // Fetch the newly created task to return complete data
-        $stmt = $pdo->prepare("SELECT * FROM tasks WHERE id = ? AND user_id = ?");
-        $stmt->execute([$taskId, $userId]);
-        $task = $stmt->fetch();
-        
-        http_response_code(201);
-        echo json_encode([
-            'message' => 'Task created successfully',
-            'task_id' => $taskId,
-            'task' => $task
-        ]);
-    } catch (PDOException $e) {
-        http_response_code(500);
-        echo json_encode(['error' => 'Failed to create task: ' . $e->getMessage()]);
-    }
+function parseJsonInput() {
+	$input = json_decode(file_get_contents('php://input'), true);
+	return is_array($input) ? $input : [];
 }
 
-/**
- * Update task
- */
-function updateTask($pdo, $userId) {
-    $input = json_decode(file_get_contents('php://input'), true);
-    
-    if (!isset($input['id'])) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Task ID is required']);
-        return;
-    }
-    
-    // Verify ownership
-    $stmt = $pdo->prepare("SELECT id FROM tasks WHERE id = ? AND user_id = ?");
-    $stmt->execute([$input['id'], $userId]);
-    if (!$stmt->fetch()) {
-        http_response_code(403);
-        echo json_encode(['error' => 'Unauthorized']);
-        return;
-    }
-    
-    try {
-        $updates = [];
-        $values = [];
-        
-        $allowedFields = ['title', 'description', 'category', 'priority', 'status', 'due_date'];
-        foreach ($allowedFields as $field) {
-            if (isset($input[$field])) {
-                // Normalize due_date if present
-                if ($field === 'due_date' && !empty($input[$field])) {
-                    try {
-                        $dt = new DateTime($input[$field]);
-                        $values[] = $dt->format('Y-m-d H:i:s');
-                    } catch (Exception $e) {
-                        $values[] = null;
-                    }
-                } else {
-                    $values[] = $input[$field];
-                }
-                $updates[] = "$field = ?";
-            }
-        }
-        
-        if (empty($updates)) {
-            http_response_code(400);
-            echo json_encode(['error' => 'No fields to update']);
-            return;
-        }
-        
-        $updates[] = "updated_at = CURRENT_TIMESTAMP";
-        $values[] = $input['id'];
-        
-        $sql = "UPDATE tasks SET " . implode(', ', $updates) . " WHERE id = ?";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute($values);
-        
-        echo json_encode(['message' => 'Task updated successfully']);
-    } catch (PDOException $e) {
-        http_response_code(500);
-        echo json_encode(['error' => 'Failed to update task: ' . $e->getMessage()]);
-    }
+function getTaskRecord($pdo, $taskId) {
+	$stmt = $pdo->prepare("
+		SELECT t.*, o.name AS organization_name,
+		       assignee.username AS assigned_to_name, assignee.email AS assigned_to_email,
+		       assigner.username AS assigned_by_name, assigner.email AS assigned_by_email
+		FROM tasks t
+		LEFT JOIN organizations o ON o.id = t.organization_id
+		LEFT JOIN users assignee ON assignee.id = t.assigned_to
+		LEFT JOIN users assigner ON assigner.id = t.assigned_by
+		WHERE t.id = ?
+	");
+	$stmt->execute([$taskId]);
+	return $stmt->fetch();
 }
 
-/**
- * Delete task
- */
-function deleteTask($pdo, $userId) {
-    $taskId = $_GET['id'] ?? null;
-    
-    if (!$taskId) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Task ID is required']);
-        return;
-    }
-    
-    // Verify ownership
-    $stmt = $pdo->prepare("SELECT id FROM tasks WHERE id = ? AND user_id = ?");
-    $stmt->execute([$taskId, $userId]);
-    if (!$stmt->fetch()) {
-        http_response_code(403);
-        echo json_encode(['error' => 'Unauthorized']);
-        return;
-    }
-    
-    try {
-        $stmt = $pdo->prepare("DELETE FROM tasks WHERE id = ? AND user_id = ?");
-        $stmt->execute([$taskId, $userId]);
-        
-        echo json_encode(['message' => 'Task deleted successfully']);
-    } catch (PDOException $e) {
-        http_response_code(500);
-        echo json_encode(['error' => 'Failed to delete task: ' . $e->getMessage()]);
-    }
+function userCanAccessTaskOrganization($pdo, $user, $organizationId) {
+	if (!$organizationId) {
+		return true;
+	}
+
+	return userCanAccessOrganization($pdo, $user, $organizationId);
 }
 
+function getTasks($pdo, $user) {
+	$mode = $_GET['mode'] ?? 'personal';
+	$organizationId = $_GET['organization_id'] ?? null;
+
+	try {
+		if ($mode === 'organization' && $organizationId) {
+			if (!userCanAccessTaskOrganization($pdo, $user, $organizationId)) {
+				http_response_code(403);
+				echo json_encode(['error' => 'Unauthorized to view this organization']);
+				return;
+			}
+
+			if (userCanManageOrganizationTasks($pdo, $user, $organizationId)) {
+				$stmt = $pdo->prepare("
+					SELECT t.*, o.name AS organization_name,
+					       assignee.username AS assigned_to_name, assignee.email AS assigned_to_email,
+					       assigner.username AS assigned_by_name, assigner.email AS assigned_by_email
+					FROM tasks t
+					LEFT JOIN organizations o ON o.id = t.organization_id
+					LEFT JOIN users assignee ON assignee.id = t.assigned_to
+					LEFT JOIN users assigner ON assigner.id = t.assigned_by
+					WHERE t.organization_id = ?
+					ORDER BY t.created_at DESC
+				");
+				$stmt->execute([$organizationId]);
+			} else {
+				$stmt = $pdo->prepare("
+					SELECT t.*, o.name AS organization_name,
+					       assignee.username AS assigned_to_name, assignee.email AS assigned_to_email,
+					       assigner.username AS assigned_by_name, assigner.email AS assigned_by_email
+					FROM tasks t
+					LEFT JOIN organizations o ON o.id = t.organization_id
+					LEFT JOIN users assignee ON assignee.id = t.assigned_to
+					LEFT JOIN users assigner ON assigner.id = t.assigned_by
+					WHERE t.organization_id = ? AND (t.assigned_to = ? OR t.user_id = ? OR t.assigned_by = ?)
+					ORDER BY t.created_at DESC
+				");
+				$stmt->execute([$organizationId, $user['id'], $user['id'], $user['id']]);
+			}
+		} else {
+			$stmt = $pdo->prepare("
+				SELECT t.*, o.name AS organization_name,
+				       assignee.username AS assigned_to_name, assignee.email AS assigned_to_email,
+				       assigner.username AS assigned_by_name, assigner.email AS assigned_by_email
+				FROM tasks t
+				LEFT JOIN organizations o ON o.id = t.organization_id
+				LEFT JOIN users assignee ON assignee.id = t.assigned_to
+				LEFT JOIN users assigner ON assigner.id = t.assigned_by
+				WHERE t.organization_id IS NULL AND t.user_id = ?
+				ORDER BY t.created_at DESC
+			");
+			$stmt->execute([$user['id']]);
+		}
+
+		$tasks = $stmt->fetchAll();
+		echo json_encode($tasks);
+	} catch (PDOException $exception) {
+		http_response_code(500);
+		echo json_encode(['error' => 'Failed to fetch tasks: ' . $exception->getMessage()]);
+	}
+}
+
+function createTask($pdo, $user) {
+	$input = parseJsonInput();
+
+	if (empty($input['title'])) {
+		http_response_code(400);
+		echo json_encode(['error' => 'Title is required']);
+		return;
+	}
+
+	$organizationId = !empty($input['organization_id']) ? (int) $input['organization_id'] : null;
+	$assignedTo = !empty($input['assigned_to']) ? (int) $input['assigned_to'] : null;
+	$assignedBy = (int) $user['id'];
+	$status = $input['status'] ?? 'pending';
+	$dueDate = normalizeDateTimeValue($input['due_date'] ?? null);
+
+	if ($organizationId) {
+		if (!userCanManageOrganizationTasks($pdo, $user, $organizationId)) {
+			http_response_code(403);
+			echo json_encode(['error' => 'Only organization admins can create organization tasks']);
+			return;
+		}
+
+		if ($assignedTo) {
+			$membership = getOrganizationMembership($pdo, $assignedTo, $organizationId);
+			if (!$membership && !isSuperAdminEmail($user['email'])) {
+				http_response_code(400);
+				echo json_encode(['error' => 'Assigned user must belong to the organization']);
+				return;
+			}
+		}
+
+		if (!$assignedTo) {
+			$assignedTo = (int) $user['id'];
+		}
+	} else {
+		$organizationId = null;
+		$assignedTo = (int) $user['id'];
+		$assignedBy = (int) $user['id'];
+	}
+
+	try {
+		$stmt = $pdo->prepare("
+			INSERT INTO tasks (
+				user_id,
+				organization_id,
+				assigned_to,
+				assigned_by,
+				title,
+				description,
+				category,
+				priority,
+				status,
+				due_date
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		");
+		$stmt->execute([
+			$user['id'],
+			$organizationId,
+			$assignedTo,
+			$assignedBy,
+			$input['title'],
+			$input['description'] ?? null,
+			$input['category'] ?? null,
+			$input['priority'] ?? 'medium',
+			$status,
+			$dueDate,
+		]);
+
+		$taskId = $pdo->lastInsertId();
+		$task = getTaskRecord($pdo, $taskId);
+
+		http_response_code(201);
+		echo json_encode([
+			'message' => 'Task created successfully',
+			'task_id' => $taskId,
+			'task' => $task,
+		]);
+	} catch (PDOException $exception) {
+		http_response_code(500);
+		echo json_encode(['error' => 'Failed to create task: ' . $exception->getMessage()]);
+	}
+}
+
+function updateTask($pdo, $user) {
+	$input = parseJsonInput();
+	$taskId = $input['id'] ?? null;
+
+	if (!$taskId) {
+		http_response_code(400);
+		echo json_encode(['error' => 'Task ID is required']);
+		return;
+	}
+
+	$task = getTaskRecord($pdo, $taskId);
+	if (!$task) {
+		http_response_code(404);
+		echo json_encode(['error' => 'Task not found']);
+		return;
+	}
+
+	if (!empty($input['action']) && $input['action'] === 'submit') {
+		submitTask($pdo, $user, $task);
+		return;
+	}
+
+	if (!empty($input['action']) && $input['action'] === 'review') {
+		reviewTask($pdo, $user, $task, $input);
+		return;
+	}
+
+	try {
+		$updates = [];
+		$values = [];
+
+		if ((int) $task['organization_id'] > 0) {
+			if (userCanManageOrganizationTasks($pdo, $user, $task['organization_id'])) {
+				$allowedFields = ['title', 'description', 'category', 'priority', 'status', 'due_date', 'assigned_to'];
+				foreach ($allowedFields as $field) {
+					if (array_key_exists($field, $input)) {
+						if ($field === 'due_date') {
+							$values[] = normalizeDateTimeValue($input[$field]);
+						} elseif ($field === 'assigned_to') {
+							$assignedTo = !empty($input[$field]) ? (int) $input[$field] : null;
+							if ($assignedTo) {
+								$membership = getOrganizationMembership($pdo, $assignedTo, $task['organization_id']);
+								if (!$membership && !isSuperAdminEmail($user['email'])) {
+									http_response_code(400);
+									echo json_encode(['error' => 'Assigned user must belong to the organization']);
+									return;
+								}
+							}
+							$values[] = $assignedTo;
+						} else {
+							$values[] = $input[$field];
+						}
+
+						$updates[] = "$field = ?";
+					}
+				}
+			} elseif ((int) $task['assigned_to'] === (int) $user['id']) {
+				$allowedStatus = ['pending', 'in_progress', 'submitted'];
+				if (!array_key_exists('status', $input)) {
+					http_response_code(403);
+					echo json_encode(['error' => 'Only task assignees can update status']);
+					return;
+				}
+
+				if (!in_array($input['status'], $allowedStatus, true)) {
+					http_response_code(400);
+					echo json_encode(['error' => 'Invalid status transition']);
+					return;
+				}
+
+				$updates[] = 'status = ?';
+				$values[] = $input['status'];
+			} else {
+				http_response_code(403);
+				echo json_encode(['error' => 'Unauthorized']);
+				return;
+			}
+		} else {
+			if ((int) $task['user_id'] !== (int) $user['id']) {
+				http_response_code(403);
+				echo json_encode(['error' => 'Unauthorized']);
+				return;
+			}
+
+			$allowedFields = ['title', 'description', 'category', 'priority', 'status', 'due_date'];
+			foreach ($allowedFields as $field) {
+				if (array_key_exists($field, $input)) {
+					$values[] = $field === 'due_date' ? normalizeDateTimeValue($input[$field]) : $input[$field];
+					$updates[] = "$field = ?";
+				}
+			}
+		}
+
+		if (empty($updates)) {
+			http_response_code(400);
+			echo json_encode(['error' => 'No fields to update']);
+			return;
+		}
+
+		$updates[] = 'updated_at = CURRENT_TIMESTAMP';
+		$values[] = $taskId;
+
+		$sql = 'UPDATE tasks SET ' . implode(', ', $updates) . ' WHERE id = ?';
+		$stmt = $pdo->prepare($sql);
+		$stmt->execute($values);
+
+		echo json_encode(['message' => 'Task updated successfully']);
+	} catch (PDOException $exception) {
+		http_response_code(500);
+		echo json_encode(['error' => 'Failed to update task: ' . $exception->getMessage()]);
+	}
+}
+
+function submitTask($pdo, $user, $task) {
+	if ((int) $task['assigned_to'] !== (int) $user['id'] && (int) $task['user_id'] !== (int) $user['id']) {
+		http_response_code(403);
+		echo json_encode(['error' => 'Only the assigned user can submit this task']);
+		return;
+	}
+
+	try {
+		$stmt = $pdo->prepare("UPDATE tasks SET status = 'submitted', updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+		$stmt->execute([$task['id']]);
+
+		echo json_encode(['message' => 'Task submitted successfully']);
+	} catch (PDOException $exception) {
+		http_response_code(500);
+		echo json_encode(['error' => 'Failed to submit task: ' . $exception->getMessage()]);
+	}
+}
+
+function reviewTask($pdo, $user, $task, $input) {
+	if ((int) $task['organization_id'] <= 0 || !userCanManageOrganizationTasks($pdo, $user, $task['organization_id'])) {
+		http_response_code(403);
+		echo json_encode(['error' => 'Only organization admins can review tasks']);
+		return;
+	}
+
+	$reviewAction = $input['reviewAction'] ?? null;
+	if (!in_array($reviewAction, ['approve', 'reject'], true)) {
+		http_response_code(400);
+		echo json_encode(['error' => 'Review action must be approve or reject']);
+		return;
+	}
+
+	$status = $reviewAction === 'approve' ? 'completed' : 'in_progress';
+
+	try {
+		$stmt = $pdo->prepare("UPDATE tasks SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+		$stmt->execute([$status, $task['id']]);
+
+		echo json_encode(['message' => 'Task reviewed successfully', 'status' => $status]);
+	} catch (PDOException $exception) {
+		http_response_code(500);
+		echo json_encode(['error' => 'Failed to review task: ' . $exception->getMessage()]);
+	}
+}
+
+function deleteTask($pdo, $user) {
+	$taskId = $_GET['id'] ?? null;
+
+	if (!$taskId) {
+		http_response_code(400);
+		echo json_encode(['error' => 'Task ID is required']);
+		return;
+	}
+
+	$task = getTaskRecord($pdo, $taskId);
+	if (!$task) {
+		http_response_code(404);
+		echo json_encode(['error' => 'Task not found']);
+		return;
+	}
+
+	if ((int) $task['organization_id'] > 0) {
+		if (!userCanManageOrganizationTasks($pdo, $user, $task['organization_id'])) {
+			http_response_code(403);
+			echo json_encode(['error' => 'Only organization admins can delete organization tasks']);
+			return;
+		}
+	} elseif ((int) $task['user_id'] !== (int) $user['id']) {
+		http_response_code(403);
+		echo json_encode(['error' => 'Unauthorized']);
+		return;
+	}
+
+	try {
+		$stmt = $pdo->prepare("DELETE FROM tasks WHERE id = ?");
+		$stmt->execute([$taskId]);
+
+		echo json_encode(['message' => 'Task deleted successfully']);
+	} catch (PDOException $exception) {
+		http_response_code(500);
+		echo json_encode(['error' => 'Failed to delete task: ' . $exception->getMessage()]);
+	}
+}

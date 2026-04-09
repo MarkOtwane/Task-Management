@@ -216,8 +216,14 @@ class TaskAPI {
 	/**
 	 * Get all tasks
 	 */
-	async getTasks() {
-		return this.request("/api/tasks.php", {
+	async getTasks({ mode = "personal", organizationId = null } = {}) {
+		const query = new URLSearchParams();
+		query.set("mode", mode);
+		if (organizationId) {
+			query.set("organization_id", organizationId);
+		}
+
+		return this.request(`/api/tasks.php?${query.toString()}`, {
 			method: "GET",
 		});
 	}
@@ -248,6 +254,47 @@ class TaskAPI {
 	async deleteTask(id) {
 		return this.request(`/api/tasks.php?id=${id}`, {
 			method: "DELETE",
+		});
+	}
+
+	async submitTask(id) {
+		return this.request("/api/tasks.php", {
+			method: "PUT",
+			body: JSON.stringify({ id, action: "submit" }),
+		});
+	}
+
+	async reviewTask(id, reviewAction) {
+		return this.request("/api/tasks.php", {
+			method: "PUT",
+			body: JSON.stringify({ id, action: "review", reviewAction }),
+		});
+	}
+
+	// ===== ORGANIZATIONS =====
+
+	async getOrganizations() {
+		return this.request("/api/organizations.php", {
+			method: "GET",
+		});
+	}
+
+	async createOrganization(name) {
+		return this.request("/api/organizations.php", {
+			method: "POST",
+			body: JSON.stringify({ name }),
+		});
+	}
+
+	async addOrganizationMember({ organizationId, userId = null, email = null, role = "member" }) {
+		return this.request("/api/organizations.php?action=add-member", {
+			method: "POST",
+			body: JSON.stringify({
+				organization_id: organizationId,
+				user_id: userId,
+				email,
+				role,
+			}),
 		});
 	}
 

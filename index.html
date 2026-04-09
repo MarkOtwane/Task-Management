@@ -1904,6 +1904,19 @@
 								<span class="toggle-slider"></span>
 							</label>
 						</div>
+						<div class="form-group" style="margin-top: 12px; margin-bottom: 10px;">
+							<label for="organizationModeToggle" style="display: block; margin-bottom: 6px; color: var(--text-secondary); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase;">Workspace Mode</label>
+							<select id="organizationModeToggle" style="width: 100%;">
+								<option value="personal">Personal Mode</option>
+								<option value="organization">Organizational Mode</option>
+							</select>
+						</div>
+						<div class="form-group hidden" id="organizationSelectorGroup" style="margin-bottom: 10px;">
+							<label for="organizationSelector" style="display: block; margin-bottom: 6px; color: var(--text-secondary); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase;">Selected Organization</label>
+							<select id="organizationSelector" style="width: 100%;"></select>
+						</div>
+						<button type="button" class="btn btn-secondary hidden" id="createOrganizationBtn" style="width: 100%; margin-bottom: 10px;">+ Create Organization</button>
+						<button type="button" class="btn btn-secondary hidden" id="addOrganizationMemberBtn" style="width: 100%; margin-bottom: 10px;">+ Add Member</button>
 						<button class="btn btn-secondary" id="logoutBtn" style="width: 100%; margin-top: 15px">🚪 Logout</button>
 					</div>
 				</aside>
@@ -2209,6 +2222,14 @@
 								<option value="day">Day Plan</option>
 							</select>
 						</div>
+						<div class="form-group hidden" id="taskOrganizationGroup">
+							<label for="taskOrganizationId">Organization</label>
+							<select id="taskOrganizationId"></select>
+						</div>
+						<div class="form-group hidden" id="taskAssigneeGroup">
+							<label for="taskAssignedTo">Assign To</label>
+							<select id="taskAssignedTo"></select>
+						</div>
 						<div class="form-group"><label for="taskDueDate">Due Date</label> <input type="date" id="taskDueDate" /></div>
 						<div class="form-group"><label for="taskDueTime">Due Time</label> <input type="time" id="taskDueTime" /></div>
 						<div class="form-group">
@@ -2330,6 +2351,12 @@
 				setCurrentUser: (user) => localStorage.setItem("currentUser", JSON.stringify(user)),
 				getTasks: () => JSON.parse(localStorage.getItem("tasks") || "[]"),
 				saveTasks: (tasks) => localStorage.setItem("tasks", JSON.stringify(tasks)),
+				getOrganizations: () => JSON.parse(localStorage.getItem("organizations") || "[]"),
+				saveOrganizations: (organizations) => localStorage.setItem("organizations", JSON.stringify(organizations)),
+				getOrganizationMode: () => localStorage.getItem("organizationMode") || "personal",
+				saveOrganizationMode: (mode) => localStorage.setItem("organizationMode", mode),
+				getSelectedOrganizationId: () => localStorage.getItem("selectedOrganizationId") || "",
+				saveSelectedOrganizationId: (organizationId) => localStorage.setItem("selectedOrganizationId", organizationId || ""),
 				getResetTokens: () => JSON.parse(localStorage.getItem("passwordResetTokens") || "{}"),
 				saveResetTokens: (tokens) => localStorage.setItem("passwordResetTokens", JSON.stringify(tokens)),
 				getLastReminderCheck: () => parseInt(localStorage.getItem("lastReminderCheck") || "0"),
@@ -2394,6 +2421,9 @@
 
 			let currentUser = storage.getCurrentUser();
 			let tasks = [];
+			let organizations = storage.getOrganizations();
+			let organizationMode = storage.getOrganizationMode();
+			let selectedOrganizationId = storage.getSelectedOrganizationId();
 			let diaryEntries = [];
 			let preachingEntries = [];
 			let expandedPreachingEntryIds = new Set();
@@ -2650,6 +2680,140 @@
 				});
 			}
 
+			function isSuperAdminUser() {
+				return currentUser && currentUser.email === "autonemac003@gmail.com";
+			}
+
+			function getSelectedOrganization() {
+				if (!selectedOrganizationId) {
+					return null;
+				}
+				return organizations.find((organization) => String(organization.id) === String(selectedOrganizationId)) || null;
+			}
+
+			function isCurrentUserOrganizationAdmin() {
+				if (isSuperAdminUser()) {
+					return true;
+				}
+
+				const selectedOrganization = getSelectedOrganization();
+				return Boolean(selectedOrganization && selectedOrganization.membership_role === "organization_admin");
+			}
+
+			function syncOrganizationControls() {
+				const modeToggle = document.getElementById("organizationModeToggle");
+				const organizationGroup = document.getElementById("organizationSelectorGroup");
+				const organizationSelector = document.getElementById("organizationSelector");
+				const createOrganizationBtn = document.getElementById("createOrganizationBtn");
+				const addOrganizationMemberBtn = document.getElementById("addOrganizationMemberBtn");
+				const taskOrganizationGroup = document.getElementById("taskOrganizationGroup");
+				const taskAssigneeGroup = document.getElementById("taskAssigneeGroup");
+				const taskOrganizationSelect = document.getElementById("taskOrganizationId");
+				const taskAssignedToSelect = document.getElementById("taskAssignedTo");
+
+				if (modeToggle) {
+					modeToggle.value = organizationMode;
+				}
+
+				if (organizationGroup) {
+					organizationGroup.classList.toggle("hidden", organizationMode !== "organization");
+				}
+
+				if (createOrganizationBtn) {
+					createOrganizationBtn.classList.toggle("hidden", !isSuperAdminUser());
+				}
+
+				if (addOrganizationMemberBtn) {
+					addOrganizationMemberBtn.classList.toggle("hidden", organizationMode !== "organization" || !isCurrentUserOrganizationAdmin());
+				}
+
+				if (taskOrganizationGroup) {
+					taskOrganizationGroup.classList.toggle("hidden", organizationMode !== "organization");
+				}
+
+				if (taskAssigneeGroup) {
+					taskAssigneeGroup.classList.toggle("hidden", organizationMode !== "organization");
+				}
+
+				if (organizationSelector) {
+					organizationSelector.innerHTML = organizations.length
+						? organizations
+							.map((organization) => `<option value="${organization.id}">${organization.name}</option>`)
+							.join("")
+						: '<option value="">No organizations available</option>';
+					if (selectedOrganizationId) {
+						organizationSelector.value = String(selectedOrganizationId);
+					}
+				}
+
+				if (taskOrganizationSelect) {
+					taskOrganizationSelect.innerHTML = organizations.length
+						? organizations
+							.map((organization) => `<option value="${organization.id}">${organization.name}</option>`)
+							.join("")
+						: '<option value="">No organizations available</option>';
+					if (selectedOrganizationId) {
+						taskOrganizationSelect.value = String(selectedOrganizationId);
+					}
+				}
+
+				if (taskAssignedToSelect) {
+					const activeOrganization = getSelectedOrganization();
+					const members = activeOrganization && Array.isArray(activeOrganization.members) ? activeOrganization.members : [];
+					const options = members
+						.map((member) => `<option value="${member.user_id}">${member.username || member.email || `User ${member.user_id}`} (${member.role})</option>`)
+						.join("");
+					taskAssignedToSelect.innerHTML = options || '<option value="">No members available</option>';
+				}
+			}
+
+			async function loadOrganizations() {
+				if (!api || !currentUser) {
+					return;
+				}
+
+				try {
+					const backendOrganizations = await api.getOrganizations();
+					organizations = (backendOrganizations || []).map((organization) => ({
+						...organization,
+						id: Number(organization.id),
+						members: Array.isArray(organization.members) ? organization.members : [],
+					}));
+					storage.saveOrganizations(organizations);
+					const selectedOrganizationExists = organizations.some((organization) => String(organization.id) === String(selectedOrganizationId));
+					if (organizationMode === "organization" && (!selectedOrganizationId || !selectedOrganizationExists) && organizations.length > 0) {
+						selectedOrganizationId = String(organizations[0].id);
+						storage.saveSelectedOrganizationId(selectedOrganizationId);
+					}
+					syncOrganizationControls();
+				} catch (error) {
+					console.warn("Failed to load organizations:", error);
+				}
+			}
+
+			function setOrganizationMode(mode) {
+				organizationMode = mode === "organization" ? "organization" : "personal";
+				storage.saveOrganizationMode(organizationMode);
+				if (organizationMode !== "organization") {
+					selectedOrganizationId = "";
+					storage.saveSelectedOrganizationId("");
+				} else if (!selectedOrganizationId && organizations.length > 0) {
+					selectedOrganizationId = String(organizations[0].id);
+					storage.saveSelectedOrganizationId(selectedOrganizationId);
+				}
+				syncOrganizationControls();
+				loadTasks();
+			}
+
+			function setSelectedOrganization(organizationId) {
+				selectedOrganizationId = organizationId ? String(organizationId) : "";
+				storage.saveSelectedOrganizationId(selectedOrganizationId);
+				syncOrganizationControls();
+				if (organizationMode === "organization") {
+					loadTasks();
+				}
+			}
+
 			// ===== AUTH FUNCTIONS =====
 			document.getElementById("showRegister").addEventListener("click", (e) => {
 				e.preventDefault();
@@ -2688,7 +2852,8 @@
 						currentUser = {
 							id: response.user_id,
 							email: email,
-							name: response.name || email.split("@")[0]
+							name: response.name || email.split("@")[0],
+							role: response.role || "member"
 						};
 						storage.setCurrentUser(currentUser);
 						document.getElementById("userNameDisplay").textContent = `Welcome, ${currentUser.name}!`;
@@ -2697,6 +2862,7 @@
 						loadTasks(); // Load tasks from backend
 									loadDiaryEntries(); // Load diary entries from backend
 								loadPreachingEntries(); // Load preaching entries from backend
+								loadOrganizations();
 						showNotification("Welcome back!", "success");
 					} else {
 						showNotification("Login failed. Check credentials and try again.", "error");
@@ -2716,13 +2882,22 @@
 						async function loadTasks() {
 							try {
 								if (!api) return;
-								const backendTasks = await api.getTasks();
+								const backendTasks = await api.getTasks({
+									mode: organizationMode,
+									organizationId: selectedOrganizationId,
+								});
 								// Map backend task schema to frontend shape
 								tasks = (backendTasks || []).map((t) => {
 									const mapped = {
 										id: Number(t.id),
 										// Ensure userId is set so getUserTasks() can filter correctly
 										userId: t.user_id ? Number(t.user_id) : (currentUser ? currentUser.id : null),
+										organizationId: t.organization_id ? Number(t.organization_id) : null,
+										assignedTo: t.assigned_to ? Number(t.assigned_to) : null,
+										assignedBy: t.assigned_by ? Number(t.assigned_by) : null,
+										organizationName: t.organization_name || '',
+										assignedToName: t.assigned_to_name || '',
+										assignedByName: t.assigned_by_name || '',
 										title: t.title,
 										description: t.description,
 										plan: t.category || 'day',
@@ -2731,6 +2906,7 @@
 										dueTime: t.due_date ? new Date(t.due_date).toISOString().split('T')[1].slice(0,5) : '',
 										reminder: 'none',
 										customReminder: '',
+										status: (t.status || 'pending').toLowerCase(),
 										completed: (t.status || '').toLowerCase() === 'completed',
 										createdAt: (() => {
 											const createdAtDate = parseBackendTimestamp(t.created_at);
@@ -2792,7 +2968,8 @@
 						currentUser = {
 							id: response.user_id,
 							email: email,
-							name: name
+							name: name,
+							role: response.role || (email === 'autonemac003@gmail.com' ? 'super_admin' : 'member')
 						};
 						storage.setCurrentUser(currentUser);
 						document.getElementById("userNameDisplay").textContent = `Welcome, ${currentUser.name}!`;
@@ -2801,6 +2978,7 @@
 						loadTasks();
 									loadDiaryEntries();
 								loadPreachingEntries();
+								loadOrganizations();
 					} else {
 						showNotification("Registration failed: " + (response.message || "Unknown error"), "error");
 						console.error('Invalid registration response:', response);
@@ -3067,7 +3245,19 @@
 
 			// ===== UTILITY FUNCTIONS =====
 			function getUserTasks() {
-				return tasks.filter((task) => task.userId === currentUser.id);
+				if (!currentUser) {
+					return [];
+				}
+
+				if (organizationMode === "organization" && selectedOrganizationId) {
+					if (isCurrentUserOrganizationAdmin()) {
+						return tasks.filter((task) => String(task.organizationId || "") === String(selectedOrganizationId));
+					}
+
+					return tasks.filter((task) => String(task.organizationId || "") === String(selectedOrganizationId) && (task.assignedTo === currentUser.id || task.userId === currentUser.id || task.assignedBy === currentUser.id));
+				}
+
+				return tasks.filter((task) => task.organizationId == null && task.userId === currentUser.id);
 			}
 
 			function generateId() {
@@ -4235,11 +4425,14 @@
 				document.getElementById("taskTitle").value = "";
 				document.getElementById("taskDescription").value = "";
 				document.getElementById("taskPlan").value = "day";
+				document.getElementById("taskOrganizationId").value = selectedOrganizationId || "";
+				document.getElementById("taskAssignedTo").value = currentUser ? String(currentUser.id) : "";
 				document.getElementById("taskDueDate").value = "";
 				document.getElementById("taskDueTime").value = "";
 				document.getElementById("taskReminder").value = "none";
 				document.getElementById("customReminder").value = "";
 				document.getElementById("customReminderGroup").classList.add("hidden");
+				syncOrganizationControls();
 				taskModal.classList.remove("hidden");
 			});
 
@@ -4263,6 +4456,68 @@
 				}
 			});
 
+			document.getElementById("organizationModeToggle").addEventListener("change", (e) => {
+				setOrganizationMode(e.target.value);
+			});
+
+			document.getElementById("organizationSelector").addEventListener("change", (e) => {
+				setSelectedOrganization(e.target.value);
+			});
+
+			document.getElementById("createOrganizationBtn").addEventListener("click", async () => {
+				if (!api || !isSuperAdminUser()) {
+					showNotification("Only the super admin can create organizations", "error");
+					return;
+				}
+
+				const name = window.prompt("Enter organization name");
+				if (!name) {
+					return;
+				}
+
+				try {
+					const response = await api.createOrganization(name.trim());
+					showNotification(response.message || "Organization created", "success");
+					await loadOrganizations();
+					setOrganizationMode("organization");
+				} catch (error) {
+					showNotification("Failed to create organization: " + error.message, "error");
+				}
+			});
+
+			document.getElementById("addOrganizationMemberBtn").addEventListener("click", async () => {
+				if (!api || !isCurrentUserOrganizationAdmin()) {
+					showNotification("Only organization admins can add members", "error");
+					return;
+				}
+
+				const activeOrganization = getSelectedOrganization();
+				if (!activeOrganization) {
+					showNotification("Select an organization first", "error");
+					return;
+				}
+
+				const email = window.prompt("Enter the member email");
+				if (!email) {
+					return;
+				}
+
+				const role = window.prompt("Enter role: organization_admin, member, or client", "member") || "member";
+
+				try {
+					const response = await api.addOrganizationMember({
+						organizationId: activeOrganization.id,
+						email: email.trim(),
+						role: role.trim(),
+					});
+					showNotification(response.message || "Organization member added", "success");
+					await loadOrganizations();
+					setSelectedOrganization(activeOrganization.id);
+				} catch (error) {
+					showNotification("Failed to add organization member: " + error.message, "error");
+				}
+			});
+
 			taskForm.addEventListener("submit", (e) => {
 				e.preventDefault();
 
@@ -4270,6 +4525,8 @@
 					title: document.getElementById("taskTitle").value.trim(),
 					description: document.getElementById("taskDescription").value.trim(),
 					plan: document.getElementById("taskPlan").value,
+						organizationId: document.getElementById("taskOrganizationId").value || null,
+						assignedTo: document.getElementById("taskAssignedTo").value || null,
 					dueDate: document.getElementById("taskDueDate").value,
 					dueTime: document.getElementById("taskDueTime").value,
 					timezone: document.getElementById("taskTimezone").value,
@@ -4285,6 +4542,11 @@
 					showNotification("Please set a due date when setting a due time", "error");
 					return;
 				}
+
+					if (organizationMode === "organization" && !taskData.organizationId) {
+						showNotification("Select an organization before saving this task", "error");
+						return;
+					}
 
 				// Use backend API to save/update task
 				if (!api || !currentUser) {
@@ -4323,12 +4585,21 @@
 						title: taskData.title,
 						description: taskData.description,
 						category: taskData.plan,
+							organization_id: taskData.organizationId,
+							assigned_to: taskData.assignedTo ? Number(taskData.assignedTo) : null,
 						due_date: dueDateIso
 					}).then((response) => {
 						// Update local tasks array with all new data
 						const taskIndex = tasks.findIndex((t) => t.id === editingTaskId);
 						if (taskIndex !== -1) {
-							tasks[taskIndex] = { ...tasks[taskIndex], ...taskData, id: editingTaskId };
+								tasks[taskIndex] = {
+									...tasks[taskIndex],
+									...taskData,
+									id: editingTaskId,
+									organizationId: taskData.organizationId ? Number(taskData.organizationId) : null,
+									assignedTo: taskData.assignedTo ? Number(taskData.assignedTo) : null,
+									status: response.status || tasks[taskIndex].status || 'pending'
+								};
 						}
 						storage.saveTasks(tasks);
 						showNotification("Task updated successfully! ✏️", "success");
@@ -4351,6 +4622,8 @@
 						title: taskData.title,
 						description: taskData.description,
 						category: taskData.plan,
+								organization_id: taskData.organizationId,
+								assigned_to: taskData.assignedTo ? Number(taskData.assignedTo) : null,
 						due_date: dueDateIso
 					}).then((response) => {
 						console.log('Task creation response:', response);
@@ -4374,6 +4647,12 @@
 							newTask = {
 								id: parseInt(response.task.id),
 								userId: currentUser.id,
+									organizationId: response.task.organization_id ? Number(response.task.organization_id) : (taskData.organizationId ? Number(taskData.organizationId) : null),
+									assignedTo: response.task.assigned_to ? Number(response.task.assigned_to) : (taskData.assignedTo ? Number(taskData.assignedTo) : null),
+									assignedBy: response.task.assigned_by ? Number(response.task.assigned_by) : currentUser.id,
+									organizationName: response.task.organization_name || '',
+									assignedToName: response.task.assigned_to_name || '',
+									assignedByName: response.task.assigned_by_name || '',
 								title: response.task.title,
 								description: response.task.description || '',
 								plan: response.task.category || 'day',
@@ -4381,7 +4660,8 @@
 								dueTime: parseDueTime(response.task.due_date),
 								reminder: 'none',
 								customReminder: null,
-								completed: response.task.status === 'completed',
+									status: (response.task.status || 'pending').toLowerCase(),
+									completed: response.task.status === 'completed',
 								createdAt: (() => {
 									const createdAtDate = parseBackendTimestamp(response.task.created_at);
 									return createdAtDate ? createdAtDate.getTime() : Date.now();
@@ -4395,6 +4675,18 @@
 							newTask = {
 								id: response.task_id || response.id,
 								userId: currentUser.id,
+									organizationId: taskData.organizationId ? Number(taskData.organizationId) : null,
+									assignedTo: taskData.assignedTo ? Number(taskData.assignedTo) : currentUser.id,
+									assignedBy: currentUser.id,
+									organizationName: getSelectedOrganization() ? getSelectedOrganization().name : '',
+									assignedToName: (() => {
+										const activeOrganization = getSelectedOrganization();
+										const assignedMember = activeOrganization && Array.isArray(activeOrganization.members)
+											? activeOrganization.members.find((member) => String(member.user_id) === String(taskData.assignedTo || currentUser.id))
+											: null;
+										return assignedMember ? (assignedMember.username || assignedMember.email || currentUser.name) : currentUser.name;
+									})(),
+									assignedByName: currentUser.name,
 								title: taskData.title,
 								description: taskData.description,
 								plan: taskData.plan,
@@ -4402,6 +4694,7 @@
 								dueTime: taskData.dueTime,
 								reminder: taskData.reminder,
 								customReminder: taskData.customReminder,
+									status: 'pending',
 								completed: false,
 								createdAt: Date.now(),
 								reflection: null,
@@ -4565,6 +4858,7 @@
 				const searchTerm = document.getElementById("searchInput").value.toLowerCase();
 				const filterPlan = document.getElementById("filterPlan").value;
 				const filterStatus = document.getElementById("filterStatus").value;
+				const organizationAdmin = isCurrentUserOrganizationAdmin();
 
 				let filteredTasks = userTasks.filter((task) => {
 					const matchesSearch = task.title.toLowerCase().includes(searchTerm) || task.description.toLowerCase().includes(searchTerm);
@@ -4628,6 +4922,12 @@
 							reminderHTML = `<span class="task-reminder-indicator email">${reminderText[task.reminder] || "Reminder set"}</span>`;
 						}
 
+							const isOrganizationTask = task.organizationId != null;
+							const isAssignedToCurrentUser = currentUser && task.assignedTo === currentUser.id;
+							const canSubmitOrganizationTask = isOrganizationTask && isAssignedToCurrentUser && task.status !== "submitted" && task.status !== "completed";
+							const canReviewOrganizationTask = isOrganizationTask && organizationAdmin && task.status === "submitted";
+							const canEditOrganizationTask = isOrganizationTask && organizationAdmin;
+
 						return `
           <div class="task-card ${task.plan} ${task.completed ? "completed" : ""}" data-task-id="${task.id}">
             <div class="task-header">
@@ -4639,6 +4939,8 @@
             ${timerHTML}
             <div class="task-meta">
               <span class="task-badge ${task.plan}">${planIcons[task.plan]} ${task.plan.toUpperCase()}</span>
+							${task.status ? `<span class="task-badge"><i class="fas fa-circle-info"></i> ${task.status.replace(/_/g, " ").toUpperCase()}</span>` : ""}
+							${task.organizationName ? `<span class="task-badge"><i class="fas fa-building"></i> ${task.organizationName}</span>` : ""}
               ${
 				task.dueDate
 					? `<span class="task-badge ${isOverdue(task.dueDate) && !task.completed ? "due" : ""}">
@@ -4651,7 +4953,7 @@
             </div>
             <div class="task-actions">
               ${
-				!task.completed
+					!task.completed && !isOrganizationTask
 					? `
                 <button class="btn btn-small btn-success" onclick="openReflectionModal('${task.id}')">
                   ✓ Complete
@@ -4662,6 +4964,9 @@
               `
 					: ""
 			}
+				  ${canSubmitOrganizationTask ? `<button class="btn btn-small btn-success" onclick="submitTaskAction('${task.id}')">Submit Task</button>` : ""}
+				  ${canReviewOrganizationTask ? `<button class="btn btn-small btn-success" onclick="reviewTaskAction('${task.id}', 'approve')">Approve</button><button class="btn btn-small btn-secondary" onclick="reviewTaskAction('${task.id}', 'reject')">Reject</button>` : ""}
+				  ${canEditOrganizationTask ? `<button class="btn btn-small btn-primary" onclick="editTask('${task.id}')">✏️ Edit</button>` : ""}
               <button class="btn btn-small btn-danger" onclick="deleteTask('${task.id}')">
                 🗑️ Delete
               </button>
@@ -4682,12 +4987,21 @@
 				const task = tasks.find((t) => t.id === parseFloat(taskId));
 				editingTaskId = task.id;
 
+				if (task.organizationId) {
+					setOrganizationMode("organization");
+					setSelectedOrganization(task.organizationId);
+				}
+
+				syncOrganizationControls();
+
 				document.getElementById("modalTitle").textContent = "Edit Task";
 				document.getElementById("taskTitle").value = task.title || "";
 				document.getElementById("taskDescription").value = task.description || "";
 				document.getElementById("taskPlan").value = task.plan || "day";
 				document.getElementById("taskDueDate").value = task.dueDate || "";
 				document.getElementById("taskDueTime").value = task.dueTime || "";
+				document.getElementById("taskOrganizationId").value = task.organizationId || selectedOrganizationId || "";
+				document.getElementById("taskAssignedTo").value = task.assignedTo || currentUser.id || "";
 				document.getElementById("taskReminder").value = task.reminder || "none";
 				document.getElementById("customReminder").value = task.customReminder || "";
 
@@ -4759,6 +5073,50 @@
 				const taskCard = document.querySelector(`[data-task-id="${taskId}"]`);
 				const confirmDiv = taskCard.querySelector(".task-actions > div");
 				if (confirmDiv) confirmDiv.remove();
+			};
+
+			window.submitTaskAction = (taskId) => {
+				if (!api) {
+					showNotification("API not initialized", "error");
+					return;
+				}
+
+				api.submitTask(taskId).then(() => {
+					const task = tasks.find((entry) => entry.id === parseFloat(taskId));
+					if (task) {
+						task.status = "submitted";
+						task.completed = false;
+					}
+					renderTasks();
+					updateOverview();
+					updatePlans();
+					updateAnalytics();
+					showNotification("Task submitted successfully", "success");
+				}).catch((error) => {
+					showNotification("Failed to submit task: " + error.message, "error");
+				});
+			};
+
+			window.reviewTaskAction = (taskId, reviewAction) => {
+				if (!api) {
+					showNotification("API not initialized", "error");
+					return;
+				}
+
+				api.reviewTask(taskId, reviewAction).then((response) => {
+					const task = tasks.find((entry) => entry.id === parseFloat(taskId));
+					if (task) {
+						task.status = response.status || (reviewAction === "approve" ? "completed" : "in_progress");
+						task.completed = task.status === "completed";
+					}
+					renderTasks();
+					updateOverview();
+					updatePlans();
+					updateAnalytics();
+					showNotification(reviewAction === "approve" ? "Task approved" : "Task sent back for changes", "success");
+				}).catch((error) => {
+					showNotification("Failed to review task: " + error.message, "error");
+				});
 			};
 
 			// ===== SEARCH & FILTER =====
@@ -5106,7 +5464,9 @@
 			if (currentUser) {
 				document.getElementById("userNameDisplay").textContent = `Welcome, ${currentUser.name}!`;
 				showPage("dashboard");
+				syncOrganizationControls();
 				showSection("overview");
+				loadOrganizations();
 				loadDiaryEntries();
 
 				// Initialize timer and reminder systems

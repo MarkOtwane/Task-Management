@@ -154,3 +154,76 @@ function requireAuth() {
     error_log('Authentication successful for user: ' . $userId);
     return $userId;
 }
+
+/**
+ * Get the authenticated user record.
+ */
+function getCurrentUser($pdo) {
+	$userId = requireAuth();
+	$stmt = $pdo->prepare("SELECT id, email, username, role FROM users WHERE id = ?");
+	$stmt->execute([$userId]);
+	$user = $stmt->fetch();
+
+	if (!$user) {
+		http_response_code(401);
+		echo json_encode(['error' => 'Unauthorized - User not found']);
+		exit;
+	}
+
+	$user['role'] = $user['role'] ?: 'member';
+	return $user;
+}
+
+/**
+ * Determine whether the user is the fixed super admin.
+ */
+function isSuperAdminEmail($email) {
+	return strtolower((string) $email) === 'autonemac003@gmail.com';
+}
+
+/**
+ * Check organization membership and return the membership row if present.
+ */
+function getOrganizationMembership($pdo, $userId, $organizationId) {
+	$stmt = $pdo->prepare("SELECT id, user_id, organization_id, role FROM organization_members WHERE user_id = ? AND organization_id = ?");
+	$stmt->execute([$userId, $organizationId]);
+	return $stmt->fetch();
+}
+
+/**
+ * Check whether a user can access an organization.
+ */
+function userCanAccessOrganization($pdo, $user, $organizationId) {
+	if (!$organizationId) {
+		return false;
+	}
+
+	if (isSuperAdminEmail($user['email'])) {
+		return true;
+	}
+
+	return (bool) getOrganizationMembership($pdo, $user['id'], $organizationId);
+}
+
+/**
+ * Check whether a user is an organization admin.
+ */
+function userIsOrganizationAdmin($pdo, $user, $organizationId) {
+	if (isSuperAdminEmail($user['email'])) {
+		return true;
+	}
+
+	$membership = getOrganizationMembership($pdo, $user['id'], $organizationId);
+	if (!$membership) {
+		return false;
+	}
+
+	return in_array($membership['role'], ['organization_admin'], true);
+}
+
+/**
+ * Check whether a user can assign or review organization tasks.
+ */
+function userCanManageOrganizationTasks($pdo, $user, $organizationId) {
+	return userIsOrganizationAdmin($pdo, $user, $organizationId);
+}
