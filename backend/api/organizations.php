@@ -12,6 +12,15 @@ $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? null;
 $user = getCurrentUser($pdo);
 
+function logOrganizationDebug($event, $user, $organizationId = null, $payload = null) {
+	error_log('[organizations] ' . $event . ' userId=' . ($user['id'] ?? 'unknown') . ' role=' . ($user['role'] ?? 'unknown') . ' orgId=' . ($organizationId ?? 'null') . ' payload=' . json_encode($payload));
+}
+
+logOrganizationDebug('request', $user, $_GET['organization_id'] ?? null, [
+	'method' => $method,
+	'action' => $action,
+]);
+
 if ($method === 'GET') {
 	getOrganizations($pdo, $user);
 } elseif ($method === 'POST' && $action === 'add-member') {
@@ -24,15 +33,18 @@ if ($method === 'GET') {
 }
 
 function createOrganization($pdo, $user) {
-	if (!isSuperAdminEmail($user['email'])) {
-		http_response_code(403);
-		echo json_encode(['error' => 'Only the super admin can create organizations']);
-		return;
-	}
-
 	$input = json_decode(file_get_contents('php://input'), true);
 	if (!is_array($input)) {
 		$input = [];
+	}
+
+	logOrganizationDebug('createOrganization.attempt', $user, null, $input);
+
+	if (!isSuperAdminEmail($user['email'])) {
+		logOrganizationDebug('createOrganization.denied_not_super_admin_email', $user, null, $input);
+		http_response_code(403);
+		echo json_encode(['error' => 'Only the super admin can create organizations']);
+		return;
 	}
 
 	$name = trim($input['name'] ?? '');
@@ -50,6 +62,10 @@ function createOrganization($pdo, $user) {
 		$memberStmt = $pdo->prepare("INSERT INTO organization_members (user_id, organization_id, role) VALUES (?, ?, ?)");
 		$memberStmt->execute([$user['id'], $organizationId, 'organization_admin']);
 
+		logOrganizationDebug('createOrganization.success', $user, $organizationId, [
+			'name' => $name,
+		]);
+
 		http_response_code(201);
 		echo json_encode([
 			'message' => 'Organization created successfully',
@@ -62,6 +78,10 @@ function createOrganization($pdo, $user) {
 			],
 		]);
 	} catch (PDOException $exception) {
+		logOrganizationDebug('createOrganization.error', $user, null, [
+			'error' => $exception->getMessage(),
+			'name' => $name,
+		]);
 		http_response_code(500);
 		echo json_encode(['error' => 'Failed to create organization: ' . $exception->getMessage()]);
 	}
@@ -69,6 +89,8 @@ function createOrganization($pdo, $user) {
 
 function getOrganizations($pdo, $user) {
 	try {
+		logOrganizationDebug('getOrganizations.start', $user);
+
 		if (isSuperAdminEmail($user['email'])) {
 			$stmt = $pdo->prepare("
 				SELECT o.*, creator.username AS created_by_name
@@ -103,8 +125,16 @@ function getOrganizations($pdo, $user) {
 			$organization['members'] = $membersStmt->fetchAll();
 		}
 		unset($organization);
+
+		logOrganizationDebug('getOrganizations.success', $user, null, [
+			'count' => count($organizations),
+		]);
+
 		echo json_encode($organizations);
 	} catch (PDOException $exception) {
+		logOrganizationDebug('getOrganizations.error', $user, null, [
+			'error' => $exception->getMessage(),
+		]);
 		http_response_code(500);
 		echo json_encode(['error' => 'Failed to fetch organizations: ' . $exception->getMessage()]);
 	}
@@ -121,6 +151,8 @@ function addOrganizationMember($pdo, $user) {
 	$userEmail = trim($input['email'] ?? '');
 	$role = $input['role'] ?? 'member';
 
+	logOrganizationDebug('addOrganizationMember.attempt', $user, $organizationId, $input);
+
 	if ($organizationId <= 0 || !$userId && $userEmail === '') {
 		http_response_code(400);
 		echo json_encode(['error' => 'Organization ID and user identifier are required']);
@@ -134,6 +166,7 @@ function addOrganizationMember($pdo, $user) {
 	}
 
 	if (!userCanManageOrganizationTasks($pdo, $user, $organizationId)) {
+		logOrganizationDebug('addOrganizationMember.denied_not_org_admin', $user, $organizationId, $input);
 		http_response_code(403);
 		echo json_encode(['error' => 'Only organization admins can add members']);
 		return;
@@ -162,6 +195,11 @@ function addOrganizationMember($pdo, $user) {
 		");
 		$insert->execute([$userId, $organizationId, $role]);
 
+		logOrganizationDebug('addOrganizationMember.success', $user, $organizationId, [
+			'user_id' => $userId,
+			'role' => $role,
+		]);
+
 		echo json_encode([
 			'message' => 'Organization member saved successfully',
 			'organization_id' => $organizationId,
@@ -169,6 +207,9 @@ function addOrganizationMember($pdo, $user) {
 			'role' => $role,
 		]);
 	} catch (PDOException $exception) {
+		logOrganizationDebug('addOrganizationMember.error', $user, $organizationId, [
+			'error' => $exception->getMessage(),
+		]);
 		http_response_code(500);
 		echo json_encode(['error' => 'Failed to save organization member: ' . $exception->getMessage()]);
 	}

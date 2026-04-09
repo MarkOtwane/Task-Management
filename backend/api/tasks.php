@@ -11,6 +11,15 @@ require_once '../middleware/auth.php';
 $method = $_SERVER['REQUEST_METHOD'];
 $user = getCurrentUser($pdo);
 
+function logTaskDebug($event, $user, $organizationId = null, $payload = null) {
+	error_log('[tasks] ' . $event . ' userId=' . ($user['id'] ?? 'unknown') . ' role=' . ($user['role'] ?? 'unknown') . ' orgId=' . ($organizationId ?? 'null') . ' payload=' . json_encode($payload));
+}
+
+logTaskDebug('request', $user, $_GET['organization_id'] ?? null, [
+	'method' => $method,
+	'query' => $_GET,
+]);
+
 if ($method === 'GET') {
 	getTasks($pdo, $user);
 } elseif ($method === 'POST') {
@@ -67,9 +76,20 @@ function userCanAccessTaskOrganization($pdo, $user, $organizationId) {
 
 function getTasks($pdo, $user) {
 	$mode = $_GET['mode'] ?? 'personal';
-	$organizationId = $_GET['organization_id'] ?? null;
+	$organizationId = !empty($_GET['organization_id']) ? (int) $_GET['organization_id'] : null;
+
+	if ($mode === 'organization' && !$organizationId) {
+		logTaskDebug('getTasks.fallback_to_personal_missing_organization', $user, null, [
+			'mode' => $mode,
+		]);
+		$mode = 'personal';
+	}
 
 	try {
+		logTaskDebug('getTasks.start', $user, $organizationId, [
+			'mode' => $mode,
+		]);
+
 		if ($mode === 'organization' && $organizationId) {
 			if (!userCanAccessTaskOrganization($pdo, $user, $organizationId)) {
 				http_response_code(403);
@@ -99,10 +119,10 @@ function getTasks($pdo, $user) {
 					LEFT JOIN organizations o ON o.id = t.organization_id
 					LEFT JOIN users assignee ON assignee.id = t.assigned_to
 					LEFT JOIN users assigner ON assigner.id = t.assigned_by
-					WHERE t.organization_id = ? AND (t.assigned_to = ? OR t.user_id = ? OR t.assigned_by = ?)
+					WHERE t.organization_id = ? AND t.assigned_to = ?
 					ORDER BY t.created_at DESC
 				");
-				$stmt->execute([$organizationId, $user['id'], $user['id'], $user['id']]);
+				$stmt->execute([$organizationId, $user['id']]);
 			}
 		} else {
 			$stmt = $pdo->prepare("
@@ -120,8 +140,16 @@ function getTasks($pdo, $user) {
 		}
 
 		$tasks = $stmt->fetchAll();
+		logTaskDebug('getTasks.success', $user, $organizationId, [
+			'mode' => $mode,
+			'count' => count($tasks),
+		]);
 		echo json_encode($tasks);
 	} catch (PDOException $exception) {
+		logTaskDebug('getTasks.error', $user, $organizationId, [
+			'mode' => $mode,
+			'error' => $exception->getMessage(),
+		]);
 		http_response_code(500);
 		echo json_encode(['error' => 'Failed to fetch tasks: ' . $exception->getMessage()]);
 	}
@@ -129,6 +157,9 @@ function getTasks($pdo, $user) {
 
 function createTask($pdo, $user) {
 	$input = parseJsonInput();
+	$requestedOrganizationId = !empty($input['organization_id']) ? (int) $input['organization_id'] : null;
+
+	logTaskDebug('createTask.attempt', $user, $requestedOrganizationId, $input);
 
 	if (empty($input['title'])) {
 		http_response_code(400);
@@ -144,6 +175,7 @@ function createTask($pdo, $user) {
 
 	if ($organizationId) {
 		if (!userCanManageOrganizationTasks($pdo, $user, $organizationId)) {
+			logTaskDebug('createTask.denied_not_org_admin', $user, $organizationId, $input);
 			http_response_code(403);
 			echo json_encode(['error' => 'Only organization admins can create organization tasks']);
 			return;
@@ -151,7 +183,10 @@ function createTask($pdo, $user) {
 
 		if ($assignedTo) {
 			$membership = getOrganizationMembership($pdo, $assignedTo, $organizationId);
-			if (!$membership && !isSuperAdminEmail($user['email'])) {
+			if (!$membership) {
+				logTaskDebug('createTask.denied_assignee_not_member', $user, $organizationId, [
+					'assigned_to' => $assignedTo,
+				]);
 				http_response_code(400);
 				echo json_encode(['error' => 'Assigned user must belong to the organization']);
 				return;
@@ -159,6 +194,16 @@ function createTask($pdo, $user) {
 		}
 
 		if (!$assignedTo) {
+			$creatorMembership = getOrganizationMembership($pdo, $user['id'], $organizationId);
+			if (!$creatorMembership) {
+				logTaskDebug('createTask.denied_default_assignee_not_member', $user, $organizationId, [
+					'suggested_assigned_to' => $user['id'],
+				]);
+				http_response_code(400);
+				echo json_encode(['error' => 'Assigned user must belong to the organization']);
+				return;
+			}
+
 			$assignedTo = (int) $user['id'];
 		}
 	} else {
@@ -198,6 +243,12 @@ function createTask($pdo, $user) {
 		$taskId = $pdo->lastInsertId();
 		$task = getTaskRecord($pdo, $taskId);
 
+		logTaskDebug('createTask.success', $user, $organizationId, [
+			'task_id' => (int) $taskId,
+			'assigned_to' => $assignedTo,
+			'status' => $status,
+		]);
+
 		http_response_code(201);
 		echo json_encode([
 			'message' => 'Task created successfully',
@@ -205,6 +256,10 @@ function createTask($pdo, $user) {
 			'task' => $task,
 		]);
 	} catch (PDOException $exception) {
+		logTaskDebug('createTask.error', $user, $organizationId, [
+			'error' => $exception->getMessage(),
+			'input' => $input,
+		]);
 		http_response_code(500);
 		echo json_encode(['error' => 'Failed to create task: ' . $exception->getMessage()]);
 	}
@@ -252,12 +307,21 @@ function updateTask($pdo, $user) {
 							$assignedTo = !empty($input[$field]) ? (int) $input[$field] : null;
 							if ($assignedTo) {
 								$membership = getOrganizationMembership($pdo, $assignedTo, $task['organization_id']);
-								if (!$membership && !isSuperAdminEmail($user['email'])) {
+								if (!$membership) {
+									logTaskDebug('updateTask.denied_assignee_not_member', $user, $task['organization_id'], [
+										'task_id' => (int) $taskId,
+										'assigned_to' => $assignedTo,
+									]);
 									http_response_code(400);
 									echo json_encode(['error' => 'Assigned user must belong to the organization']);
 									return;
 								}
 							}
+
+							logTaskDebug('taskAssignment.update', $user, $task['organization_id'], [
+								'task_id' => (int) $taskId,
+								'assigned_to' => $assignedTo,
+							]);
 							$values[] = $assignedTo;
 						} else {
 							$values[] = $input[$field];
@@ -316,15 +380,29 @@ function updateTask($pdo, $user) {
 		$stmt = $pdo->prepare($sql);
 		$stmt->execute($values);
 
+		logTaskDebug('updateTask.success', $user, $task['organization_id'] ?? null, [
+			'task_id' => (int) $taskId,
+			'updates' => $updates,
+		]);
+
 		echo json_encode(['message' => 'Task updated successfully']);
 	} catch (PDOException $exception) {
+		logTaskDebug('updateTask.error', $user, $task['organization_id'] ?? null, [
+			'task_id' => (int) $taskId,
+			'error' => $exception->getMessage(),
+		]);
 		http_response_code(500);
 		echo json_encode(['error' => 'Failed to update task: ' . $exception->getMessage()]);
 	}
 }
 
 function submitTask($pdo, $user, $task) {
-	if ((int) $task['assigned_to'] !== (int) $user['id'] && (int) $task['user_id'] !== (int) $user['id']) {
+	$isOrganizationTask = (int) $task['organization_id'] > 0;
+	$canSubmit = $isOrganizationTask
+		? ((int) $task['assigned_to'] === (int) $user['id'])
+		: (((int) $task['assigned_to'] === (int) $user['id']) || ((int) $task['user_id'] === (int) $user['id']));
+
+	if (!$canSubmit) {
 		http_response_code(403);
 		echo json_encode(['error' => 'Only the assigned user can submit this task']);
 		return;
@@ -334,8 +412,17 @@ function submitTask($pdo, $user, $task) {
 		$stmt = $pdo->prepare("UPDATE tasks SET status = 'submitted', updated_at = CURRENT_TIMESTAMP WHERE id = ?");
 		$stmt->execute([$task['id']]);
 
+		logTaskDebug('submitTask.success', $user, $task['organization_id'] ?? null, [
+			'task_id' => (int) $task['id'],
+			'new_status' => 'submitted',
+		]);
+
 		echo json_encode(['message' => 'Task submitted successfully']);
 	} catch (PDOException $exception) {
+		logTaskDebug('submitTask.error', $user, $task['organization_id'] ?? null, [
+			'task_id' => (int) $task['id'],
+			'error' => $exception->getMessage(),
+		]);
 		http_response_code(500);
 		echo json_encode(['error' => 'Failed to submit task: ' . $exception->getMessage()]);
 	}
@@ -361,8 +448,18 @@ function reviewTask($pdo, $user, $task, $input) {
 		$stmt = $pdo->prepare("UPDATE tasks SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
 		$stmt->execute([$status, $task['id']]);
 
+		logTaskDebug('reviewTask.success', $user, $task['organization_id'] ?? null, [
+			'task_id' => (int) $task['id'],
+			'review_action' => $reviewAction,
+			'new_status' => $status,
+		]);
+
 		echo json_encode(['message' => 'Task reviewed successfully', 'status' => $status]);
 	} catch (PDOException $exception) {
+		logTaskDebug('reviewTask.error', $user, $task['organization_id'] ?? null, [
+			'task_id' => (int) $task['id'],
+			'error' => $exception->getMessage(),
+		]);
 		http_response_code(500);
 		echo json_encode(['error' => 'Failed to review task: ' . $exception->getMessage()]);
 	}

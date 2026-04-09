@@ -2814,6 +2814,74 @@
 				}
 			}
 
+			function getTaskRequestContext() {
+				if (organizationMode === "organization" && selectedOrganizationId) {
+					return {
+						mode: "organization",
+						organizationId: selectedOrganizationId,
+					};
+				}
+
+				if (organizationMode === "organization" && !selectedOrganizationId) {
+					console.warn("[org-mode] Missing selected organization. Falling back to personal mode for request.");
+				}
+
+				return {
+					mode: "personal",
+					organizationId: null,
+				};
+			}
+
+			// Keep this in global scope so task refresh works from all views and events.
+			async function loadTasks() {
+				try {
+					if (!api) return;
+					const taskContext = getTaskRequestContext();
+					const backendTasks = await api.getTasks(taskContext);
+					// Map backend task schema to frontend shape
+					tasks = (backendTasks || []).map((t) => {
+						const mapped = {
+							id: Number(t.id),
+							// Ensure userId is set so getUserTasks() can filter correctly
+							userId: t.user_id ? Number(t.user_id) : (currentUser ? currentUser.id : null),
+							organizationId: t.organization_id ? Number(t.organization_id) : null,
+							assignedTo: t.assigned_to ? Number(t.assigned_to) : null,
+							assignedBy: t.assigned_by ? Number(t.assigned_by) : null,
+							organizationName: t.organization_name || '',
+							assignedToName: t.assigned_to_name || '',
+							assignedByName: t.assigned_by_name || '',
+							title: t.title,
+							description: t.description,
+							plan: t.category || 'day',
+							// dueDate (YYYY-MM-DD) and dueTime (HH:MM)
+							dueDate: t.due_date ? new Date(t.due_date).toISOString().split('T')[0] : '',
+							dueTime: t.due_date ? new Date(t.due_date).toISOString().split('T')[1].slice(0,5) : '',
+							reminder: 'none',
+							customReminder: '',
+							status: (t.status || 'pending').toLowerCase(),
+							completed: (t.status || '').toLowerCase() === 'completed',
+							createdAt: (() => {
+								const createdAtDate = parseBackendTimestamp(t.created_at);
+								return createdAtDate ? createdAtDate.getTime() : Date.now();
+							})(),
+							reflection: null,
+							reminderSent: false,
+							deadlineSent: false
+						};
+						return mapped;
+					});
+					renderTasks();
+					updateOverview();
+					updatePlans();
+					// Persist loaded tasks to localStorage for offline/quick access
+					try { storage.saveTasks(tasks); } catch (e) { console.warn('Could not save tasks to storage', e); }
+				} catch (error) {
+					console.error("Error loading tasks:", error);
+					// Fall back to localStorage if API fails
+					tasks = storage.getTasks();
+				}
+			}
+
 			// ===== AUTH FUNCTIONS =====
 			document.getElementById("showRegister").addEventListener("click", (e) => {
 				e.preventDefault();
@@ -2877,58 +2945,6 @@
 					// Clear any existing token on login failure
 					localStorage.removeItem('auth_token');
 				});
-
-						// ===== LOAD TASKS FROM BACKEND =====
-						async function loadTasks() {
-							try {
-								if (!api) return;
-								const backendTasks = await api.getTasks({
-									mode: organizationMode,
-									organizationId: selectedOrganizationId,
-								});
-								// Map backend task schema to frontend shape
-								tasks = (backendTasks || []).map((t) => {
-									const mapped = {
-										id: Number(t.id),
-										// Ensure userId is set so getUserTasks() can filter correctly
-										userId: t.user_id ? Number(t.user_id) : (currentUser ? currentUser.id : null),
-										organizationId: t.organization_id ? Number(t.organization_id) : null,
-										assignedTo: t.assigned_to ? Number(t.assigned_to) : null,
-										assignedBy: t.assigned_by ? Number(t.assigned_by) : null,
-										organizationName: t.organization_name || '',
-										assignedToName: t.assigned_to_name || '',
-										assignedByName: t.assigned_by_name || '',
-										title: t.title,
-										description: t.description,
-										plan: t.category || 'day',
-										// dueDate (YYYY-MM-DD) and dueTime (HH:MM)
-										dueDate: t.due_date ? new Date(t.due_date).toISOString().split('T')[0] : '',
-										dueTime: t.due_date ? new Date(t.due_date).toISOString().split('T')[1].slice(0,5) : '',
-										reminder: 'none',
-										customReminder: '',
-										status: (t.status || 'pending').toLowerCase(),
-										completed: (t.status || '').toLowerCase() === 'completed',
-										createdAt: (() => {
-											const createdAtDate = parseBackendTimestamp(t.created_at);
-											return createdAtDate ? createdAtDate.getTime() : Date.now();
-										})(),
-										reflection: null,
-										reminderSent: false,
-										deadlineSent: false
-									};
-									return mapped;
-								});
-								renderTasks();
-								updateOverview();
-								updatePlans();
-								// Persist loaded tasks to localStorage for offline/quick access
-								try { storage.saveTasks(tasks); } catch (e) { console.warn('Could not save tasks to storage', e); }
-							} catch (error) {
-								console.error("Error loading tasks:", error);
-								// Fall back to localStorage if API fails
-								tasks = storage.getTasks();
-							}
-						}
 			});
 
 				// Attempt initialization when DOM is ready (in case TaskAPI is already loaded)
@@ -3254,7 +3270,7 @@
 						return tasks.filter((task) => String(task.organizationId || "") === String(selectedOrganizationId));
 					}
 
-					return tasks.filter((task) => String(task.organizationId || "") === String(selectedOrganizationId) && (task.assignedTo === currentUser.id || task.userId === currentUser.id || task.assignedBy === currentUser.id));
+					return tasks.filter((task) => String(task.organizationId || "") === String(selectedOrganizationId) && task.assignedTo === currentUser.id);
 				}
 
 				return tasks.filter((task) => task.organizationId == null && task.userId === currentUser.id);
@@ -4521,11 +4537,16 @@
 			taskForm.addEventListener("submit", (e) => {
 				e.preventDefault();
 
+				const requestContext = getTaskRequestContext();
+				const modeAwareOrganizationId = requestContext.mode === "organization"
+					? (selectedOrganizationId || document.getElementById("taskOrganizationId").value || null)
+					: null;
+
 				const taskData = {
 					title: document.getElementById("taskTitle").value.trim(),
 					description: document.getElementById("taskDescription").value.trim(),
 					plan: document.getElementById("taskPlan").value,
-						organizationId: document.getElementById("taskOrganizationId").value || null,
+						organizationId: modeAwareOrganizationId,
 						assignedTo: document.getElementById("taskAssignedTo").value || null,
 					dueDate: document.getElementById("taskDueDate").value,
 					dueTime: document.getElementById("taskDueTime").value,
@@ -4543,10 +4564,18 @@
 					return;
 				}
 
-					if (organizationMode === "organization" && !taskData.organizationId) {
-						showNotification("Select an organization before saving this task", "error");
-						return;
-					}
+				if (requestContext.mode === "organization" && !taskData.organizationId) {
+					showNotification("Select an organization before saving this task", "error");
+					return;
+				}
+
+				console.log("[task-form] submit payload", {
+					userId: currentUser ? currentUser.id : null,
+					role: currentUser ? currentUser.role : null,
+					mode: requestContext.mode,
+					organizationId: taskData.organizationId,
+					payload: taskData,
+				});
 
 				// Use backend API to save/update task
 				if (!api || !currentUser) {
