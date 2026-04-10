@@ -4,6 +4,7 @@
  * Endpoints:
  * - GET /api/notifications.php?organization_id={id}&limit=20
  * - PUT /api/notifications.php (mark one/all as read)
+ * - PATCH /api/notifications.php?action=mark-all-read
  */
 
 require_once '../config/cors.php';
@@ -12,11 +13,14 @@ require_once '../middleware/auth.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 $user = getCurrentUser($pdo);
+$action = $_GET['action'] ?? null;
 
 if ($method === 'GET') {
 	getNotifications($pdo, $user);
 } elseif ($method === 'PUT') {
 	markNotificationsAsRead($pdo, $user);
+} elseif ($method === 'PATCH' && $action === 'mark-all-read') {
+	markAllNotificationsAsRead($pdo, $user);
 } else {
 	http_response_code(405);
 	echo json_encode(['error' => 'Method not allowed']);
@@ -29,13 +33,13 @@ function getNotifications($pdo, $user) {
 
 	try {
 		if ($organizationId) {
-			$stmt = $pdo->prepare("\n				SELECT id, user_id, organization_id, task_id, message, is_read, created_at\n				FROM notifications\n				WHERE user_id = ? AND organization_id = ?\n				ORDER BY created_at DESC\n				LIMIT ?\n			");
+			$stmt = $pdo->prepare("\n				SELECT id, user_id, organization_id, task_id, message, entity_type, entity_id, is_read, created_at\n				FROM notifications\n				WHERE user_id = ? AND organization_id = ?\n				ORDER BY created_at DESC\n				LIMIT ?\n			");
 			$stmt->bindValue(1, (int) $user['id'], PDO::PARAM_INT);
 			$stmt->bindValue(2, $organizationId, PDO::PARAM_INT);
 			$stmt->bindValue(3, $limit, PDO::PARAM_INT);
 			$stmt->execute();
 		} else {
-			$stmt = $pdo->prepare("\n				SELECT id, user_id, organization_id, task_id, message, is_read, created_at\n				FROM notifications\n				WHERE user_id = ?\n				ORDER BY created_at DESC\n				LIMIT ?\n			");
+			$stmt = $pdo->prepare("\n				SELECT id, user_id, organization_id, task_id, message, entity_type, entity_id, is_read, created_at\n				FROM notifications\n				WHERE user_id = ?\n				ORDER BY created_at DESC\n				LIMIT ?\n			");
 			$stmt->bindValue(1, (int) $user['id'], PDO::PARAM_INT);
 			$stmt->bindValue(2, $limit, PDO::PARAM_INT);
 			$stmt->execute();
@@ -56,6 +60,28 @@ function getNotifications($pdo, $user) {
 	} catch (PDOException $exception) {
 		http_response_code(500);
 		echo json_encode(['error' => 'Failed to fetch notifications: ' . $exception->getMessage()]);
+	}
+}
+
+function markAllNotificationsAsRead($pdo, $user) {
+	$organizationId = !empty($_GET['organization_id']) ? (int) $_GET['organization_id'] : null;
+
+	try {
+		if ($organizationId) {
+			$stmt = $pdo->prepare("\n				UPDATE notifications\n				SET is_read = TRUE\n				WHERE user_id = ? AND organization_id = ? AND is_read = FALSE\n			");
+			$stmt->execute([(int) $user['id'], $organizationId]);
+		} else {
+			$stmt = $pdo->prepare("\n				UPDATE notifications\n				SET is_read = TRUE\n				WHERE user_id = ? AND is_read = FALSE\n			");
+			$stmt->execute([(int) $user['id']]);
+		}
+
+		echo json_encode([
+			'success' => true,
+			'message' => 'Notifications marked as read',
+		]);
+	} catch (PDOException $exception) {
+		http_response_code(500);
+		echo json_encode(['error' => 'Failed to update notifications: ' . $exception->getMessage()]);
 	}
 }
 

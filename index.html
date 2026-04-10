@@ -577,6 +577,28 @@
 				border-radius: 8px;
 			}
 
+			.task-detail-view {
+				background: var(--bg-card);
+				border: 1px solid var(--border-primary);
+				border-radius: 14px;
+				padding: 16px;
+				margin-bottom: 16px;
+			}
+
+			.submission-files-grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+				gap: 10px;
+				margin-top: 10px;
+			}
+
+			.submission-file-item {
+				border: 1px solid var(--border-primary);
+				border-radius: 10px;
+				padding: 8px;
+				background: rgba(255, 255, 255, 0.02);
+			}
+
 			.mobile-menu-btn {
 				display: none;
 				position: fixed;
@@ -2213,6 +2235,7 @@
 								<div class="nav-section-title">Organization</div>
 								<a href="#" class="org-nav-link" data-org-nav="dashboard"> <span class="icon"><span class="material-icons icon-24">dashboard</span></span> Dashboard </a>
 								<a href="#" class="org-nav-link" data-org-nav="tasks"> <span class="icon"><span class="material-icons icon-24">assignment</span></span> Tasks </a>
+								<a href="#" class="org-nav-link hidden" data-org-nav="requests"> <span class="icon"><span class="material-icons icon-24">assignment_returned</span></span> Requests </a>
 								<a href="#" class="org-nav-link" data-org-nav="members"> <span class="icon"><span class="material-icons icon-24">group</span></span> Members </a>
 								<a href="#" class="org-nav-link" data-org-nav="activity"> <span class="icon"><span class="material-icons icon-24">history</span></span> Activity </a>
 								<a href="#" class="org-nav-link" data-org-nav="settings"> <span class="icon"><span class="material-icons icon-24">settings</span></span> Settings </a>
@@ -2331,6 +2354,7 @@
 								<div class="organization-tabs" id="organizationTabs">
 									<button type="button" class="organization-tab active" data-org-section="dashboard">Dashboard</button>
 									<button type="button" class="organization-tab" data-org-section="tasks">Tasks</button>
+									<button type="button" class="organization-tab hidden" data-org-section="requests">Requests</button>
 									<button type="button" class="organization-tab" data-org-section="members">Members</button>
 									<button type="button" class="organization-tab" data-org-section="activity">Activity</button>
 									<button type="button" class="organization-tab" data-org-section="settings">Settings</button>
@@ -2360,6 +2384,12 @@
 										</div>
 									</div>
 									<div id="organizationTaskGroupList" class="organization-group-list"></div>
+								</div>
+								<div id="orgPanelRequests" class="org-panel hidden">
+									<div class="controls-bar" style="margin-bottom: 12px;">
+										<button type="button" class="btn btn-primary" id="createClientRequestBtn">+ Create Request</button>
+									</div>
+									<div id="organizationRequestsList" class="organization-group-list"></div>
 								</div>
 								<div id="orgPanelMembers" class="org-panel hidden">
 									<div id="organizationMembersList" class="organization-members-list"></div>
@@ -2439,6 +2469,7 @@
 							<button class="btn btn-primary" id="addTaskBtn">+ Add Task</button>
 						</div>
 						<div class="tasks-grid" id="tasksGrid"></div>
+						<div id="taskDetailView" class="task-detail-view hidden"></div>
 						<div id="emptyTasksState" class="empty-state hidden">
 							<div class="empty-state-icon"><i class="fas fa-list-check"></i></div>
 							<h3>No tasks yet</h3>
@@ -2857,6 +2888,8 @@
 			let currentUser = storage.getCurrentUser();
 			let tasks = [];
 			let organizations = storage.getOrganizations();
+			let organizationActivities = [];
+			let clientRequests = [];
 			let organizationMode = storage.getOrganizationMode();
 			let selectedOrganizationId = storage.getSelectedOrganizationId();
 			const organizationState = {
@@ -3204,7 +3237,7 @@
 					? items.map((item) => {
 						const unreadClass = item.is_read || item.isRead ? "" : "unread";
 						return `
-							<div class="notification-dropdown-item ${unreadClass}" data-notification-id="${item.id}">
+							<div class="notification-dropdown-item ${unreadClass}" data-notification-id="${item.id}" data-entity-type="${item.entity_type || item.entityType || "task"}" data-entity-id="${item.entity_id || item.entityId || item.task_id || item.taskId || ""}">
 								<div><strong>${item.message || item.text}</strong></div>
 								<div class="organization-member-meta">${new Date(item.created_at || item.createdAt).toLocaleString()}</div>
 							</div>
@@ -3247,20 +3280,12 @@
 					<div class="task-submission-form" data-submission-form="${task.id}" data-submission-context="${contextKey}">
 						<h4>Submit Task</h4>
 						<div class="form-group" style="margin-bottom: 10px;">
-							<label for="submissionType-${contextKey}-${task.id}">Submission Type</label>
-							<select id="submissionType-${contextKey}-${task.id}" data-submission-type data-task-id="${task.id}" data-context="${contextKey}">
-								<option value="image">Image</option>
-								<option value="video">Video</option>
-								<option value="link">Link</option>
-							</select>
+							<label for="submissionUrl-${contextKey}-${task.id}">Submission Link (optional)</label>
+							<input type="url" id="submissionUrl-${contextKey}-${task.id}" placeholder="https://..." data-submission-url data-task-id="${task.id}" data-context="${contextKey}" />
 						</div>
 						<div class="form-group" id="submissionFileGroup-${contextKey}-${task.id}">
-							<label for="submissionFile-${contextKey}-${task.id}">Upload File</label>
-							<input type="file" id="submissionFile-${contextKey}-${task.id}" data-submission-file data-task-id="${task.id}" data-context="${contextKey}" accept="image/*,video/*" />
-						</div>
-						<div class="form-group hidden" id="submissionUrlGroup-${contextKey}-${task.id}">
-							<label for="submissionUrl-${contextKey}-${task.id}">Submission URL</label>
-							<input type="url" id="submissionUrl-${contextKey}-${task.id}" placeholder="https://..." data-submission-url data-task-id="${task.id}" data-context="${contextKey}" />
+							<label for="submissionFile-${contextKey}-${task.id}">Upload Files (optional)</label>
+							<input type="file" id="submissionFile-${contextKey}-${task.id}" data-submission-file data-task-id="${task.id}" data-context="${contextKey}" accept="image/*,video/*" multiple />
 						</div>
 						<div class="submission-preview" id="submissionPreview-${contextKey}-${task.id}">No preview yet.</div>
 						<button type="button" class="btn btn-success btn-small" data-submit-evidence="${task.id}" data-context="${contextKey}">
@@ -3268,6 +3293,34 @@
 						</button>
 					</div>
 				`;
+			}
+
+			function parseSubmissionFiles(value) {
+				if (!value) {
+					return [];
+				}
+
+				if (Array.isArray(value)) {
+					return value;
+				}
+
+				try {
+					const parsed = JSON.parse(value);
+					return Array.isArray(parsed) ? parsed : [];
+				} catch (error) {
+					return [];
+				}
+			}
+
+			function buildTaskRoute(taskId) {
+				return `/tasks/${taskId}`;
+			}
+
+			function updateTaskRoute(taskId) {
+				const nextPath = buildTaskRoute(taskId);
+				if (window.location.pathname !== nextPath) {
+					window.history.pushState({}, "", nextPath);
+				}
 			}
 
 			function isSuperAdminUser() {
@@ -3416,8 +3469,15 @@
 				try {
 					const organizationId = organizationMode === "organization" && selectedOrganizationId ? Number(selectedOrganizationId) : null;
 					const response = await api.getNotifications({ organizationId, limit: 30 });
-					notifications = Array.isArray(response.notifications) ? response.notifications : [];
-					unreadNotificationCount = Number(response.unread_count || 0);
+					notifications = Array.isArray(response.notifications)
+						? response.notifications.map((item) => ({
+							...item,
+							isRead: Boolean(item.is_read),
+							entityType: item.entity_type || "task",
+							entityId: item.entity_id || item.task_id || null,
+						}))
+						: [];
+					unreadNotificationCount = notifications.filter((item) => !item.isRead).length;
 				} catch (error) {
 					const collabData = getCurrentOrgCollabData();
 					notifications = ((collabData?.notifications || {})[currentUser?.id] || []).slice(0, 30);
@@ -3425,6 +3485,112 @@
 				}
 
 				renderNotificationBell();
+			}
+
+			async function loadOrganizationActivities() {
+				const activeOrganization = getSelectedOrganization();
+				if (!api || !currentUser || !activeOrganization) {
+					organizationActivities = (getCurrentOrgCollabData()?.activity || []).slice(0, 100);
+					return;
+				}
+
+				try {
+					const response = await api.getActivities({ organizationId: activeOrganization.id, limit: 100 });
+					organizationActivities = Array.isArray(response.activities) ? response.activities : [];
+				} catch (error) {
+					organizationActivities = (getCurrentOrgCollabData()?.activity || []).slice(0, 100);
+				}
+			}
+
+			async function loadClientRequests() {
+				const activeOrganization = getSelectedOrganization();
+				if (!api || !currentUser || !activeOrganization) {
+					clientRequests = [];
+					return;
+				}
+
+				const role = getCurrentOrganizationRole();
+				if (role !== "client" && role !== "organization_admin") {
+					clientRequests = [];
+					return;
+				}
+
+				try {
+					const response = await api.getClientRequests({ organizationId: activeOrganization.id, limit: 50 });
+					clientRequests = Array.isArray(response.requests) ? response.requests : [];
+				} catch (error) {
+					clientRequests = [];
+				}
+			}
+
+			function renderTaskDetailView(task) {
+				const detailContainer = document.getElementById("taskDetailView");
+				if (!detailContainer || !task) {
+					return;
+				}
+
+				const submissionLink = task.submissionLink || task.submission_link || "";
+				const submissionFiles = parseSubmissionFiles(task.submissionFiles || task.submission_files);
+				const submittedBy = task.submittedByName || task.submitted_by_name || task.assignedToName || "Unknown";
+				const submittedAt = task.submittedAt || task.submitted_at;
+				const reviewFeedback = task.reviewFeedback || task.review_feedback || "";
+
+				detailContainer.innerHTML = `
+					<div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px;">
+						<h3 style="margin: 0;">Task Detail: ${task.title || "Task"}</h3>
+						<button type="button" class="btn btn-secondary btn-small" id="closeTaskDetailBtn">Close</button>
+					</div>
+					<div class="organization-task-meta">Status: ${(task.status || "pending").replace(/_/g, " ")}</div>
+					<div class="organization-task-meta">Submitted by: ${submittedBy}</div>
+					<div class="organization-task-meta">Submitted date: ${submittedAt ? new Date(submittedAt).toLocaleString() : "Not submitted"}</div>
+					${submissionLink ? `<div style="margin-top: 10px;"><strong>Submitted link</strong><div><a href="${submissionLink}" target="_blank" rel="noopener noreferrer">${submissionLink}</a></div></div>` : "<div style=\"margin-top: 10px;\"><strong>Submitted link</strong><div>None</div></div>"}
+					<div style="margin-top: 10px;"><strong>Uploaded files</strong></div>
+					<div class="submission-files-grid">
+						${submissionFiles.length ? submissionFiles.map((url) => `
+							<div class="submission-file-item">
+								${/\.(png|jpg|jpeg|gif|webp)$/i.test(url) ? `<img src="${url}" alt="Submission" />` : ''}
+								${/\.(mp4|mov|avi|mkv|webm)$/i.test(url) ? `<video src="${url}" controls></video>` : ''}
+								${!(/\.(png|jpg|jpeg|gif|webp|mp4|mov|avi|mkv|webm)$/i.test(url)) ? `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>` : ''}
+							</div>
+						`).join("") : "<div class='submission-file-item'>No files uploaded</div>"}
+					</div>
+					${reviewFeedback ? `<div style="margin-top: 10px;"><strong>Review feedback</strong><div>${reviewFeedback}</div></div>` : ""}
+				`;
+				detailContainer.classList.remove("hidden");
+
+				document.getElementById("closeTaskDetailBtn")?.addEventListener("click", () => {
+					detailContainer.classList.add("hidden");
+				});
+			}
+
+			async function navigateToTaskFromNotification(taskId) {
+				if (!taskId) {
+					return;
+				}
+
+				showSection("tasks");
+				updateTaskRoute(taskId);
+				let task = tasks.find((entry) => Number(entry.id) === Number(taskId));
+
+				if (!task && api) {
+					try {
+						task = await api.getTaskById(taskId);
+					} catch (error) {
+						showNotification("Unable to open task details", "error");
+						return;
+					}
+				}
+
+				if (!task) {
+					showNotification("Task not found", "error");
+					return;
+				}
+
+				renderTaskDetailView(task);
+				const taskCard = document.querySelector(`[data-task-id="${taskId}"]`);
+				if (taskCard) {
+					taskCard.scrollIntoView({ behavior: "smooth", block: "center" });
+				}
 			}
 
 			function renderActivityModalPage() {
@@ -3465,7 +3631,27 @@
 			}
 
 			function renderOrganizationTabs() {
+				const role = getCurrentOrganizationRole();
+				const visibleSections = new Set(["dashboard", "activity"]);
+				if (role === "organization_admin") {
+					visibleSections.add("tasks");
+					visibleSections.add("members");
+					visibleSections.add("settings");
+					visibleSections.add("requests");
+				} else if (role === "member") {
+					visibleSections.add("tasks");
+					visibleSections.add("members");
+				} else if (role === "client") {
+					visibleSections.add("requests");
+				}
+
+				if (!visibleSections.has(organizationUIState.activeSection)) {
+					organizationUIState.activeSection = role === "client" ? "requests" : "dashboard";
+				}
+
 				document.querySelectorAll(".organization-tab").forEach((tab) => {
+					const isVisible = visibleSections.has(tab.dataset.orgSection);
+					tab.classList.toggle("hidden", !isVisible);
 					const isActive = tab.dataset.orgSection === organizationUIState.activeSection;
 					tab.classList.toggle("active", isActive);
 				});
@@ -3485,14 +3671,16 @@
 					return;
 				}
 
-				const orgTasks = tasks.filter((task) => String(task.organizationId || "") === String(activeOrganization.id));
+				const orgTasks = getOrganizationTasksForView(activeOrganization);
+				const role = getCurrentOrganizationRole();
 				const statusCounts = {
 					pending: orgTasks.filter((task) => task.status === "pending").length,
 					in_progress: orgTasks.filter((task) => task.status === "in_progress").length,
 					completed: orgTasks.filter((task) => task.status === "completed").length,
 				};
 				const membersCount = Array.isArray(activeOrganization.members) ? activeOrganization.members.length : 0;
-				const collabData = getCurrentOrgCollabData();
+				const recentActivity = organizationActivities.slice(0, 1);
+				const requestCount = clientRequests.length;
 
 				summaryContainer.innerHTML = `
 					<div class="org-stat-card"><div class="label">Total tasks</div><div class="value">${orgTasks.length}</div></div>
@@ -3500,15 +3688,20 @@
 					<div class="org-stat-card"><div class="label">In Progress</div><div class="value">${statusCounts.in_progress}</div></div>
 					<div class="org-stat-card"><div class="label">Completed</div><div class="value">${statusCounts.completed}</div></div>
 					<div class="org-stat-card"><div class="label">Total Members</div><div class="value">${membersCount}</div></div>
+					${role === "client" ? `<div class="org-stat-card"><div class="label">My Requests</div><div class="value">${requestCount}</div></div>` : ""}
 				`;
 
-				const recentActivity = (collabData?.activity || []).slice(0, 1);
 				recentActivityList.innerHTML = ActivityPreview(recentActivity);
 			}
 
 			function getOrganizationTasksForView(activeOrganization) {
+				const role = getCurrentOrganizationRole();
+				if (role === "client") {
+					return [];
+				}
+
 				let orgTasks = tasks.filter((task) => String(task.organizationId || "") === String(activeOrganization.id));
-				if (organizationUIState.taskOwnershipFilter === "mine") {
+				if (role === "member" || organizationUIState.taskOwnershipFilter === "mine") {
 					orgTasks = orgTasks.filter((task) => task.assignedTo === currentUser.id || task.userId === currentUser.id);
 				}
 
@@ -3563,6 +3756,10 @@
 				const activeOrganization = getSelectedOrganization();
 				const container = document.getElementById("organizationTaskGroupList");
 				if (!activeOrganization || !container) return;
+				if (getCurrentOrganizationRole() === "client") {
+					container.innerHTML = '<div class="organization-task-item"><strong>Clients do not have access to internal tasks.</strong><div class="organization-task-meta">Use the Requests tab to submit work.</div></div>';
+					return;
+				}
 
 				const collabData = getCurrentOrgCollabData();
 				const orgTasks = getOrganizationTasksForView(activeOrganization);
@@ -3634,13 +3831,50 @@
 
 			function renderOrganizationActivityPanel() {
 				const container = document.getElementById("organizationActivityTimeline");
-				const collabData = getCurrentOrgCollabData();
 				if (!container) return;
 
-				const activity = (collabData?.activity || []).slice(0, 100);
+				const activity = organizationActivities.slice(0, 100);
 				container.innerHTML = activity.length
-					? activity.map((entry) => `<div class="organization-activity-item"><strong>${entry.message}</strong><div class="organization-member-meta">${new Date(entry.createdAt).toLocaleString()} • ${entry.userName || "System"}</div></div>`).join("")
+					? activity.map((entry) => `<div class="organization-activity-item"><strong>${entry.message}</strong><div class="organization-member-meta">${new Date(entry.created_at || entry.createdAt).toLocaleString()} • ${entry.user_name || entry.userName || "System"}</div></div>`).join("")
 					: '<div class="organization-activity-item">No tracked activity yet.</div>';
+			}
+
+			function renderOrganizationRequestsPanel() {
+				const container = document.getElementById("organizationRequestsList");
+				const createButton = document.getElementById("createClientRequestBtn");
+				if (!container) return;
+
+				const role = getCurrentOrganizationRole();
+				const activeOrganization = getSelectedOrganization();
+				if (!activeOrganization) return;
+
+				if (createButton) {
+					createButton.classList.toggle("hidden", role !== "client");
+				}
+
+				if (role !== "client" && role !== "organization_admin") {
+					container.innerHTML = '<div class="organization-task-item"><strong>No request access for this role.</strong></div>';
+					return;
+				}
+
+				const requests = clientRequests.slice();
+				container.innerHTML = requests.length
+					? requests.map((request) => {
+						const isAdmin = role === "organization_admin";
+						return `
+							<div class="organization-task-item">
+								<strong>${request.title}</strong>
+								<div class="organization-task-meta">Status: ${request.status} • Created: ${new Date(request.created_at).toLocaleString()}${request.client_name ? ` • Client: ${request.client_name}` : ""}</div>
+								<div style="margin-top: 8px;">${request.description || "No description"}</div>
+								${isAdmin ? `
+									<div class="task-controls" style="margin-top: 10px;">
+										<button class="btn btn-success btn-small" type="button" data-request-action="accept" data-request-id="${request.id}">Accept</button>
+										<button class="btn btn-secondary btn-small" type="button" data-request-action="reject" data-request-id="${request.id}">Reject</button>
+									</div>` : ""}
+							</div>
+						`;
+					}).join("")
+					: '<div class="organization-task-item"><strong>No requests yet.</strong></div>';
 			}
 
 			function renderOrganizationSettingsPanel() {
@@ -3699,6 +3933,7 @@
 					});
 					showNotification(response.message || "Organization member added", "success");
 					addOrgActivity("member_added", `Added ${email.trim()} as ${role.trim()}`);
+					await loadOrganizationActivities();
 					await loadOrganizations();
 					setSelectedOrganization(activeOrganization.id);
 				} catch (error) {
@@ -3711,42 +3946,34 @@
 				if (submitButton) {
 					const taskId = Number(submitButton.dataset.submitEvidence);
 					const context = submitButton.dataset.context || "org";
-					const typeSelect = document.getElementById(`submissionType-${context}-${taskId}`);
 					const fileInput = document.getElementById(`submissionFile-${context}-${taskId}`);
 					const urlInput = document.getElementById(`submissionUrl-${context}-${taskId}`);
+					const submissionLink = urlInput ? urlInput.value.trim() : "";
+					const submissionFiles = fileInput && fileInput.files ? Array.from(fileInput.files) : [];
 
-					if (!typeSelect) {
-						showNotification("Submission form is not ready", "error");
-						return;
-					}
-
-					const submissionType = typeSelect.value;
-					const submissionUrl = urlInput ? urlInput.value.trim() : "";
-					const submissionFile = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
-
-					if (submissionType === "link" && !/^https?:\/\//i.test(submissionUrl)) {
+					if (submissionLink && !/^https?:\/\//i.test(submissionLink)) {
 						showNotification("Enter a valid link before submitting", "error");
 						return;
 					}
 
-					if ((submissionType === "image" || submissionType === "video") && !submissionFile) {
-						showNotification("Upload a file before submitting", "error");
+					if (!submissionLink && submissionFiles.length === 0) {
+						showNotification("Add a link, file, or both before submitting", "error");
 						return;
 					}
 
 					try {
 						const response = await api.submitTaskWithEvidence({
 							taskId,
-							submissionType,
-							submissionUrl,
-							file: submissionFile,
+							submissionLink,
+							files: submissionFiles,
 						});
 						const task = tasks.find((entry) => entry.id === taskId);
 						if (task) {
 							task.status = "submitted";
 							task.completed = false;
-							task.submissionType = submissionType;
-							task.submissionUrl = response.submissionUrl || submissionUrl || "";
+							task.submissionType = "mixed";
+							task.submissionLink = response.submissionLink || submissionLink || "";
+							task.submissionFiles = response.submissionFiles || submissionFiles.map((file) => file.name);
 							task.submittedAt = response.submittedAt || new Date().toISOString();
 							if (task.assignedBy) {
 								pushNotificationForUser(task.assignedBy, `Task submitted: ${task.title}`, "info");
@@ -3774,11 +4001,12 @@
 					if (!feedbackDialog) return;
 					const feedback = feedbackDialog.feedback || "";
 					try {
-						await api.reviewTask(taskId, action);
+						await api.reviewTask(taskId, action, feedback);
 						const task = tasks.find((entry) => entry.id === taskId);
 						if (task) {
 							task.status = action === "approve" ? "completed" : "in_progress";
 							task.completed = task.status === "completed";
+							task.reviewFeedback = feedback;
 							withOrgCollab(task.organizationId, (orgData) => {
 								if (!orgData.reviews[taskId]) orgData.reviews[taskId] = [];
 								orgData.reviews[taskId].unshift({
@@ -3794,6 +4022,7 @@
 								pushNotificationForUser(task.assignedTo, `Task ${action === "approve" ? "approved" : "rejected"}: ${task.title}`, action === "approve" ? "success" : "warning");
 							}
 							addOrgActivity("task_reviewed", `${task.title} ${action === "approve" ? "approved" : "rejected"}`, task.id);
+							await loadOrganizationActivities();
 						}
 						renderOrganizationWorkspace();
 						showNotification(`Task ${action === "approve" ? "approved" : "rejected"}`, "success");
@@ -3814,6 +4043,7 @@
 					try {
 						await api.addOrganizationMember({ organizationId: activeOrganization.id, userId, role });
 						addOrgActivity("member_role_updated", `Updated member role to ${role}`);
+						await loadOrganizationActivities();
 						showNotification("Member role updated", "success");
 						await loadOrganizations();
 						setSelectedOrganization(activeOrganization.id);
@@ -3835,6 +4065,7 @@
 					try {
 						await api.removeOrganizationMember({ organizationId: activeOrganization.id, userId });
 						addOrgActivity("member_removed", `Removed member #${userId}`);
+						await loadOrganizationActivities();
 						showNotification("Member removed", "success");
 						await loadOrganizations();
 						setSelectedOrganization(activeOrganization.id);
@@ -3871,6 +4102,7 @@
 					}
 					addOrgActivity("task_commented", `Comment added on ${task.title}`, taskId);
 					input.value = "";
+					await loadOrganizationActivities();
 					renderOrganizationWorkspace();
 					return;
 				}
@@ -3902,6 +4134,7 @@
 						return orgData;
 					});
 					addOrgActivity("task_replied", `Reply added on ${task.title}`, taskId);
+					await loadOrganizationActivities();
 					renderOrganizationWorkspace();
 					return;
 				}
@@ -3935,6 +4168,7 @@
 					if (input) {
 						input.value = "";
 					}
+					await loadOrganizationActivities();
 					renderOrganizationWorkspace();
 					showNotification("Attachment metadata saved", "success");
 					return;
@@ -4048,6 +4282,7 @@
 				if (selectedOrganization) {
 					renderOrganizationDashboard();
 					renderOrganizationTasksPanel();
+					renderOrganizationRequestsPanel();
 					renderOrganizationMembersPanel();
 					renderOrganizationActivityPanel();
 					renderOrganizationSettingsPanel();
@@ -4066,7 +4301,9 @@
 				const taskOrganizationSelect = document.getElementById("taskOrganizationId");
 				const taskAssignedToSelect = document.getElementById("taskAssignedTo");
 				const organizationNavGroup = document.getElementById("organizationNavGroup");
+				const sidebarOrgLinks = document.querySelectorAll(".org-nav-link");
 				const defaultNavLinks = document.querySelectorAll('.nav-link[data-section="diary"], .nav-link[data-section="preaching"], .nav-link[data-section="analytics"], .nav-link[data-section="plans"]');
+				const currentRole = getCurrentOrganizationRole();
 
 				if (modeToggle) {
 					modeToggle.value = organizationMode;
@@ -4132,6 +4369,17 @@
 					organizationNavGroup.classList.toggle("hidden", organizationMode !== "organization");
 				}
 
+				sidebarOrgLinks.forEach((link) => {
+					const section = link.dataset.orgNav;
+					const isVisible = section === "dashboard"
+						|| section === "activity"
+						|| (section === "tasks" && currentRole !== "client")
+						|| (section === "members" && currentRole !== "client")
+						|| (section === "requests" && (currentRole === "client" || currentRole === "organization_admin"))
+						|| (section === "settings" && currentRole === "organization_admin");
+					link.classList.toggle("hidden", organizationMode !== "organization" || !isVisible);
+				});
+
 				defaultNavLinks.forEach((link) => {
 					link.classList.toggle("hidden", organizationMode === "organization");
 				});
@@ -4171,6 +4419,13 @@
 						updateOrganizationState({ selectedOrganizationId: "" });
 					}
 					syncOrganizationControls();
+					if (organizationMode === "organization" && selectedOrganizationId) {
+						if (getCurrentOrganizationRole() !== "client") {
+							loadTasks().catch((error) => console.warn("[org-mode] Task load failed", error));
+						}
+						loadOrganizationActivities().catch((error) => console.warn("[org-mode] Activity load failed", error));
+						loadClientRequests().catch((error) => console.warn("[org-mode] Request load failed", error));
+					}
 				} catch (error) {
 					console.warn("Failed to load organizations:", error);
 					updateOrganizationState({ organizations: [], loading: false });
@@ -4198,6 +4453,8 @@
 					loadNotifications();
 					if (selectedOrganizationId) {
 						loadTasks().catch((error) => console.warn("[org-mode] Task load failed", error));
+						loadOrganizationActivities().catch((error) => console.warn("[org-mode] Activity load failed", error));
+						loadClientRequests().catch((error) => console.warn("[org-mode] Request load failed", error));
 					}
 				} else {
 					showSection("overview");
@@ -4220,8 +4477,12 @@
 					}
 
 					showSection("organization");
-					loadTasks().catch((error) => console.warn("[org-mode] Task load failed", error));
+					if (getCurrentOrganizationRole() !== "client") {
+						loadTasks().catch((error) => console.warn("[org-mode] Task load failed", error));
+					}
 					loadNotifications();
+					loadOrganizationActivities().catch((error) => console.warn("[org-mode] Activity load failed", error));
+					loadClientRequests().catch((error) => console.warn("[org-mode] Request load failed", error));
 				}
 			}
 
@@ -4287,7 +4548,11 @@
 							status: (t.status || 'pending').toLowerCase(),
 							completed: (t.status || '').toLowerCase() === 'completed',
 							submissionType: t.submission_type || "",
-							submissionUrl: t.submission_url || "",
+							submissionUrl: t.submission_url || t.submission_link || "",
+							submissionLink: t.submission_link || t.submission_url || "",
+							submissionFiles: parseSubmissionFiles(t.submission_files),
+							submittedByName: t.submitted_by_name || "",
+							reviewFeedback: t.review_feedback || "",
 							submittedAt: t.submitted_at || null,
 							createdAt: (() => {
 								const createdAtDate = parseBackendTimestamp(t.created_at);
@@ -5997,42 +6262,34 @@
 				if (submissionButton && !event.target.closest("#organizationDashboardPanel")) {
 					const taskId = Number(submissionButton.dataset.submitEvidence);
 					const context = submissionButton.dataset.context || "task";
-					const typeSelect = document.getElementById(`submissionType-${context}-${taskId}`);
 					const fileInput = document.getElementById(`submissionFile-${context}-${taskId}`);
 					const urlInput = document.getElementById(`submissionUrl-${context}-${taskId}`);
+					const submissionLink = urlInput ? urlInput.value.trim() : "";
+					const submissionFiles = fileInput && fileInput.files ? Array.from(fileInput.files) : [];
 
-					if (!typeSelect) {
-						showNotification("Submission form is not ready", "error");
-						return;
-					}
-
-					const submissionType = typeSelect.value;
-					const submissionUrl = urlInput ? urlInput.value.trim() : "";
-					const submissionFile = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
-
-					if (submissionType === "link" && !/^https?:\/\//i.test(submissionUrl)) {
+					if (submissionLink && !/^https?:\/\//i.test(submissionLink)) {
 						showNotification("Enter a valid link before submitting", "error");
 						return;
 					}
 
-					if ((submissionType === "image" || submissionType === "video") && !submissionFile) {
-						showNotification("Upload a file before submitting", "error");
+					if (!submissionLink && submissionFiles.length === 0) {
+						showNotification("Add a link, file, or both before submitting", "error");
 						return;
 					}
 
 					try {
 						const response = await api.submitTaskWithEvidence({
 							taskId,
-							submissionType,
-							submissionUrl,
-							file: submissionFile,
+							submissionLink,
+							files: submissionFiles,
 						});
 						const task = tasks.find((entry) => entry.id === taskId);
 						if (task) {
 							task.status = "submitted";
 							task.completed = false;
-							task.submissionType = submissionType;
-							task.submissionUrl = response.submissionUrl || submissionUrl || "";
+							task.submissionType = "mixed";
+							task.submissionLink = response.submissionLink || submissionLink || "";
+							task.submissionFiles = response.submissionFiles || submissionFiles.map((file) => file.name);
 							task.submittedAt = response.submittedAt || new Date().toISOString();
 							if (task.assignedBy) {
 								pushNotificationForUser(task.assignedBy, `Task submitted: ${task.title}`, "info");
@@ -6041,12 +6298,104 @@
 								addOrgActivity("task_submitted", `${task.title} submitted for review`, task.id);
 							}
 						}
+						await loadOrganizationActivities();
 						await loadNotifications();
 						renderTasks();
 						renderOrganizationWorkspace();
 						showNotification("Task submitted successfully", "success");
 					} catch (error) {
 						showNotification("Failed to submit task: " + error.message, "error");
+					}
+					return;
+				}
+
+				const createClientRequestButton = event.target.closest("#createClientRequestBtn");
+				if (createClientRequestButton) {
+					const activeOrganization = getSelectedOrganization();
+					if (!activeOrganization || getCurrentOrganizationRole() !== "client") {
+						showNotification("Only clients can submit requests", "error");
+						return;
+					}
+
+					const dialogResult = await showInputDialog({
+						title: "Create Request",
+						fields: [
+							{ name: "title", label: "Request Title", required: true },
+							{ name: "description", label: "Request Description" },
+						],
+						submitText: "Send Request",
+					});
+					if (!dialogResult || !dialogResult.title) return;
+
+					try {
+						await api.createClientRequest({
+							organization_id: activeOrganization.id,
+							title: dialogResult.title,
+							description: dialogResult.description || "",
+						});
+						await loadClientRequests();
+						await loadOrganizationActivities();
+						renderOrganizationWorkspace();
+						showNotification("Request submitted successfully", "success");
+					} catch (error) {
+						showNotification("Failed to submit request: " + error.message, "error");
+					}
+					return;
+				}
+
+				const requestActionButton = event.target.closest("[data-request-action]");
+				if (requestActionButton) {
+					if (!api || getCurrentOrganizationRole() !== "organization_admin") {
+						showNotification("Only organization admins can review requests", "error");
+						return;
+					}
+
+					const action = requestActionButton.dataset.requestAction;
+					const requestId = Number(requestActionButton.dataset.requestId);
+					const activeOrganization = getSelectedOrganization();
+					if (!activeOrganization || !requestId) return;
+
+					if (action === "accept") {
+						const acceptDialog = await showInputDialog({
+							title: "Convert Request to Task",
+							fields: [
+								{ name: "task_title", label: "Task Title", required: true },
+								{ name: "task_description", label: "Task Description" },
+								{ name: "assigned_to", label: "Assignee User ID (optional)" },
+							],
+							submitText: "Accept Request",
+						});
+						if (!acceptDialog) return;
+						try {
+							await api.reviewClientRequest({
+								request_id: requestId,
+								organization_id: activeOrganization.id,
+								task_title: acceptDialog.task_title,
+								task_description: acceptDialog.task_description || "",
+								assigned_to: acceptDialog.assigned_to ? Number(acceptDialog.assigned_to) : null,
+							}, "accept");
+							await loadTasks().catch(() => {});
+							await loadClientRequests();
+							await loadOrganizationActivities();
+							renderOrganizationWorkspace();
+							showNotification("Request accepted and converted to a task", "success");
+						} catch (error) {
+							showNotification("Failed to accept request: " + error.message, "error");
+						}
+						return;
+					}
+
+					try {
+						await api.reviewClientRequest({
+							request_id: requestId,
+							organization_id: activeOrganization.id,
+						}, "reject");
+						await loadClientRequests();
+						await loadOrganizationActivities();
+						renderOrganizationWorkspace();
+						showNotification("Request rejected", "success");
+					} catch (error) {
+						showNotification("Failed to reject request: " + error.message, "error");
 					}
 					return;
 				}
@@ -6060,11 +6409,15 @@
 
 				const markAllButton = event.target.closest("#markAllNotificationsReadBtn");
 				if (markAllButton) {
+					notifications = notifications.map((notification) => ({ ...notification, isRead: true, is_read: true }));
+					unreadNotificationCount = 0;
+					renderNotificationBell();
 					try {
 						const organizationId = organizationMode === "organization" && selectedOrganizationId ? Number(selectedOrganizationId) : null;
 						await api.markAllNotificationsRead(organizationId);
-						await loadNotifications();
+						showNotification("All notifications marked as read", "success");
 					} catch (error) {
+						await loadNotifications();
 						showNotification("Failed to mark notifications as read", "error");
 					}
 					return;
@@ -6073,13 +6426,25 @@
 				const notificationItem = event.target.closest("[data-notification-id]");
 				if (notificationItem) {
 					const notificationId = Number(notificationItem.dataset.notificationId);
+					const entityType = notificationItem.dataset.entityType || "task";
+					const entityId = Number(notificationItem.dataset.entityId || 0);
 					if (notificationId) {
 						try {
 							await api.markNotificationRead(notificationId);
-							await loadNotifications();
+							notifications = notifications.map((item) => item.id === notificationId ? { ...item, isRead: true, is_read: true } : item);
+							unreadNotificationCount = notifications.filter((item) => !(item.isRead || item.is_read)).length;
+							renderNotificationBell();
 						} catch (error) {
 							showNotification("Failed to mark notification as read", "error");
 						}
+					}
+
+					if (entityType === "task" && entityId) {
+						await navigateToTaskFromNotification(entityId);
+					} else if (entityType === "client_request") {
+						organizationUIState.activeSection = "requests";
+						showSection("organization");
+						renderOrganizationWorkspace();
 					}
 					return;
 				}
@@ -6091,41 +6456,27 @@
 			});
 
 			document.addEventListener("change", (event) => {
-				const submissionType = event.target.closest("[data-submission-type]");
-				if (submissionType) {
-					const taskId = submissionType.dataset.taskId;
-					const context = submissionType.dataset.context;
-					const fileGroup = document.getElementById(`submissionFileGroup-${context}-${taskId}`);
-					const urlGroup = document.getElementById(`submissionUrlGroup-${context}-${taskId}`);
-					if (submissionType.value === "link") {
-						if (fileGroup) fileGroup.classList.add("hidden");
-						if (urlGroup) urlGroup.classList.remove("hidden");
-					} else {
-						if (fileGroup) fileGroup.classList.remove("hidden");
-						if (urlGroup) urlGroup.classList.add("hidden");
-					}
-				}
-
 				const submissionFile = event.target.closest("[data-submission-file]");
 				if (submissionFile) {
 					const taskId = submissionFile.dataset.taskId;
 					const context = submissionFile.dataset.context;
 					const preview = document.getElementById(`submissionPreview-${context}-${taskId}`);
-					const file = submissionFile.files && submissionFile.files[0] ? submissionFile.files[0] : null;
+					const files = submissionFile.files ? Array.from(submissionFile.files) : [];
 					if (!preview) return;
-					if (!file) {
+					if (!files.length) {
 						preview.textContent = "No preview yet.";
 						return;
 					}
-
-					const fileUrl = URL.createObjectURL(file);
-					if (file.type.startsWith("image/")) {
-						preview.innerHTML = `<img src="${fileUrl}" alt="Submission preview" />`;
-					} else if (file.type.startsWith("video/")) {
-						preview.innerHTML = `<video src="${fileUrl}" controls></video>`;
-					} else {
-						preview.textContent = file.name;
-					}
+					preview.innerHTML = files.map((file) => {
+						const fileUrl = URL.createObjectURL(file);
+						if (file.type.startsWith("image/")) {
+							return `<img src="${fileUrl}" alt="Submission preview" />`;
+						}
+						if (file.type.startsWith("video/")) {
+							return `<video src="${fileUrl}" controls></video>`;
+						}
+						return `<div>${file.name}</div>`;
+					}).join("");
 				}
 			});
 
@@ -6210,6 +6561,7 @@
 				});
 				addOrgActivity("settings_updated", "Workspace settings updated");
 				showNotification("Organization settings saved", "success");
+				await loadOrganizationActivities();
 				await loadOrganizations();
 				setSelectedOrganization(activeOrganization.id);
 			});
@@ -6356,6 +6708,7 @@
 						storage.saveTasks(tasks);
 						if (requestContext.mode === "organization" && taskData.organizationId) {
 							addOrgActivity("task_updated", `Task updated: ${taskData.title}`, editingTaskId);
+							loadOrganizationActivities();
 							if (taskData.assignedTo && Number(taskData.assignedTo) !== Number(currentUser.id)) {
 								pushNotificationForUser(Number(taskData.assignedTo), `Task updated: ${taskData.title}`, "info");
 							}
@@ -6433,7 +6786,11 @@
 								reminderSent: false,
 								deadlineSent: false,
 								submissionType: response.task.submission_type || "",
-								submissionUrl: response.task.submission_url || "",
+								submissionUrl: response.task.submission_url || response.task.submission_link || "",
+								submissionLink: response.task.submission_link || response.task.submission_url || "",
+								submissionFiles: parseSubmissionFiles(response.task.submission_files),
+								submittedByName: response.task.submitted_by_name || "",
+								reviewFeedback: response.task.review_feedback || "",
 								submittedAt: response.task.submitted_at || null,
 							};
 						} else {
@@ -6470,6 +6827,10 @@
 								deadlineSent: false,
 								submissionType: "",
 								submissionUrl: "",
+								submissionLink: "",
+								submissionFiles: [],
+								submittedByName: "",
+								reviewFeedback: "",
 								submittedAt: null,
 							};
 						}
@@ -6479,6 +6840,7 @@
 						try { storage.saveTasks(tasks); } catch (e) { console.warn('Could not save tasks to storage', e); }
 						if (requestContext.mode === "organization" && newTask.organizationId) {
 							addOrgActivity("task_created", `Task created: ${newTask.title}`, newTask.id);
+							loadOrganizationActivities();
 							if (newTask.assignedTo && Number(newTask.assignedTo) !== Number(currentUser.id)) {
 								pushNotificationForUser(Number(newTask.assignedTo), `You have been assigned a task by ${currentUser.name}`, "info");
 							}
@@ -6889,6 +7251,7 @@
 						task.completed = false;
 						if (task.organizationId) {
 							addOrgActivity("task_submitted", `${task.title} submitted for review`, task.id);
+							loadOrganizationActivities();
 							if (task.assignedBy) {
 								pushNotificationForUser(task.assignedBy, `Task submitted: ${task.title}`, "info");
 							}
@@ -6922,11 +7285,12 @@
 					}
 					const feedback = feedbackDialog.feedback || "";
 
-					api.reviewTask(taskId, reviewAction).then((response) => {
+					api.reviewTask(taskId, reviewAction, feedback).then((response) => {
 					const task = tasks.find((entry) => entry.id === parseFloat(taskId));
 					if (task) {
 						task.status = response.status || (reviewAction === "approve" ? "completed" : "in_progress");
 						task.completed = task.status === "completed";
+						task.reviewFeedback = feedback;
 						if (task.organizationId) {
 							withOrgCollab(task.organizationId, (orgData) => {
 								if (!orgData.reviews[task.id]) orgData.reviews[task.id] = [];
@@ -6940,6 +7304,7 @@
 								return orgData;
 							});
 							addOrgActivity("task_reviewed", `${task.title} ${reviewAction === "approve" ? "approved" : "rejected"}`, task.id);
+							loadOrganizationActivities();
 							if (task.assignedTo) {
 								pushNotificationForUser(task.assignedTo, `Task ${reviewAction === "approve" ? "approved" : "rejected"}: ${task.title}`, reviewAction === "approve" ? "success" : "warning");
 							}

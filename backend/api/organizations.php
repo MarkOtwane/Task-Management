@@ -7,6 +7,7 @@
 require_once '../config/cors.php';
 require_once '../config/database.php';
 require_once '../middleware/auth.php';
+require_once __DIR__ . '/activity_helpers.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? null;
@@ -65,6 +66,7 @@ function createOrganization($pdo, $user) {
 
 		$memberStmt = $pdo->prepare("INSERT INTO organization_members (user_id, organization_id, role) VALUES (?, ?, ?)");
 		$memberStmt->execute([$user['id'], $organizationId, 'organization_admin']);
+		recordWorkspaceActivity($pdo, [(int) $user['id']], (int) $organizationId, 'organization_created', 'Organization created: ' . $name, null, []);
 
 		logOrganizationDebug('createOrganization.success', $user, $organizationId, [
 			'name' => $name,
@@ -198,6 +200,9 @@ function addOrganizationMember($pdo, $user) {
 			DO UPDATE SET role = EXCLUDED.role
 		");
 		$insert->execute([$userId, $organizationId, $role]);
+		recordWorkspaceActivity($pdo, [(int) $user['id'], (int) $userId], $organizationId, 'member_added', 'Member added: ' . ($userEmail !== '' ? $userEmail : ('User ' . $userId)), null, [
+			'member_role' => $role,
+		]);
 
 		logOrganizationDebug('addOrganizationMember.success', $user, $organizationId, [
 			'user_id' => $userId,
@@ -262,6 +267,9 @@ function removeOrganizationMember($pdo, $user) {
 		logOrganizationDebug('removeOrganizationMember.success', $user, $organizationId, [
 			'user_id' => $userId,
 		]);
+		recordWorkspaceActivity($pdo, [(int) $user['id'], $userId], $organizationId, 'member_removed', 'Member removed', null, [
+			'user_id' => $userId,
+		]);
 
 		echo json_encode([
 			'message' => 'Organization member removed successfully',
@@ -314,6 +322,7 @@ function updateOrganizationName($pdo, $user) {
 		logOrganizationDebug('updateOrganizationName.success', $user, $organizationId, [
 			'name' => $name,
 		]);
+		recordWorkspaceActivity($pdo, [(int) $user['id']], $organizationId, 'settings_updated', 'Organization renamed to ' . $name, null, []);
 
 		echo json_encode([
 			'message' => 'Organization updated successfully',

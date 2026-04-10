@@ -133,6 +133,7 @@ function initializeDatabase($pdo) {
         $pdo->exec("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS submission_type VARCHAR(20)");
         $pdo->exec("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS submission_url TEXT");
         $pdo->exec("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMP");
+        $pdo->exec("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS request_id INTEGER");
 
         $pdo->exec("CREATE INDEX IF NOT EXISTS idx_tasks_organization_id ON tasks(organization_id)");
         $pdo->exec("CREATE INDEX IF NOT EXISTS idx_tasks_assigned_to ON tasks(assigned_to)");
@@ -149,14 +150,77 @@ function initializeDatabase($pdo) {
                 organization_id INTEGER REFERENCES organizations(id) ON DELETE CASCADE,
                 task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
                 message TEXT NOT NULL,
+                entity_type VARCHAR(50) DEFAULT 'task',
+                entity_id INTEGER,
                 is_read BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ");
 
+        $pdo->exec("ALTER TABLE notifications ADD COLUMN IF NOT EXISTS entity_type VARCHAR(50) DEFAULT 'task'");
+        $pdo->exec("ALTER TABLE notifications ADD COLUMN IF NOT EXISTS entity_id INTEGER");
+
         $pdo->exec("CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id)");
         $pdo->exec("CREATE INDEX IF NOT EXISTS idx_notifications_read_state ON notifications(user_id, is_read)");
         $pdo->exec("CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at DESC)");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_notifications_entity ON notifications(entity_type, entity_id)");
+
+        // Workspace activities table
+        $pdo->exec(" 
+            CREATE TABLE IF NOT EXISTS activities (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                organization_id INTEGER REFERENCES organizations(id) ON DELETE CASCADE,
+                task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL,
+                event_type VARCHAR(80) NOT NULL,
+                message TEXT NOT NULL,
+                metadata JSONB DEFAULT '{}'::jsonb,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ");
+
+        $pdo->exec("ALTER TABLE activities ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}'::jsonb");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_activities_user_id ON activities(user_id)");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_activities_organization_id ON activities(organization_id)");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_activities_created_at ON activities(created_at DESC)");
+
+        // Client requests table
+        $pdo->exec(" 
+            CREATE TABLE IF NOT EXISTS client_requests (
+                id SERIAL PRIMARY KEY,
+                client_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                organization_id INTEGER REFERENCES organizations(id) ON DELETE CASCADE,
+                title VARCHAR(255) NOT NULL,
+                description TEXT,
+                status VARCHAR(20) DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ");
+
+        $pdo->exec("ALTER TABLE client_requests ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'pending'");
+        $pdo->exec("ALTER TABLE client_requests ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_client_requests_client_id ON client_requests(client_id)");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_client_requests_organization_id ON client_requests(organization_id)");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_client_requests_status ON client_requests(status)");
+
+        // Task submissions table (separate from tasks core data)
+        $pdo->exec(" 
+            CREATE TABLE IF NOT EXISTS task_submissions (
+                id SERIAL PRIMARY KEY,
+                task_id INTEGER UNIQUE REFERENCES tasks(id) ON DELETE CASCADE,
+                organization_id INTEGER REFERENCES organizations(id) ON DELETE CASCADE,
+                submitted_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+                submission_link TEXT,
+                submission_files TEXT DEFAULT '[]',
+                review_feedback TEXT,
+                submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ");
+
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_task_submissions_task_id ON task_submissions(task_id)");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_task_submissions_submitted_by ON task_submissions(submitted_by)");
 
         // Task reflections table
         $pdo->exec("

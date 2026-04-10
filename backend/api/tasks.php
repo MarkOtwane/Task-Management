@@ -7,6 +7,7 @@
 require_once '../config/cors.php';
 require_once '../config/database.php';
 require_once '../middleware/auth.php';
+require_once __DIR__ . '/activity_helpers.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 $user = getCurrentUser($pdo);
@@ -97,33 +98,44 @@ function getTaskRecord($pdo, $taskId) {
 	$stmt = $pdo->prepare("
 		SELECT t.*, o.name AS organization_name,
 		       assignee.username AS assigned_to_name, assignee.email AS assigned_to_email,
-		       assigner.username AS assigned_by_name, assigner.email AS assigned_by_email
+		       assigner.username AS assigned_by_name, assigner.email AS assigned_by_email,
+		       ts.submission_link,
+		       ts.submission_files,
+		       ts.review_feedback,
+		       ts.submitted_by,
+		       ts.submitted_at,
+		       submitter.username AS submitted_by_name,
+		       submitter.email AS submitted_by_email
 		FROM tasks t
 		LEFT JOIN organizations o ON o.id = t.organization_id
 		LEFT JOIN users assignee ON assignee.id = t.assigned_to
 		LEFT JOIN users assigner ON assigner.id = t.assigned_by
+		LEFT JOIN task_submissions ts ON ts.task_id = t.id
+		LEFT JOIN users submitter ON submitter.id = ts.submitted_by
 		WHERE t.id = ?
 	");
 	$stmt->execute([$taskId]);
 	return $stmt->fetch();
 }
 
-function createNotificationRecord($pdo, $userId, $message, $organizationId = null, $taskId = null) {
+function createNotificationRecord($pdo, $userId, $message, $organizationId = null, $entityType = 'task', $entityId = null) {
 	if (!$userId || !$message) {
 		return;
 	}
 
 	try {
 		$stmt = $pdo->prepare(" 
-			INSERT INTO notifications (user_id, organization_id, task_id, message, is_read, created_at)
-			VALUES (?, ?, ?, ?, FALSE, CURRENT_TIMESTAMP)
+			INSERT INTO notifications (user_id, organization_id, task_id, message, entity_type, entity_id, is_read, created_at)
+			VALUES (?, ?, ?, ?, ?, ?, FALSE, CURRENT_TIMESTAMP)
 		");
-		$stmt->execute([(int) $userId, $organizationId ?: null, $taskId ?: null, $message]);
+		$taskId = $entityType === 'task' ? ($entityId ?: null) : null;
+		$stmt->execute([(int) $userId, $organizationId ?: null, $taskId, $message, $entityType, $entityId ?: null]);
 	} catch (PDOException $exception) {
 		error_log('[tasks] createNotificationRecord.error payload=' . json_encode([
 			'user_id' => $userId,
 			'organization_id' => $organizationId,
-			'task_id' => $taskId,
+			'entity_type' => $entityType,
+			'entity_id' => $entityId,
 			'error' => $exception->getMessage(),
 		]));
 	}
@@ -162,6 +174,11 @@ function userCanAccessTaskOrganization($pdo, $user, $organizationId) {
 function canUserViewTask($pdo, $user, $task) {
 	if ((int) $task['organization_id'] > 0) {
 		if (!userCanAccessOrganization($pdo, $user, $task['organization_id'])) {
+			return false;
+		}
+
+		$membership = getOrganizationMembership($pdo, $user['id'], $task['organization_id']);
+		if ($membership && $membership['role'] === 'client') {
 			return false;
 		}
 
@@ -221,15 +238,29 @@ function getTasks($pdo, $user) {
 				return;
 			}
 
+			$membership = getOrganizationMembership($pdo, $user['id'], $organizationId);
+			if ($membership && $membership['role'] === 'client') {
+				echo json_encode([]);
+				return;
+			}
+
 			if (userCanManageOrganizationTasks($pdo, $user, $organizationId)) {
 				$stmt = $pdo->prepare("
 					SELECT t.*, o.name AS organization_name,
 					       assignee.username AS assigned_to_name, assignee.email AS assigned_to_email,
-					       assigner.username AS assigned_by_name, assigner.email AS assigned_by_email
+					       assigner.username AS assigned_by_name, assigner.email AS assigned_by_email,
+					       ts.submission_link,
+					       ts.submission_files,
+					       ts.review_feedback,
+					       ts.submitted_by,
+					       ts.submitted_at,
+					       submitter.username AS submitted_by_name, submitter.email AS submitted_by_email
 					FROM tasks t
 					LEFT JOIN organizations o ON o.id = t.organization_id
 					LEFT JOIN users assignee ON assignee.id = t.assigned_to
 					LEFT JOIN users assigner ON assigner.id = t.assigned_by
+					LEFT JOIN task_submissions ts ON ts.task_id = t.id
+					LEFT JOIN users submitter ON submitter.id = ts.submitted_by
 					WHERE t.organization_id = ?
 					ORDER BY t.created_at DESC
 				");
@@ -238,11 +269,19 @@ function getTasks($pdo, $user) {
 				$stmt = $pdo->prepare("
 					SELECT t.*, o.name AS organization_name,
 					       assignee.username AS assigned_to_name, assignee.email AS assigned_to_email,
-					       assigner.username AS assigned_by_name, assigner.email AS assigned_by_email
+					       assigner.username AS assigned_by_name, assigner.email AS assigned_by_email,
+					       ts.submission_link,
+					       ts.submission_files,
+					       ts.review_feedback,
+					       ts.submitted_by,
+					       ts.submitted_at,
+					       submitter.username AS submitted_by_name, submitter.email AS submitted_by_email
 					FROM tasks t
 					LEFT JOIN organizations o ON o.id = t.organization_id
 					LEFT JOIN users assignee ON assignee.id = t.assigned_to
 					LEFT JOIN users assigner ON assigner.id = t.assigned_by
+					LEFT JOIN task_submissions ts ON ts.task_id = t.id
+					LEFT JOIN users submitter ON submitter.id = ts.submitted_by
 					WHERE t.organization_id = ? AND t.assigned_to = ?
 					ORDER BY t.created_at DESC
 				");
@@ -252,11 +291,19 @@ function getTasks($pdo, $user) {
 			$stmt = $pdo->prepare("
 				SELECT t.*, o.name AS organization_name,
 				       assignee.username AS assigned_to_name, assignee.email AS assigned_to_email,
-				       assigner.username AS assigned_by_name, assigner.email AS assigned_by_email
+				       assigner.username AS assigned_by_name, assigner.email AS assigned_by_email,
+				       ts.submission_link,
+				       ts.submission_files,
+				       ts.review_feedback,
+				       ts.submitted_by,
+				       ts.submitted_at,
+				       submitter.username AS submitted_by_name, submitter.email AS submitted_by_email
 				FROM tasks t
 				LEFT JOIN organizations o ON o.id = t.organization_id
 				LEFT JOIN users assignee ON assignee.id = t.assigned_to
 				LEFT JOIN users assigner ON assigner.id = t.assigned_by
+				LEFT JOIN task_submissions ts ON ts.task_id = t.id
+				LEFT JOIN users submitter ON submitter.id = ts.submitted_by
 				WHERE t.organization_id IS NULL AND t.user_id = ?
 				ORDER BY t.created_at DESC
 			");
@@ -315,7 +362,7 @@ function createTask($pdo, $user) {
 
 		if ($assignedTo) {
 			$membership = getOrganizationMembership($pdo, $assignedTo, $organizationId);
-			if (!$membership) {
+			if (!$membership || $membership['role'] === 'client') {
 				logTaskDebug('createTask.denied_assignee_not_member', $user, $organizationId, [
 					'assigned_to' => $assignedTo,
 				]);
@@ -327,7 +374,7 @@ function createTask($pdo, $user) {
 
 		if (!$assignedTo) {
 			$creatorMembership = getOrganizationMembership($pdo, $user['id'], $organizationId);
-			if (!$creatorMembership) {
+			if (!$creatorMembership || $creatorMembership['role'] === 'client') {
 				logTaskDebug('createTask.denied_default_assignee_not_member', $user, $organizationId, [
 					'suggested_assigned_to' => $user['id'],
 				]);
@@ -384,6 +431,17 @@ function createTask($pdo, $user) {
 			'status' => $status,
 		]);
 
+		if ($organizationId) {
+			$activityRecipients = [(int) $user['id']];
+			if ($assignedTo && (int) $assignedTo !== (int) $user['id']) {
+				$activityRecipients[] = (int) $assignedTo;
+			}
+			recordWorkspaceActivity($pdo, $activityRecipients, $organizationId, 'task_created', 'Task created: ' . $input['title'], (int) $taskId, [
+				'assigned_to' => $assignedTo,
+				'created_by' => (int) $user['id'],
+			]);
+		}
+
 		if ($organizationId && $assignedTo && (int) $assignedTo !== (int) $user['id']) {
 			$adminName = buildDisplayName($user);
 			createNotificationRecord(
@@ -391,6 +449,7 @@ function createTask($pdo, $user) {
 				$assignedTo,
 				'You have been assigned a task by ' . $adminName,
 				$organizationId,
+				'task',
 				(int) $taskId
 			);
 		}
@@ -441,6 +500,7 @@ function updateTask($pdo, $user) {
 			$newAssignedTo,
 			'You have been assigned a task by ' . $adminName,
 			$task['organization_id'] ?? null,
+			'task',
 			(int) $taskId
 		);
 	}
@@ -480,7 +540,7 @@ function updateTask($pdo, $user) {
 							$assignedTo = !empty($input[$field]) ? (int) $input[$field] : null;
 							if ($assignedTo) {
 								$membership = getOrganizationMembership($pdo, $assignedTo, $task['organization_id']);
-								if (!$membership) {
+								if (!$membership || $membership['role'] === 'client') {
 									logTaskDebug('updateTask.denied_assignee_not_member', $user, $task['organization_id'], [
 										'task_id' => (int) $taskId,
 										'assigned_to' => $assignedTo,
@@ -504,6 +564,12 @@ function updateTask($pdo, $user) {
 					}
 				}
 			} elseif ((int) $task['assigned_to'] === (int) $user['id']) {
+				$membership = getOrganizationMembership($pdo, $user['id'], $task['organization_id']);
+				if ($membership && $membership['role'] === 'client') {
+					http_response_code(403);
+					echo json_encode(['error' => 'Client members cannot update organization tasks']);
+					return;
+				}
 				$allowedStatus = ['pending', 'in_progress', 'submitted'];
 				if (!array_key_exists('status', $input)) {
 					http_response_code(403);
@@ -552,6 +618,16 @@ function updateTask($pdo, $user) {
 		$sql = 'UPDATE tasks SET ' . implode(', ', $updates) . ' WHERE id = ?';
 		$stmt = $pdo->prepare($sql);
 		$stmt->execute($values);
+
+		if ((int) $task['organization_id'] > 0) {
+			$activityRecipients = [(int) $user['id']];
+			if (!empty($task['assigned_to']) && (int) $task['assigned_to'] !== (int) $user['id']) {
+				$activityRecipients[] = (int) $task['assigned_to'];
+			}
+			recordWorkspaceActivity($pdo, $activityRecipients, (int) $task['organization_id'], 'task_updated', 'Task updated: ' . ($input['title'] ?? $task['title']), (int) $taskId, [
+				'updated_fields' => array_keys($input),
+			]);
+		}
 
 		logTaskDebug('updateTask.success', $user, $task['organization_id'] ?? null, [
 			'task_id' => (int) $taskId,
@@ -643,6 +719,14 @@ function attachTaskMeetLink($pdo, $user) {
 
 function submitTask($pdo, $user, $task) {
 	$isOrganizationTask = (int) $task['organization_id'] > 0;
+	if ($isOrganizationTask) {
+		$membership = getOrganizationMembership($pdo, $user['id'], $task['organization_id']);
+		if ($membership && $membership['role'] === 'client') {
+			http_response_code(403);
+			echo json_encode(['error' => 'Client members cannot submit tasks']);
+			return;
+		}
+	}
 	$canSubmit = $isOrganizationTask
 		? ((int) $task['assigned_to'] === (int) $user['id'])
 		: (((int) $task['assigned_to'] === (int) $user['id']) || ((int) $task['user_id'] === (int) $user['id']));
@@ -657,12 +741,24 @@ function submitTask($pdo, $user, $task) {
 		$stmt = $pdo->prepare("UPDATE tasks SET status = 'submitted', submitted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
 		$stmt->execute([$task['id']]);
 
+		if ((int) $task['organization_id'] > 0) {
+			$activityRecipients = [(int) $user['id']];
+			if (!empty($task['assigned_by'])) {
+				$activityRecipients[] = (int) $task['assigned_by'];
+			}
+			recordWorkspaceActivity($pdo, $activityRecipients, (int) $task['organization_id'], 'task_submitted', buildDisplayName($user) . ' submitted a task', (int) $task['id'], [
+				'submitted_by' => (int) $user['id'],
+			]);
+		}
+
 		if (!empty($task['assigned_by']) && (int) $task['assigned_by'] !== (int) $user['id']) {
+			$submitterName = buildDisplayName($user);
 			createNotificationRecord(
 				$pdo,
 				(int) $task['assigned_by'],
-				'Task submitted: ' . ($task['title'] ?? ('#' . $task['id'])),
+				$submitterName . ' submitted a task',
 				$task['organization_id'] ?? null,
+				'task',
 				(int) $task['id']
 			);
 		}
@@ -685,18 +781,11 @@ function submitTask($pdo, $user, $task) {
 
 function submitTaskWithEvidence($pdo, $user) {
 	$taskId = !empty($_POST['task_id']) ? (int) $_POST['task_id'] : 0;
-	$submissionType = strtolower(trim((string) ($_POST['submission_type'] ?? '')));
-	$submissionUrl = trim((string) ($_POST['submission_url'] ?? ''));
+	$submissionLink = trim((string) ($_POST['submission_link'] ?? ($_POST['submission_url'] ?? '')));
 
 	if ($taskId <= 0) {
 		http_response_code(400);
 		echo json_encode(['error' => 'Task ID is required']);
-		return;
-	}
-
-	if (!in_array($submissionType, ['image', 'video', 'link'], true)) {
-		http_response_code(400);
-		echo json_encode(['error' => 'submission_type must be image, video, or link']);
 		return;
 	}
 
@@ -708,6 +797,14 @@ function submitTaskWithEvidence($pdo, $user) {
 	}
 
 	$isOrganizationTask = (int) $task['organization_id'] > 0;
+	if ($isOrganizationTask) {
+		$membership = getOrganizationMembership($pdo, $user['id'], $task['organization_id']);
+		if ($membership && $membership['role'] === 'client') {
+			http_response_code(403);
+			echo json_encode(['error' => 'Client members cannot submit tasks']);
+			return;
+		}
+	}
 	$canSubmit = $isOrganizationTask
 		? ((int) $task['assigned_to'] === (int) $user['id'])
 		: (((int) $task['assigned_to'] === (int) $user['id']) || ((int) $task['user_id'] === (int) $user['id']));
@@ -718,47 +815,27 @@ function submitTaskWithEvidence($pdo, $user) {
 		return;
 	}
 
-	$storedSubmissionUrl = null;
+	$storedSubmissionFiles = [];
+	if ($submissionLink !== '' && !filter_var($submissionLink, FILTER_VALIDATE_URL)) {
+		http_response_code(400);
+		echo json_encode(['error' => 'submission_link must be a valid URL']);
+		return;
+	}
 
-	if ($submissionType === 'link') {
-		if (!$submissionUrl || !filter_var($submissionUrl, FILTER_VALIDATE_URL)) {
-			http_response_code(400);
-			echo json_encode(['error' => 'Link submission requires a valid URL']);
-			return;
-		}
-		$storedSubmissionUrl = $submissionUrl;
-	} else {
-		if (empty($_FILES['submission_file']) || !isset($_FILES['submission_file']['tmp_name'])) {
-			http_response_code(400);
-			echo json_encode(['error' => 'A submission file is required for image/video submissions']);
-			return;
-		}
+	$filesPayload = [];
+	if (!empty($_FILES['submission_files']) && isset($_FILES['submission_files']['name']) && is_array($_FILES['submission_files']['name'])) {
+		$filesPayload = $_FILES['submission_files'];
+	} elseif (!empty($_FILES['submission_file'])) {
+		$filesPayload = [
+			'name' => [$_FILES['submission_file']['name'] ?? ''],
+			'type' => [$_FILES['submission_file']['type'] ?? ''],
+			'tmp_name' => [$_FILES['submission_file']['tmp_name'] ?? ''],
+			'error' => [$_FILES['submission_file']['error'] ?? 4],
+			'size' => [$_FILES['submission_file']['size'] ?? 0],
+		];
+	}
 
-		$file = $_FILES['submission_file'];
-		if (!empty($file['error'])) {
-			http_response_code(400);
-			echo json_encode(['error' => 'File upload failed']);
-			return;
-		}
-
-		if ((int) $file['size'] > 20 * 1024 * 1024) {
-			http_response_code(400);
-			echo json_encode(['error' => 'File exceeds 20MB upload limit']);
-			return;
-		}
-
-		$allowedExtensions = $submissionType === 'image'
-			? ['jpg', 'jpeg', 'png', 'gif', 'webp']
-			: ['mp4', 'mov', 'avi', 'mkv', 'webm'];
-
-		$originalName = (string) ($file['name'] ?? 'submission');
-		$extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-		if (!$extension || !in_array($extension, $allowedExtensions, true)) {
-			http_response_code(400);
-			echo json_encode(['error' => 'Invalid file type for submission']);
-			return;
-		}
-
+	if (!empty($filesPayload['name']) && is_array($filesPayload['name'])) {
 		$uploadDir = realpath(__DIR__ . '/../../uploads');
 		if ($uploadDir === false) {
 			$uploadDir = __DIR__ . '/../../uploads';
@@ -772,45 +849,116 @@ function submitTaskWithEvidence($pdo, $user) {
 			mkdir($submissionDir, 0775, true);
 		}
 
-		$safeName = sanitizeSubmissionFileName(pathinfo($originalName, PATHINFO_FILENAME));
-		$fileName = sprintf('task_%d_user_%d_%d_%s.%s', $taskId, (int) $user['id'], time(), $safeName, $extension);
-		$targetPath = $submissionDir . DIRECTORY_SEPARATOR . $fileName;
+		$allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov', 'avi', 'mkv', 'webm'];
+		$totalFiles = count($filesPayload['name']);
 
-		if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
-			http_response_code(500);
-			echo json_encode(['error' => 'Failed to store uploaded file']);
-			return;
+		for ($index = 0; $index < $totalFiles; $index++) {
+			$errorCode = (int) ($filesPayload['error'][$index] ?? 4);
+			if ($errorCode === 4) {
+				continue;
+			}
+			if ($errorCode !== 0) {
+				http_response_code(400);
+				echo json_encode(['error' => 'One or more files failed to upload']);
+				return;
+			}
+
+			$size = (int) ($filesPayload['size'][$index] ?? 0);
+			if ($size > 20 * 1024 * 1024) {
+				http_response_code(400);
+				echo json_encode(['error' => 'Each file must be 20MB or less']);
+				return;
+			}
+
+			$originalName = (string) ($filesPayload['name'][$index] ?? 'submission');
+			$tmpPath = (string) ($filesPayload['tmp_name'][$index] ?? '');
+			$extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+			if (!$extension || !in_array($extension, $allowedExtensions, true)) {
+				http_response_code(400);
+				echo json_encode(['error' => 'Invalid file type in submission_files']);
+				return;
+			}
+
+			$safeName = sanitizeSubmissionFileName(pathinfo($originalName, PATHINFO_FILENAME));
+			$fileName = sprintf('task_%d_user_%d_%d_%d_%s.%s', $taskId, (int) $user['id'], time(), $index, $safeName, $extension);
+			$targetPath = $submissionDir . DIRECTORY_SEPARATOR . $fileName;
+
+			if (!move_uploaded_file($tmpPath, $targetPath)) {
+				http_response_code(500);
+				echo json_encode(['error' => 'Failed to store one or more submission files']);
+				return;
+			}
+
+			$storedSubmissionFiles[] = '/uploads/task_submissions/' . $fileName;
 		}
+	}
 
-		$storedSubmissionUrl = '/uploads/task_submissions/' . $fileName;
+	if ($submissionLink === '' && empty($storedSubmissionFiles)) {
+		http_response_code(400);
+		echo json_encode(['error' => 'Provide at least a submission link or one uploaded file']);
+		return;
 	}
 
 	try {
 		$stmt = $pdo->prepare(" 
 			UPDATE tasks
 			SET status = 'submitted',
-			    submission_type = ?,
+			    submission_type = 'mixed',
 			    submission_url = ?,
 			    submitted_at = CURRENT_TIMESTAMP,
 			    updated_at = CURRENT_TIMESTAMP
 			WHERE id = ?
 		");
-		$stmt->execute([$submissionType, $storedSubmissionUrl, $taskId]);
+		$stmt->execute([$submissionLink !== '' ? $submissionLink : null, $taskId]);
+
+		$submissionFilesJson = json_encode($storedSubmissionFiles);
+		$submissionStatement = $pdo->prepare(" 
+			INSERT INTO task_submissions (task_id, organization_id, submitted_by, submission_link, submission_files, review_feedback, submitted_at, updated_at)
+			VALUES (?, ?, ?, ?, ?, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+			ON CONFLICT (task_id)
+			DO UPDATE SET
+				submitted_by = EXCLUDED.submitted_by,
+				submission_link = EXCLUDED.submission_link,
+				submission_files = EXCLUDED.submission_files,
+				review_feedback = NULL,
+				submitted_at = CURRENT_TIMESTAMP,
+				updated_at = CURRENT_TIMESTAMP
+		");
+		$submissionStatement->execute([
+			$taskId,
+			$task['organization_id'] ?? null,
+			(int) $user['id'],
+			$submissionLink !== '' ? $submissionLink : null,
+			$submissionFilesJson,
+		]);
 
 		if (!empty($task['assigned_by']) && (int) $task['assigned_by'] !== (int) $user['id']) {
+			$submitterName = buildDisplayName($user);
 			createNotificationRecord(
 				$pdo,
 				(int) $task['assigned_by'],
-				'Task submitted: ' . ($task['title'] ?? ('#' . $taskId)),
+				$submitterName . ' submitted a task',
 				$task['organization_id'] ?? null,
+				'task',
 				$taskId
 			);
 		}
 
+		if ((int) $task['organization_id'] > 0) {
+			$activityRecipients = [(int) $user['id']];
+			if (!empty($task['assigned_by'])) {
+				$activityRecipients[] = (int) $task['assigned_by'];
+			}
+			recordWorkspaceActivity($pdo, $activityRecipients, (int) $task['organization_id'], 'task_submitted', buildDisplayName($user) . ' submitted a task', (int) $task['id'], [
+				'submission_link' => $submissionLink,
+				'submission_files' => $storedSubmissionFiles,
+			]);
+		}
+
 		echo json_encode([
 			'message' => 'Task submitted successfully',
-			'submissionType' => $submissionType,
-			'submissionUrl' => $storedSubmissionUrl,
+			'submissionLink' => $submissionLink,
+			'submissionFiles' => $storedSubmissionFiles,
 			'submittedAt' => date('c'),
 		]);
 	} catch (PDOException $exception) {
@@ -834,20 +982,41 @@ function reviewTask($pdo, $user, $task, $input) {
 	}
 
 	$status = $reviewAction === 'approve' ? 'completed' : 'in_progress';
+	$feedback = trim((string) ($input['feedback'] ?? ''));
 
 	try {
 		$stmt = $pdo->prepare("UPDATE tasks SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
 		$stmt->execute([$status, $task['id']]);
 
+		$submissionFeedbackStatement = $pdo->prepare(" 
+			UPDATE task_submissions
+			SET review_feedback = ?, updated_at = CURRENT_TIMESTAMP
+			WHERE task_id = ?
+		");
+		$submissionFeedbackStatement->execute([$feedback !== '' ? $feedback : null, (int) $task['id']]);
+
 		if (!empty($task['assigned_to'])) {
+			$message = $reviewAction === 'approve'
+				? 'Your task was approved'
+				: ('Your task was rejected' . ($feedback !== '' ? (': ' . $feedback) : ''));
 			createNotificationRecord(
 				$pdo,
 				(int) $task['assigned_to'],
-				'Task ' . ($reviewAction === 'approve' ? 'approved' : 'rejected') . ': ' . ($task['title'] ?? ('#' . $task['id'])),
+				$message,
 				$task['organization_id'] ?? null,
+				'task',
 				(int) $task['id']
 			);
 		}
+
+		$activityRecipients = [(int) $user['id']];
+		if (!empty($task['assigned_to'])) {
+			$activityRecipients[] = (int) $task['assigned_to'];
+		}
+		recordWorkspaceActivity($pdo, $activityRecipients, (int) $task['organization_id'], 'task_reviewed', 'Task ' . ($reviewAction === 'approve' ? 'approved' : 'rejected'), (int) $task['id'], [
+			'review_action' => $reviewAction,
+			'feedback' => $feedback,
+		]);
 
 		logTaskDebug('reviewTask.success', $user, $task['organization_id'] ?? null, [
 			'task_id' => (int) $task['id'],
@@ -855,7 +1024,7 @@ function reviewTask($pdo, $user, $task, $input) {
 			'new_status' => $status,
 		]);
 
-		echo json_encode(['message' => 'Task reviewed successfully', 'status' => $status]);
+		echo json_encode(['message' => 'Task reviewed successfully', 'status' => $status, 'feedback' => $feedback]);
 	} catch (PDOException $exception) {
 		logTaskDebug('reviewTask.error', $user, $task['organization_id'] ?? null, [
 			'task_id' => (int) $task['id'],
@@ -897,6 +1066,14 @@ function deleteTask($pdo, $user) {
 	try {
 		$stmt = $pdo->prepare("DELETE FROM tasks WHERE id = ?");
 		$stmt->execute([$taskId]);
+
+		if ((int) $task['organization_id'] > 0) {
+			$activityRecipients = [(int) $user['id']];
+			if (!empty($task['assigned_to'])) {
+				$activityRecipients[] = (int) $task['assigned_to'];
+			}
+			recordWorkspaceActivity($pdo, $activityRecipients, (int) $task['organization_id'], 'task_deleted', 'Task deleted: ' . $task['title'], (int) $taskId, []);
+		}
 
 		echo json_encode(['message' => 'Task deleted successfully']);
 	} catch (PDOException $exception) {

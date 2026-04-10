@@ -273,24 +273,68 @@ class TaskAPI {
 		});
 	}
 
-	async submitTaskWithEvidence({ taskId, submissionType, submissionUrl = "", file = null }) {
+	async submitTaskWithEvidence({ taskId, submissionLink = "", files = [], file = null }) {
 		const formData = new FormData();
 		formData.append("task_id", String(taskId));
-		formData.append("submission_type", submissionType);
-		if (submissionUrl) {
-			formData.append("submission_url", submissionUrl);
+		if (submissionLink) {
+			formData.append("submission_link", submissionLink);
 		}
+
+		const normalizedFiles = Array.isArray(files) ? files.filter(Boolean) : [];
+		normalizedFiles.forEach((currentFile) => {
+			formData.append("submission_files[]", currentFile, currentFile.name || "submission");
+		});
+
+		// Backward compatibility for single-file callers
 		if (file) {
-			formData.append("submission_file", file, file.name || "submission");
+			formData.append("submission_files[]", file, file.name || "submission");
 		}
 
 		return this.requestFormData("/api/tasks.php?action=submit-evidence", formData);
 	}
 
-	async reviewTask(id, reviewAction) {
+	async reviewTask(id, reviewAction, feedback = "") {
 		return this.request("/api/tasks.php", {
 			method: "PUT",
-			body: JSON.stringify({ id, action: "review", reviewAction }),
+			body: JSON.stringify({ id, action: "review", reviewAction, feedback }),
+		});
+	}
+
+	async getActivities({ organizationId = null, limit = 100 } = {}) {
+		const query = new URLSearchParams();
+		query.set("limit", String(limit));
+		if (organizationId) {
+			query.set("organization_id", String(organizationId));
+		}
+
+		return this.request(`/api/activities.php?${query.toString()}`, {
+			method: "GET",
+		});
+	}
+
+	async getClientRequests({ organizationId = null, limit = 50 } = {}) {
+		const query = new URLSearchParams();
+		query.set("limit", String(limit));
+		if (organizationId) {
+			query.set("organization_id", String(organizationId));
+		}
+
+		return this.request(`/api/client-requests.php?${query.toString()}`, {
+			method: "GET",
+		});
+	}
+
+	async createClientRequest(requestData) {
+		return this.request("/api/client-requests.php", {
+			method: "POST",
+			body: JSON.stringify(requestData),
+		});
+	}
+
+	async reviewClientRequest(requestData, action) {
+		return this.request(`/api/client-requests.php?action=${encodeURIComponent(action)}`, {
+			method: "PUT",
+			body: JSON.stringify(requestData),
 		});
 	}
 
@@ -379,9 +423,14 @@ class TaskAPI {
 	}
 
 	async markAllNotificationsRead(organizationId = null) {
-		return this.request("/api/notifications.php", {
-			method: "PUT",
-			body: JSON.stringify({ mark_all: true, organization_id: organizationId }),
+		const query = new URLSearchParams();
+		query.set("action", "mark-all-read");
+		if (organizationId) {
+			query.set("organization_id", String(organizationId));
+		}
+
+		return this.request(`/api/notifications.php?${query.toString()}`, {
+			method: "PATCH",
 		});
 	}
 
