@@ -323,6 +323,26 @@ class TaskAPI {
 		});
 	}
 
+	async removeOrganizationMember({ organizationId, userId }) {
+		return this.request("/api/organizations.php?action=remove-member", {
+			method: "POST",
+			body: JSON.stringify({
+				organization_id: organizationId,
+				user_id: userId,
+			}),
+		});
+	}
+
+	async updateOrganizationName({ organizationId, name }) {
+		return this.request("/api/organizations.php?action=update-name", {
+			method: "POST",
+			body: JSON.stringify({
+				organization_id: organizationId,
+				name,
+			}),
+		});
+	}
+
 	// ===== REFLECTIONS =====
 
 	/**

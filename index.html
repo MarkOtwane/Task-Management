@@ -1166,6 +1166,122 @@
 				color: var(--text-secondary);
 			}
 
+			.organization-tabs {
+				display: flex;
+				gap: 8px;
+				flex-wrap: wrap;
+				margin-bottom: 16px;
+			}
+
+			.organization-tab {
+				background: rgba(255, 255, 255, 0.04);
+				border: 1px solid var(--border-primary);
+				color: var(--text-secondary);
+				padding: 8px 14px;
+				border-radius: 999px;
+				font-weight: 600;
+				cursor: pointer;
+			}
+
+			.organization-tab.active {
+				background: rgba(59, 130, 246, 0.2);
+				border-color: rgba(59, 130, 246, 0.5);
+				color: var(--text-primary);
+			}
+
+			.org-panel {
+				display: block;
+			}
+
+			.org-stats-grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+				gap: 12px;
+				margin-bottom: 16px;
+			}
+
+			.org-stat-card {
+				padding: 14px;
+				border: 1px solid var(--border-primary);
+				border-radius: 12px;
+				background: rgba(255, 255, 255, 0.03);
+			}
+
+			.org-stat-card .label {
+				font-size: 12px;
+				text-transform: uppercase;
+				letter-spacing: 0.05em;
+				color: var(--text-tertiary);
+			}
+
+			.org-stat-card .value {
+				font-size: 24px;
+				font-weight: 700;
+				margin-top: 6px;
+			}
+
+			.organization-group-list {
+				display: grid;
+				gap: 14px;
+			}
+
+			.organization-task-group {
+				border: 1px solid var(--border-primary);
+				border-radius: 14px;
+				padding: 14px;
+				background: rgba(255, 255, 255, 0.03);
+			}
+
+			.organization-task-group h4 {
+				margin-top: 0;
+				margin-bottom: 10px;
+			}
+
+			.organization-task-item .task-controls {
+				display: flex;
+				gap: 8px;
+				flex-wrap: wrap;
+				margin-top: 10px;
+			}
+
+			.organization-thread {
+				margin-top: 10px;
+				padding-top: 10px;
+				border-top: 1px dashed var(--border-primary);
+			}
+
+			.organization-comment-item {
+				padding: 8px 10px;
+				border: 1px solid var(--border-primary);
+				border-radius: 10px;
+				margin-bottom: 8px;
+				background: rgba(255, 255, 255, 0.02);
+			}
+
+			.organization-comment-meta {
+				font-size: 12px;
+				color: var(--text-tertiary);
+				margin-bottom: 4px;
+			}
+
+			.organization-activity-list {
+				display: grid;
+				gap: 10px;
+			}
+
+			.organization-activity-item {
+				padding: 10px 12px;
+				border: 1px solid var(--border-primary);
+				border-radius: 10px;
+				background: rgba(255, 255, 255, 0.03);
+			}
+
+			@media (max-width: 900px) {
+				.organization-dashboard-grid {
+					grid-template-columns: 1fr;
+				}
+			}
+
 			/* ===== DIARY SECTION ===== */
 			.diary-layout {
 				display: grid;
@@ -2084,16 +2200,64 @@
 								<div class="controls-bar" style="margin-bottom: 18px;">
 									<button class="btn btn-primary" id="organizationAssignTaskBtn" type="button">+ Assign Task</button>
 									<button class="btn btn-secondary" id="refreshOrganizationsBtn" type="button">Refresh Organizations</button>
+									<button class="btn btn-secondary" id="organizationAddMemberInlineBtn" type="button">+ Add Member</button>
 								</div>
-								<div class="organization-dashboard-grid">
-									<div>
-										<h3>Tasks in this organization</h3>
-										<div id="organizationTaskList" class="organization-task-list"></div>
+								<div class="organization-tabs" id="organizationTabs">
+									<button type="button" class="organization-tab active" data-org-section="dashboard">Dashboard</button>
+									<button type="button" class="organization-tab" data-org-section="tasks">Tasks</button>
+									<button type="button" class="organization-tab" data-org-section="members">Members</button>
+									<button type="button" class="organization-tab" data-org-section="activity">Activity</button>
+									<button type="button" class="organization-tab" data-org-section="settings">Settings</button>
+								</div>
+								<div id="orgPanelDashboard" class="org-panel active">
+									<div class="org-stats-grid" id="organizationSummaryCards"></div>
+									<div class="organization-dashboard-grid">
+										<div>
+											<h3>Recent Activity</h3>
+											<div id="organizationRecentActivityList" class="organization-task-list"></div>
+										</div>
+										<div>
+											<h3>Notifications</h3>
+											<div id="organizationNotificationsList" class="organization-members-list"></div>
+										</div>
 									</div>
-									<div>
-										<h3>Members</h3>
-										<div id="organizationMembersList" class="organization-members-list"></div>
+								</div>
+								<div id="orgPanelTasks" class="org-panel hidden">
+									<div class="controls-bar" style="margin-bottom: 12px;">
+										<select id="organizationTaskOwnershipFilter">
+											<option value="team">Team tasks</option>
+											<option value="mine">My tasks</option>
+										</select>
+										<select id="organizationTaskGroupBy">
+											<option value="status">Group by status</option>
+											<option value="assignee">Group by assignee</option>
+										</select>
+										<div class="search-box" style="min-width: 240px;">
+											<span class="search-icon" aria-hidden="true"><i class="fas fa-search"></i></span>
+											<input type="text" id="organizationTaskSearchInput" placeholder="Search organization tasks..." />
+										</div>
 									</div>
+									<div id="organizationTaskGroupList" class="organization-group-list"></div>
+								</div>
+								<div id="orgPanelMembers" class="org-panel hidden">
+									<div id="organizationMembersList" class="organization-members-list"></div>
+								</div>
+								<div id="orgPanelActivity" class="org-panel hidden">
+									<div id="organizationActivityTimeline" class="organization-activity-list"></div>
+								</div>
+								<div id="orgPanelSettings" class="org-panel hidden">
+									<div class="form-group">
+										<label for="organizationNameInput">Organization Name</label>
+										<input type="text" id="organizationNameInput" placeholder="Organization name" />
+									</div>
+									<div class="form-group">
+										<label for="organizationWorkspaceMeetLink">Workspace Meeting Link</label>
+										<input type="url" id="organizationWorkspaceMeetLink" placeholder="https://meet.google.com/..." />
+									</div>
+									<div class="controls-bar" style="margin-bottom: 12px;">
+										<button type="button" class="btn btn-primary" id="organizationSaveSettingsBtn">Save Settings</button>
+									</div>
+									<div id="organizationSettingsInfo" class="organization-task-item"></div>
 								</div>
 							</div>
 						</div>
@@ -2347,6 +2511,14 @@
 								<option value="day">Day Plan</option>
 							</select>
 						</div>
+						<div class="form-group">
+							<label for="taskPriority">Priority</label>
+							<select id="taskPriority">
+								<option value="low">Low</option>
+								<option value="medium" selected>Medium</option>
+								<option value="high">High</option>
+							</select>
+						</div>
 						<div class="form-group hidden" id="taskOrganizationGroup">
 							<label for="taskOrganizationId">Organization</label>
 							<select id="taskOrganizationId"></select>
@@ -2556,6 +2728,13 @@
 				organizations,
 				loading: false,
 			};
+			const organizationUIState = {
+				activeSection: "dashboard",
+				taskOwnershipFilter: "team",
+				taskGroupBy: "status",
+				taskSearch: "",
+			};
+			const organizationCollabStorageKey = "organizationCollabData";
 			window.taskFlowState = organizationState;
 			let diaryEntries = [];
 			let preachingEntries = [];
@@ -2835,12 +3014,553 @@
 				return Boolean(selectedOrganization && selectedOrganization.membership_role === "organization_admin");
 			}
 
+			function getCurrentOrganizationRole() {
+				const selectedOrganization = getSelectedOrganization();
+				if (!selectedOrganization) {
+					return "member";
+				}
+				if (isSuperAdminUser()) {
+					return "organization_admin";
+				}
+				return selectedOrganization.membership_role || "member";
+			}
+
+			function isCurrentUserClientRole() {
+				return getCurrentOrganizationRole() === "client";
+			}
+
 			function updateOrganizationState(patch) {
 				Object.assign(organizationState, patch);
 				organizationState.currentMode = organizationMode;
 				organizationState.selectedOrganizationId = selectedOrganizationId;
 				organizationState.organizations = organizations;
 				window.taskFlowState = organizationState;
+			}
+
+			function getOrganizationCollabData() {
+				try {
+					return JSON.parse(localStorage.getItem(organizationCollabStorageKey) || "{}");
+				} catch (error) {
+					console.warn("[org-mode] Failed to parse collaboration data", error);
+					return {};
+				}
+			}
+
+			function setOrganizationCollabData(data) {
+				localStorage.setItem(organizationCollabStorageKey, JSON.stringify(data));
+			}
+
+			function withOrgCollab(orgId, callback) {
+				const key = String(orgId);
+				const allData = getOrganizationCollabData();
+				const orgData = allData[key] || {
+					activity: [],
+					comments: {},
+					attachments: {},
+					notifications: {},
+					settings: { workspaceMeetLink: "" },
+					reviews: {},
+				};
+
+				const result = callback(orgData) || orgData;
+				allData[key] = result;
+				setOrganizationCollabData(allData);
+				return result;
+			}
+
+			function addOrgActivity(eventType, message, taskId = null) {
+				const activeOrganization = getSelectedOrganization();
+				if (!activeOrganization) return;
+
+				withOrgCollab(activeOrganization.id, (orgData) => {
+					orgData.activity.unshift({
+						id: `${Date.now()}-${Math.random()}`,
+						type: eventType,
+						message,
+						taskId,
+						createdAt: Date.now(),
+						userId: currentUser ? currentUser.id : null,
+						userName: currentUser ? currentUser.name : "System",
+					});
+					orgData.activity = orgData.activity.slice(0, 200);
+					return orgData;
+				});
+			}
+
+			function pushNotificationForUser(userId, text, type = "info") {
+				const activeOrganization = getSelectedOrganization();
+				if (!activeOrganization || !userId) return;
+
+				withOrgCollab(activeOrganization.id, (orgData) => {
+					if (!orgData.notifications[userId]) {
+						orgData.notifications[userId] = [];
+					}
+					orgData.notifications[userId].unshift({
+						id: `${Date.now()}-${Math.random()}`,
+						text,
+						type,
+						createdAt: Date.now(),
+					});
+					orgData.notifications[userId] = orgData.notifications[userId].slice(0, 50);
+					return orgData;
+				});
+			}
+
+			function getCurrentOrgCollabData() {
+				const activeOrganization = getSelectedOrganization();
+				if (!activeOrganization) return null;
+				const data = getOrganizationCollabData();
+				return data[String(activeOrganization.id)] || {
+					activity: [],
+					comments: {},
+					attachments: {},
+					notifications: {},
+					settings: { workspaceMeetLink: "" },
+					reviews: {},
+				};
+			}
+
+			function renderOrganizationTabs() {
+				document.querySelectorAll(".organization-tab").forEach((tab) => {
+					const isActive = tab.dataset.orgSection === organizationUIState.activeSection;
+					tab.classList.toggle("active", isActive);
+				});
+
+				document.querySelectorAll(".org-panel").forEach((panel) => panel.classList.add("hidden"));
+				const activePanel = document.getElementById(`orgPanel${organizationUIState.activeSection.charAt(0).toUpperCase()}${organizationUIState.activeSection.slice(1)}`);
+				if (activePanel) {
+					activePanel.classList.remove("hidden");
+				}
+			}
+
+			function renderOrganizationDashboard() {
+				const summaryContainer = document.getElementById("organizationSummaryCards");
+				const recentActivityList = document.getElementById("organizationRecentActivityList");
+				const notificationsList = document.getElementById("organizationNotificationsList");
+				const activeOrganization = getSelectedOrganization();
+				if (!summaryContainer || !activeOrganization) {
+					return;
+				}
+
+				const orgTasks = tasks.filter((task) => String(task.organizationId || "") === String(activeOrganization.id));
+				const statusCounts = {
+					pending: orgTasks.filter((task) => task.status === "pending").length,
+					in_progress: orgTasks.filter((task) => task.status === "in_progress").length,
+					completed: orgTasks.filter((task) => task.status === "completed").length,
+				};
+				const membersCount = Array.isArray(activeOrganization.members) ? activeOrganization.members.length : 0;
+				const collabData = getCurrentOrgCollabData();
+
+				summaryContainer.innerHTML = `
+					<div class="org-stat-card"><div class="label">Total tasks</div><div class="value">${orgTasks.length}</div></div>
+					<div class="org-stat-card"><div class="label">Pending</div><div class="value">${statusCounts.pending}</div></div>
+					<div class="org-stat-card"><div class="label">In Progress</div><div class="value">${statusCounts.in_progress}</div></div>
+					<div class="org-stat-card"><div class="label">Completed</div><div class="value">${statusCounts.completed}</div></div>
+					<div class="org-stat-card"><div class="label">Total Members</div><div class="value">${membersCount}</div></div>
+				`;
+
+				const recentActivity = (collabData?.activity || []).slice(0, 10);
+				recentActivityList.innerHTML = recentActivity.length
+					? recentActivity.map((entry) => `<div class="organization-activity-item"><strong>${entry.message}</strong><div class="organization-member-meta">${new Date(entry.createdAt).toLocaleString()} by ${entry.userName || "System"}</div></div>`).join("")
+					: '<div class="organization-task-item"><strong>No activity yet</strong><div class="organization-task-meta">Task updates and submissions will appear here.</div></div>';
+
+				const myNotifications = ((collabData?.notifications || {})[currentUser?.id] || []).slice(0, 8);
+				notificationsList.innerHTML = myNotifications.length
+					? myNotifications.map((entry) => `<div class="organization-member-item"><strong>${entry.text}</strong><div class="organization-member-meta">${new Date(entry.createdAt).toLocaleString()}</div></div>`).join("")
+					: '<div class="organization-member-item"><strong>No notifications</strong><div class="organization-member-meta">You are up to date.</div></div>';
+			}
+
+			function getOrganizationTasksForView(activeOrganization) {
+				let orgTasks = tasks.filter((task) => String(task.organizationId || "") === String(activeOrganization.id));
+				if (organizationUIState.taskOwnershipFilter === "mine") {
+					orgTasks = orgTasks.filter((task) => task.assignedTo === currentUser.id || task.userId === currentUser.id);
+				}
+
+				if (organizationUIState.taskSearch) {
+					const query = organizationUIState.taskSearch.toLowerCase();
+					orgTasks = orgTasks.filter((task) => {
+						return (task.title || "").toLowerCase().includes(query)
+							|| (task.description || "").toLowerCase().includes(query)
+							|| (task.assignedToName || "").toLowerCase().includes(query);
+					});
+				}
+
+				return orgTasks;
+			}
+
+			function renderTaskDiscussion(task, collabData) {
+				const clientRole = isCurrentUserClientRole();
+				const comments = collabData?.comments?.[task.id] || [];
+				const attachments = collabData?.attachments?.[task.id] || [];
+				const reviewFeedback = collabData?.reviews?.[task.id] || [];
+				const commentsHtml = comments.length
+					? comments.map((entry) => `<div class="organization-comment-item"><div class="organization-comment-meta">${entry.authorName} • ${new Date(entry.createdAt).toLocaleString()}${entry.parentId ? " • reply" : ""}</div><div>${entry.text}</div>${clientRole ? "" : `<button type="button" class="btn btn-secondary btn-small" data-task-reply="${task.id}" data-comment-id="${entry.id}">Reply</button>`}</div>`).join("")
+					: '<div class="organization-comment-item">No comments yet.</div>';
+
+				const attachmentsHtml = attachments.length
+					? attachments.map((entry) => `<div class="organization-comment-item"><div class="organization-comment-meta">${entry.name} • uploaded by ${entry.uploadedByName} • ${new Date(entry.uploadedAt).toLocaleString()}</div><div>URL: ${entry.url}</div></div>`).join("")
+					: '<div class="organization-comment-item">No attachments yet.</div>';
+
+				const feedbackHtml = reviewFeedback.length
+					? reviewFeedback.map((entry) => `<div class="organization-comment-item"><div class="organization-comment-meta">${entry.action.toUpperCase()} by ${entry.reviewerName} • ${new Date(entry.createdAt).toLocaleString()}</div><div>${entry.comment || "No comment provided"}</div></div>`).join("")
+					: '<div class="organization-comment-item">No review feedback yet.</div>';
+
+				return `
+					<div class="organization-thread">
+						<strong>Comments & Discussion</strong>
+						${commentsHtml}
+						${clientRole ? "" : `<div class="controls-bar" style="margin-top: 8px;"><input type="text" id="orgCommentInput-${task.id}" placeholder="Add a comment" /><button class="btn btn-secondary btn-small" type="button" data-task-comment="${task.id}">Comment</button></div>`}
+					</div>
+					<div class="organization-thread">
+						<strong>Attachments</strong>
+						${attachmentsHtml}
+						${clientRole ? "" : `<div class="controls-bar" style="margin-top: 8px;"><input type="file" id="orgAttachmentInput-${task.id}" /><button class="btn btn-secondary btn-small" type="button" data-task-attachment="${task.id}">Upload</button></div>`}
+					</div>
+					<div class="organization-thread">
+						<strong>Review feedback</strong>
+						${feedbackHtml}
+					</div>
+				`;
+			}
+
+			function renderOrganizationTasksPanel() {
+				const activeOrganization = getSelectedOrganization();
+				const container = document.getElementById("organizationTaskGroupList");
+				if (!activeOrganization || !container) return;
+
+				const collabData = getCurrentOrgCollabData();
+				const orgTasks = getOrganizationTasksForView(activeOrganization);
+				const grouped = {};
+				orgTasks.forEach((task) => {
+					const key = organizationUIState.taskGroupBy === "assignee"
+						? (task.assignedToName || `User ${task.assignedTo || "Unassigned"}`)
+						: (task.status || "pending");
+					if (!grouped[key]) grouped[key] = [];
+					grouped[key].push(task);
+				});
+
+				const groups = Object.keys(grouped);
+				if (!groups.length) {
+					container.innerHTML = '<div class="organization-task-item"><strong>No tasks match your filters.</strong><div class="organization-task-meta">Adjust search or ownership filters.</div></div>';
+					return;
+				}
+
+				container.innerHTML = groups.map((groupName) => {
+					const tasksInGroup = grouped[groupName];
+					return `
+						<div class="organization-task-group">
+							<h4>${groupName} (${tasksInGroup.length})</h4>
+							${tasksInGroup.map((task) => `
+								<div class="organization-task-item">
+									<strong>${task.title}</strong>
+									<div class="organization-task-meta">Status: ${task.status || "pending"} • Assignee: ${task.assignedToName || "Unassigned"} • Priority: ${task.priority || "medium"} • Due: ${task.dueDate || "n/a"}</div>
+									<div class="task-controls">
+										${task.status !== "submitted" && task.assignedTo === currentUser.id ? `<button class="btn btn-success btn-small" type="button" data-submit-org-task="${task.id}">Submit</button>` : ""}
+										${isCurrentUserOrganizationAdmin() && task.status === "submitted" ? `<button class="btn btn-success btn-small" type="button" data-review-org-task="${task.id}" data-review-action="approve">Approve</button><button class="btn btn-secondary btn-small" type="button" data-review-org-task="${task.id}" data-review-action="reject">Reject</button>` : ""}
+										${task.meetLink ? `<button class="btn btn-secondary btn-small" type="button" data-open-meet="${task.id}">Open Meet</button>` : ""}
+									</div>
+									${renderTaskDiscussion(task, collabData)}
+								</div>
+							`).join("")}
+						</div>
+					`;
+				}).join("");
+			}
+
+			function renderOrganizationMembersPanel() {
+				const activeOrganization = getSelectedOrganization();
+				const membersList = document.getElementById("organizationMembersList");
+				if (!activeOrganization || !membersList) return;
+
+				const members = Array.isArray(activeOrganization.members) ? activeOrganization.members : [];
+				membersList.innerHTML = members.length
+					? members.map((member) => {
+						const canManage = isCurrentUserOrganizationAdmin() && String(member.user_id) !== String(currentUser.id);
+						return `
+							<div class="organization-member-item">
+								<strong>${member.username || member.email || `User ${member.user_id}`}</strong>
+								<div class="organization-member-meta">${member.role || "member"}</div>
+								${canManage ? `
+									<div class="task-controls">
+										<select data-member-role-user="${member.user_id}">
+											<option value="organization_admin" ${member.role === "organization_admin" ? "selected" : ""}>Admin</option>
+											<option value="member" ${member.role === "member" ? "selected" : ""}>Member</option>
+											<option value="client" ${member.role === "client" ? "selected" : ""}>Client</option>
+										</select>
+										<button class="btn btn-secondary btn-small" type="button" data-save-member-role="${member.user_id}">Save Role</button>
+										<button class="btn btn-danger btn-small" type="button" data-remove-member="${member.user_id}">Remove</button>
+									</div>` : ""}
+							</div>
+						`;
+					}).join("")
+					: '<div class="organization-member-item"><strong>No members found</strong></div>';
+			}
+
+			function renderOrganizationActivityPanel() {
+				const container = document.getElementById("organizationActivityTimeline");
+				const collabData = getCurrentOrgCollabData();
+				if (!container) return;
+
+				const activity = (collabData?.activity || []).slice(0, 100);
+				container.innerHTML = activity.length
+					? activity.map((entry) => `<div class="organization-activity-item"><strong>${entry.message}</strong><div class="organization-member-meta">${new Date(entry.createdAt).toLocaleString()} • ${entry.userName || "System"}</div></div>`).join("")
+					: '<div class="organization-activity-item">No tracked activity yet.</div>';
+			}
+
+			function renderOrganizationSettingsPanel() {
+				const activeOrganization = getSelectedOrganization();
+				if (!activeOrganization) return;
+
+				const collabData = getCurrentOrgCollabData();
+				const nameInput = document.getElementById("organizationNameInput");
+				const meetInput = document.getElementById("organizationWorkspaceMeetLink");
+				const info = document.getElementById("organizationSettingsInfo");
+				const saveButton = document.getElementById("organizationSaveSettingsBtn");
+				if (nameInput) nameInput.value = activeOrganization.name || "";
+				if (meetInput) meetInput.value = collabData?.settings?.workspaceMeetLink || "";
+				if (saveButton) {
+					saveButton.classList.toggle("hidden", !isCurrentUserOrganizationAdmin());
+				}
+				if (info) {
+					info.innerHTML = `
+						<strong>Organization Info</strong>
+						<div class="organization-task-meta">ID: ${activeOrganization.id}</div>
+						<div class="organization-task-meta">Members: ${(activeOrganization.members || []).length}</div>
+						<div class="organization-task-meta">Your role: ${activeOrganization.membership_role || "organization_admin"}</div>
+					`;
+				}
+			}
+
+			async function promptAndAddOrganizationMember() {
+				if (!api || !isCurrentUserOrganizationAdmin()) {
+					showNotification("Only organization admins can add members", "error");
+					return;
+				}
+
+				const activeOrganization = getSelectedOrganization();
+				if (!activeOrganization) {
+					showNotification("Select an organization first", "error");
+					return;
+				}
+
+				const email = window.prompt("Enter the member email");
+				if (!email) return;
+
+				const role = window.prompt("Enter role: organization_admin, member, or client", "member") || "member";
+
+				try {
+					const response = await api.addOrganizationMember({
+						organizationId: activeOrganization.id,
+						email: email.trim(),
+						role: role.trim(),
+					});
+					showNotification(response.message || "Organization member added", "success");
+					addOrgActivity("member_added", `Added ${email.trim()} as ${role.trim()}`);
+					await loadOrganizations();
+					setSelectedOrganization(activeOrganization.id);
+				} catch (error) {
+					showNotification("Failed to add organization member: " + error.message, "error");
+				}
+			}
+
+			async function handleOrganizationWorkspaceClick(event) {
+				const submitButton = event.target.closest("[data-submit-org-task]");
+				if (submitButton) {
+					const taskId = Number(submitButton.dataset.submitOrgTask);
+					try {
+						await api.submitTask(taskId);
+						const task = tasks.find((entry) => entry.id === taskId);
+						if (task) {
+							task.status = "submitted";
+							task.completed = false;
+							if (task.assignedBy) {
+								pushNotificationForUser(task.assignedBy, `Task submitted: ${task.title}`, "info");
+							}
+							addOrgActivity("task_submitted", `${task.title} submitted for review`, task.id);
+						}
+						renderOrganizationWorkspace();
+						showNotification("Task submitted successfully", "success");
+					} catch (error) {
+						showNotification("Failed to submit task: " + error.message, "error");
+					}
+					return;
+				}
+
+				const reviewButton = event.target.closest("[data-review-org-task]");
+				if (reviewButton) {
+					const taskId = Number(reviewButton.dataset.reviewOrgTask);
+					const action = reviewButton.dataset.reviewAction;
+					const feedback = window.prompt(`Optional feedback for ${action}`) || "";
+					try {
+						await api.reviewTask(taskId, action);
+						const task = tasks.find((entry) => entry.id === taskId);
+						if (task) {
+							task.status = action === "approve" ? "completed" : "in_progress";
+							task.completed = task.status === "completed";
+							withOrgCollab(task.organizationId, (orgData) => {
+								if (!orgData.reviews[taskId]) orgData.reviews[taskId] = [];
+								orgData.reviews[taskId].unshift({
+									action,
+									comment: feedback,
+									reviewerId: currentUser.id,
+									reviewerName: currentUser.name,
+									createdAt: Date.now(),
+								});
+								return orgData;
+							});
+							if (task.assignedTo) {
+								pushNotificationForUser(task.assignedTo, `Task ${action === "approve" ? "approved" : "rejected"}: ${task.title}`, action === "approve" ? "success" : "warning");
+							}
+							addOrgActivity("task_reviewed", `${task.title} ${action === "approve" ? "approved" : "rejected"}`, task.id);
+						}
+						renderOrganizationWorkspace();
+						showNotification(`Task ${action === "approve" ? "approved" : "rejected"}`, "success");
+					} catch (error) {
+						showNotification("Failed to review task: " + error.message, "error");
+					}
+					return;
+				}
+
+				const saveRoleButton = event.target.closest("[data-save-member-role]");
+				if (saveRoleButton) {
+					const userId = Number(saveRoleButton.dataset.saveMemberRole);
+					const roleSelect = document.querySelector(`[data-member-role-user="${userId}"]`);
+					const role = roleSelect ? roleSelect.value : "member";
+					const activeOrganization = getSelectedOrganization();
+					if (!activeOrganization) return;
+
+					try {
+						await api.addOrganizationMember({ organizationId: activeOrganization.id, userId, role });
+						addOrgActivity("member_role_updated", `Updated member role to ${role}`);
+						showNotification("Member role updated", "success");
+						await loadOrganizations();
+						setSelectedOrganization(activeOrganization.id);
+					} catch (error) {
+						showNotification("Failed to update role: " + error.message, "error");
+					}
+					return;
+				}
+
+				const removeMemberButton = event.target.closest("[data-remove-member]");
+				if (removeMemberButton) {
+					const userId = Number(removeMemberButton.dataset.removeMember);
+					const activeOrganization = getSelectedOrganization();
+					if (!activeOrganization) return;
+
+					const confirmed = await showConfirmMessage("Remove this member from the organization?", "Remove", "Cancel");
+					if (!confirmed) return;
+
+					try {
+						await api.removeOrganizationMember({ organizationId: activeOrganization.id, userId });
+						addOrgActivity("member_removed", `Removed member #${userId}`);
+						showNotification("Member removed", "success");
+						await loadOrganizations();
+						setSelectedOrganization(activeOrganization.id);
+					} catch (error) {
+						showNotification("Failed to remove member: " + error.message, "error");
+					}
+					return;
+				}
+
+				const commentButton = event.target.closest("[data-task-comment]");
+				if (commentButton) {
+					const taskId = Number(commentButton.dataset.taskComment);
+					const input = document.getElementById(`orgCommentInput-${taskId}`);
+					const text = input ? input.value.trim() : "";
+					if (!text) return;
+
+					const task = tasks.find((entry) => entry.id === taskId);
+					if (!task || !task.organizationId) return;
+
+					withOrgCollab(task.organizationId, (orgData) => {
+						if (!orgData.comments[taskId]) orgData.comments[taskId] = [];
+						orgData.comments[taskId].push({
+							id: `${Date.now()}-${Math.random()}`,
+							parentId: null,
+							text,
+							authorId: currentUser.id,
+							authorName: currentUser.name,
+							createdAt: Date.now(),
+						});
+						return orgData;
+					});
+					if (task.assignedTo && task.assignedTo !== currentUser.id) {
+						pushNotificationForUser(task.assignedTo, `New comment on task: ${task.title}`);
+					}
+					addOrgActivity("task_commented", `Comment added on ${task.title}`, taskId);
+					input.value = "";
+					renderOrganizationWorkspace();
+					return;
+				}
+
+				const replyButton = event.target.closest("[data-task-reply]");
+				if (replyButton) {
+					const taskId = Number(replyButton.dataset.taskReply);
+					const parentId = replyButton.dataset.commentId;
+					const reply = window.prompt("Reply comment");
+					if (!reply) return;
+					const task = tasks.find((entry) => entry.id === taskId);
+					if (!task || !task.organizationId) return;
+
+					withOrgCollab(task.organizationId, (orgData) => {
+						if (!orgData.comments[taskId]) orgData.comments[taskId] = [];
+						orgData.comments[taskId].push({
+							id: `${Date.now()}-${Math.random()}`,
+							parentId,
+							text: reply,
+							authorId: currentUser.id,
+							authorName: currentUser.name,
+							createdAt: Date.now(),
+						});
+						return orgData;
+					});
+					addOrgActivity("task_replied", `Reply added on ${task.title}`, taskId);
+					renderOrganizationWorkspace();
+					return;
+				}
+
+				const attachmentButton = event.target.closest("[data-task-attachment]");
+				if (attachmentButton) {
+					const taskId = Number(attachmentButton.dataset.taskAttachment);
+					const input = document.getElementById(`orgAttachmentInput-${taskId}`);
+					const file = input && input.files && input.files[0] ? input.files[0] : null;
+					if (!file) {
+						showNotification("Choose a file first", "warning");
+						return;
+					}
+					const task = tasks.find((entry) => entry.id === taskId);
+					if (!task || !task.organizationId) return;
+
+					withOrgCollab(task.organizationId, (orgData) => {
+						if (!orgData.attachments[taskId]) orgData.attachments[taskId] = [];
+						orgData.attachments[taskId].push({
+							id: `${Date.now()}-${Math.random()}`,
+							name: file.name,
+							url: `local-file://${encodeURIComponent(file.name)}`,
+							uploadedBy: currentUser.id,
+							uploadedByName: currentUser.name,
+							uploadedAt: Date.now(),
+						});
+						return orgData;
+					});
+					addOrgActivity("attachment_uploaded", `Attachment uploaded on ${task.title}`, taskId);
+					pushNotificationForUser(task.assignedTo, `New file attached to ${task.title}`);
+					if (input) {
+						input.value = "";
+					}
+					renderOrganizationWorkspace();
+					showNotification("Attachment metadata saved", "success");
+					return;
+				}
+
+				const meetButton = event.target.closest("[data-open-meet]");
+				if (meetButton) {
+					const taskId = Number(meetButton.dataset.openMeet);
+					const task = tasks.find((entry) => entry.id === taskId);
+					if (task && task.meetLink) {
+						window.open(task.meetLink, "_blank", "noopener,noreferrer");
+					}
+				}
 			}
 
 			function renderOrganizationWorkspace() {
@@ -2851,11 +3571,11 @@
 				const selectionPanel = document.getElementById("organizationSelectionPanel");
 				const dashboardPanel = document.getElementById("organizationDashboardPanel");
 				const organizationList = document.getElementById("organizationList");
-				const organizationTaskList = document.getElementById("organizationTaskList");
-				const organizationMembersList = document.getElementById("organizationMembersList");
 				const organizationDashboardTitle = document.getElementById("organizationDashboardTitle");
 				const organizationDashboardMeta = document.getElementById("organizationDashboardMeta");
 				const createButton = document.getElementById("organizationCreateFromWorkspaceBtn");
+				const inlineAddButton = document.getElementById("organizationAddMemberInlineBtn");
+				const assignTaskButton = document.getElementById("organizationAssignTaskBtn");
 
 				if (!section) {
 					return;
@@ -2891,6 +3611,14 @@
 					createButton.classList.toggle("hidden", !isSuperAdminUser());
 				}
 
+				if (inlineAddButton) {
+					inlineAddButton.classList.toggle("hidden", !isCurrentUserOrganizationAdmin());
+				}
+
+				if (assignTaskButton) {
+					assignTaskButton.classList.toggle("hidden", !isCurrentUserOrganizationAdmin());
+				}
+
 				if (selectionPanel) {
 					selectionPanel.classList.toggle("hidden", organizationState.loading || !hasOrganizations);
 				}
@@ -2919,38 +3647,6 @@
 						: "";
 				}
 
-				if (organizationTaskList) {
-					const organizationTasks = tasks.filter((task) => String(task.organizationId || "") === String(selectedOrganizationId));
-					organizationTaskList.innerHTML = selectedOrganization
-						? (organizationTasks.length
-							? organizationTasks
-								.map((task) => `
-									<div class="organization-task-item">
-										<strong>${task.title}</strong>
-										<div class="organization-task-meta">${task.status ? task.status.replace(/_/g, " ") : "pending"}${task.assignedToName ? ` • Assigned to ${task.assignedToName}` : ""}</div>
-									</div>
-								`)
-								.join("")
-							: '<div class="organization-task-item"><strong>No tasks yet</strong><div class="organization-task-meta">Use Assign Task to create one for this organization.</div></div>')
-						: '<div class="organization-task-item"><strong>Select an organization</strong><div class="organization-task-meta">Tasks will appear here after you choose a workspace.</div></div>';
-				}
-
-				if (organizationMembersList) {
-					const members = selectedOrganization && Array.isArray(selectedOrganization.members) ? selectedOrganization.members : [];
-					organizationMembersList.innerHTML = selectedOrganization
-						? (members.length
-							? members
-								.map((member) => `
-									<div class="organization-member-item">
-										<strong>${member.username || member.email || `User ${member.user_id}`}</strong>
-										<div class="organization-member-meta">${member.email || "No email"} • ${member.role || "member"}</div>
-									</div>
-								`)
-								.join("")
-							: '<div class="organization-member-item"><strong>No members yet</strong><div class="organization-member-meta">Invite people after selecting this organization.</div></div>')
-						: '<div class="organization-member-item"><strong>No organization selected</strong><div class="organization-member-meta">Select a workspace to view members.</div></div>';
-				}
-
 				if (organizationDashboardTitle) {
 					organizationDashboardTitle.textContent = selectedOrganization ? `${selectedOrganization.name} Dashboard` : "Organization Dashboard";
 				}
@@ -2959,6 +3655,15 @@
 					organizationDashboardMeta.textContent = selectedOrganization
 						? `${selectedOrganization.members?.length || 0} member${(selectedOrganization.members?.length || 0) === 1 ? "" : "s"}`
 						: "Select an organization to continue";
+				}
+
+				renderOrganizationTabs();
+				if (selectedOrganization) {
+					renderOrganizationDashboard();
+					renderOrganizationTasksPanel();
+					renderOrganizationMembersPanel();
+					renderOrganizationActivityPanel();
+					renderOrganizationSettingsPanel();
 				}
 			}
 
@@ -3152,6 +3857,7 @@
 						updateOverview();
 						updatePlans();
 						updateAnalytics();
+						renderOrganizationWorkspace();
 						return;
 					}
 					const backendTasks = await api.getTasks(taskContext);
@@ -3171,6 +3877,7 @@
 							title: t.title,
 							description: t.description,
 							plan: t.category || 'day',
+							priority: (t.priority || 'medium').toLowerCase(),
 							// dueDate (YYYY-MM-DD) and dueTime (HH:MM)
 							dueDate: t.due_date ? new Date(t.due_date).toISOString().split('T')[0] : '',
 							dueTime: t.due_date ? new Date(t.due_date).toISOString().split('T')[1].slice(0,5) : '',
@@ -3191,12 +3898,14 @@
 					renderTasks();
 					updateOverview();
 					updatePlans();
+					renderOrganizationWorkspace();
 					// Persist loaded tasks to localStorage for offline/quick access
 					try { storage.saveTasks(tasks); } catch (e) { console.warn('Could not save tasks to storage', e); }
 				} catch (error) {
 					console.error("Error loading tasks:", error);
 					// Fall back to localStorage if API fails
 					tasks = storage.getTasks();
+					renderOrganizationWorkspace();
 				}
 			}
 
@@ -4763,6 +5472,7 @@
 				document.getElementById("taskTitle").value = "";
 				document.getElementById("taskDescription").value = "";
 				document.getElementById("taskPlan").value = "day";
+				document.getElementById("taskPriority").value = "medium";
 				document.getElementById("taskOrganizationId").value = selectedOrganizationId || "";
 				document.getElementById("taskAssignedTo").value = currentUser ? String(currentUser.id) : "";
 				document.getElementById("taskMeetingLink").value = "";
@@ -4815,9 +5525,38 @@
 				}
 			});
 
+			document.getElementById("organizationAddMemberInlineBtn").addEventListener("click", async () => {
+				await promptAndAddOrganizationMember();
+			});
+
 			document.getElementById("refreshOrganizationsBtn").addEventListener("click", async () => {
 				console.log("[org-mode] Manual organization refresh requested");
 				await loadOrganizations().catch((error) => console.warn("[org-mode] Refresh failed", error));
+			});
+
+			document.getElementById("organizationTabs").addEventListener("click", (event) => {
+				const tabButton = event.target.closest("[data-org-section]");
+				if (!tabButton) {
+					return;
+				}
+
+				organizationUIState.activeSection = tabButton.dataset.orgSection;
+				renderOrganizationWorkspace();
+			});
+
+			document.getElementById("organizationTaskOwnershipFilter").addEventListener("change", (event) => {
+				organizationUIState.taskOwnershipFilter = event.target.value;
+				renderOrganizationTasksPanel();
+			});
+
+			document.getElementById("organizationTaskGroupBy").addEventListener("change", (event) => {
+				organizationUIState.taskGroupBy = event.target.value;
+				renderOrganizationTasksPanel();
+			});
+
+			document.getElementById("organizationTaskSearchInput").addEventListener("input", (event) => {
+				organizationUIState.taskSearch = event.target.value.trim();
+				renderOrganizationTasksPanel();
 			});
 
 			document.getElementById("organizationAssignTaskBtn").addEventListener("click", () => {
@@ -4842,6 +5581,45 @@
 				setSelectedOrganization(target.dataset.selectOrganization);
 			});
 
+			document.getElementById("organizationSaveSettingsBtn").addEventListener("click", async () => {
+				const activeOrganization = getSelectedOrganization();
+				if (!activeOrganization) {
+					showNotification("Select an organization first", "error");
+					return;
+				}
+
+				if (!isCurrentUserOrganizationAdmin()) {
+					showNotification("Only organization admins can edit settings", "error");
+					return;
+				}
+
+				const nextName = document.getElementById("organizationNameInput").value.trim();
+				const workspaceMeetLink = document.getElementById("organizationWorkspaceMeetLink").value.trim();
+
+				if (nextName && nextName !== activeOrganization.name) {
+					try {
+						await api.updateOrganizationName({ organizationId: activeOrganization.id, name: nextName });
+						addOrgActivity("settings_updated", `Organization renamed to ${nextName}`);
+					} catch (error) {
+						showNotification("Failed to update organization name: " + error.message, "error");
+						return;
+					}
+				}
+
+				withOrgCollab(activeOrganization.id, (orgData) => {
+					orgData.settings.workspaceMeetLink = workspaceMeetLink;
+					return orgData;
+				});
+				addOrgActivity("settings_updated", "Workspace settings updated");
+				showNotification("Organization settings saved", "success");
+				await loadOrganizations();
+				setSelectedOrganization(activeOrganization.id);
+			});
+
+			document.getElementById("organizationDashboardPanel").addEventListener("click", async (event) => {
+				await handleOrganizationWorkspaceClick(event);
+			});
+
 			document.getElementById("createOrganizationBtn").addEventListener("click", async () => {
 				if (!api || !isSuperAdminUser()) {
 					showNotification("Only the super admin can create organizations", "error");
@@ -4864,36 +5642,7 @@
 			});
 
 			document.getElementById("addOrganizationMemberBtn").addEventListener("click", async () => {
-				if (!api || !isCurrentUserOrganizationAdmin()) {
-					showNotification("Only organization admins can add members", "error");
-					return;
-				}
-
-				const activeOrganization = getSelectedOrganization();
-				if (!activeOrganization) {
-					showNotification("Select an organization first", "error");
-					return;
-				}
-
-				const email = window.prompt("Enter the member email");
-				if (!email) {
-					return;
-				}
-
-				const role = window.prompt("Enter role: organization_admin, member, or client", "member") || "member";
-
-				try {
-					const response = await api.addOrganizationMember({
-						organizationId: activeOrganization.id,
-						email: email.trim(),
-						role: role.trim(),
-					});
-					showNotification(response.message || "Organization member added", "success");
-					await loadOrganizations();
-					setSelectedOrganization(activeOrganization.id);
-				} catch (error) {
-					showNotification("Failed to add organization member: " + error.message, "error");
-				}
+				await promptAndAddOrganizationMember();
 			});
 
 			taskForm.addEventListener("submit", (e) => {
@@ -4908,6 +5657,7 @@
 					title: document.getElementById("taskTitle").value.trim(),
 					description: document.getElementById("taskDescription").value.trim(),
 					plan: document.getElementById("taskPlan").value,
+					priority: document.getElementById("taskPriority").value,
 						organizationId: modeAwareOrganizationId,
 						assignedTo: document.getElementById("taskAssignedTo").value || null,
 					dueDate: document.getElementById("taskDueDate").value,
@@ -4981,6 +5731,7 @@
 						title: taskData.title,
 						description: taskData.description,
 						category: taskData.plan,
+						priority: taskData.priority,
 							organization_id: taskData.organizationId,
 							assigned_to: taskData.assignedTo ? Number(taskData.assignedTo) : null,
 							meet_link: requestContext.mode === "organization" ? (taskData.meetingLink || null) : null,
@@ -5000,11 +5751,18 @@
 								};
 						}
 						storage.saveTasks(tasks);
+						if (requestContext.mode === "organization" && taskData.organizationId) {
+							addOrgActivity("task_updated", `Task updated: ${taskData.title}`, editingTaskId);
+							if (taskData.assignedTo && Number(taskData.assignedTo) !== Number(currentUser.id)) {
+								pushNotificationForUser(Number(taskData.assignedTo), `Task updated: ${taskData.title}`, "info");
+							}
+						}
 						showNotification("Task updated successfully! ✏️", "success");
 						taskModal.classList.add("hidden");
 						renderTasks();
 						updateOverview();
 						updatePlans();
+						renderOrganizationWorkspace();
 						updateCountdownTimers();
 					}).catch((error) => {
 						showNotification("Failed to update task: " + error.message, "error");
@@ -5020,6 +5778,7 @@
 						title: taskData.title,
 						description: taskData.description,
 						category: taskData.plan,
+						priority: taskData.priority,
 								organization_id: taskData.organizationId,
 								assigned_to: taskData.assignedTo ? Number(taskData.assignedTo) : null,
 							meet_link: requestContext.mode === "organization" ? (taskData.meetingLink || null) : null,
@@ -5056,6 +5815,7 @@
 								title: response.task.title,
 								description: response.task.description || '',
 								plan: response.task.category || 'day',
+								priority: (response.task.priority || taskData.priority || 'medium').toLowerCase(),
 								dueDate: parseDueDate(response.task.due_date),
 								dueTime: parseDueTime(response.task.due_date),
 								reminder: 'none',
@@ -5091,6 +5851,7 @@
 								title: taskData.title,
 								description: taskData.description,
 								plan: taskData.plan,
+								priority: (taskData.priority || 'medium').toLowerCase(),
 								dueDate: taskData.dueDate,
 								dueTime: taskData.dueTime,
 								reminder: taskData.reminder,
@@ -5107,6 +5868,12 @@
 							tasks.push(newTask);
 						// Persist the updated tasks list
 						try { storage.saveTasks(tasks); } catch (e) { console.warn('Could not save tasks to storage', e); }
+						if (requestContext.mode === "organization" && newTask.organizationId) {
+							addOrgActivity("task_created", `Task created: ${newTask.title}`, newTask.id);
+							if (newTask.assignedTo && Number(newTask.assignedTo) !== Number(currentUser.id)) {
+								pushNotificationForUser(Number(newTask.assignedTo), `You were assigned: ${newTask.title}`, "info");
+							}
+						}
 
 						// Send meeting invitations if invitees and meeting link are provided
 						if (taskData.invitees && taskData.meetingLink) {
@@ -5134,6 +5901,7 @@
 						renderTasks();
 						updateOverview();
 						updatePlans();
+						renderOrganizationWorkspace();
 						updateCountdownTimers();
 					}).catch((error) => {
 						showNotification("Failed to create task: " + error.message, "error");
@@ -5359,6 +6127,7 @@
             <div class="task-meta">
               <span class="task-badge ${task.plan}">${planIcons[task.plan]} ${task.plan.toUpperCase()}</span>
 							${task.status ? `<span class="task-badge"><i class="fas fa-circle-info"></i> ${task.status.replace(/_/g, " ").toUpperCase()}</span>` : ""}
+							${task.priority ? `<span class="task-badge"><i class="fas fa-flag"></i> ${task.priority.toUpperCase()}</span>` : ""}
 							${task.organizationName ? `<span class="task-badge"><i class="fas fa-building"></i> ${task.organizationName}</span>` : ""}
               ${
 				task.dueDate
@@ -5418,6 +6187,7 @@
 				document.getElementById("taskTitle").value = task.title || "";
 				document.getElementById("taskDescription").value = task.description || "";
 				document.getElementById("taskPlan").value = task.plan || "day";
+				document.getElementById("taskPriority").value = task.priority || "medium";
 				document.getElementById("taskDueDate").value = task.dueDate || "";
 				document.getElementById("taskDueTime").value = task.dueTime || "";
 				document.getElementById("taskOrganizationId").value = task.organizationId || selectedOrganizationId || "";
@@ -5507,11 +6277,18 @@
 					if (task) {
 						task.status = "submitted";
 						task.completed = false;
+						if (task.organizationId) {
+							addOrgActivity("task_submitted", `${task.title} submitted for review`, task.id);
+							if (task.assignedBy) {
+								pushNotificationForUser(task.assignedBy, `Task submitted: ${task.title}`, "info");
+							}
+						}
 					}
 					renderTasks();
 					updateOverview();
 					updatePlans();
 					updateAnalytics();
+					renderOrganizationWorkspace();
 					showNotification("Task submitted successfully", "success");
 				}).catch((error) => {
 					showNotification("Failed to submit task: " + error.message, "error");
@@ -5524,16 +6301,36 @@
 					return;
 				}
 
+				const feedback = window.prompt(`Optional feedback for ${reviewAction}`) || "";
+
 				api.reviewTask(taskId, reviewAction).then((response) => {
 					const task = tasks.find((entry) => entry.id === parseFloat(taskId));
 					if (task) {
 						task.status = response.status || (reviewAction === "approve" ? "completed" : "in_progress");
 						task.completed = task.status === "completed";
+						if (task.organizationId) {
+							withOrgCollab(task.organizationId, (orgData) => {
+								if (!orgData.reviews[task.id]) orgData.reviews[task.id] = [];
+								orgData.reviews[task.id].unshift({
+									action: reviewAction,
+									comment: feedback,
+									reviewerId: currentUser.id,
+									reviewerName: currentUser.name,
+									createdAt: Date.now(),
+								});
+								return orgData;
+							});
+							addOrgActivity("task_reviewed", `${task.title} ${reviewAction === "approve" ? "approved" : "rejected"}`, task.id);
+							if (task.assignedTo) {
+								pushNotificationForUser(task.assignedTo, `Task ${reviewAction === "approve" ? "approved" : "rejected"}: ${task.title}`, reviewAction === "approve" ? "success" : "warning");
+							}
+						}
 					}
 					renderTasks();
 					updateOverview();
 					updatePlans();
 					updateAnalytics();
+					renderOrganizationWorkspace();
 					showNotification(reviewAction === "approve" ? "Task approved" : "Task sent back for changes", "success");
 				}).catch((error) => {
 					showNotification("Failed to review task: " + error.message, "error");

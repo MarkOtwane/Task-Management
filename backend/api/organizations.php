@@ -25,6 +25,10 @@ if ($method === 'GET') {
 	getOrganizations($pdo, $user);
 } elseif ($method === 'POST' && $action === 'add-member') {
 	addOrganizationMember($pdo, $user);
+} elseif ($method === 'POST' && $action === 'remove-member') {
+	removeOrganizationMember($pdo, $user);
+} elseif ($method === 'POST' && $action === 'update-name') {
+	updateOrganizationName($pdo, $user);
 } elseif ($method === 'POST') {
 	createOrganization($pdo, $user);
 } else {
@@ -212,5 +216,115 @@ function addOrganizationMember($pdo, $user) {
 		]);
 		http_response_code(500);
 		echo json_encode(['error' => 'Failed to save organization member: ' . $exception->getMessage()]);
+	}
+}
+
+function removeOrganizationMember($pdo, $user) {
+	$input = json_decode(file_get_contents('php://input'), true);
+	if (!is_array($input)) {
+		$input = [];
+	}
+
+	$organizationId = (int) ($input['organization_id'] ?? 0);
+	$userId = (int) ($input['user_id'] ?? 0);
+
+	logOrganizationDebug('removeOrganizationMember.attempt', $user, $organizationId, $input);
+
+	if ($organizationId <= 0 || $userId <= 0) {
+		http_response_code(400);
+		echo json_encode(['error' => 'Organization ID and user ID are required']);
+		return;
+	}
+
+	if (!userCanManageOrganizationTasks($pdo, $user, $organizationId)) {
+		logOrganizationDebug('removeOrganizationMember.denied_not_org_admin', $user, $organizationId, $input);
+		http_response_code(403);
+		echo json_encode(['error' => 'Only organization admins can remove members']);
+		return;
+	}
+
+	if ((int) $user['id'] === $userId) {
+		http_response_code(400);
+		echo json_encode(['error' => 'Admins cannot remove themselves']);
+		return;
+	}
+
+	try {
+		$stmt = $pdo->prepare("DELETE FROM organization_members WHERE organization_id = ? AND user_id = ?");
+		$stmt->execute([$organizationId, $userId]);
+
+		if ($stmt->rowCount() === 0) {
+			http_response_code(404);
+			echo json_encode(['error' => 'Member not found in this organization']);
+			return;
+		}
+
+		logOrganizationDebug('removeOrganizationMember.success', $user, $organizationId, [
+			'user_id' => $userId,
+		]);
+
+		echo json_encode([
+			'message' => 'Organization member removed successfully',
+			'organization_id' => $organizationId,
+			'user_id' => $userId,
+		]);
+	} catch (PDOException $exception) {
+		logOrganizationDebug('removeOrganizationMember.error', $user, $organizationId, [
+			'error' => $exception->getMessage(),
+		]);
+		http_response_code(500);
+		echo json_encode(['error' => 'Failed to remove organization member: ' . $exception->getMessage()]);
+	}
+}
+
+function updateOrganizationName($pdo, $user) {
+	$input = json_decode(file_get_contents('php://input'), true);
+	if (!is_array($input)) {
+		$input = [];
+	}
+
+	$organizationId = (int) ($input['organization_id'] ?? 0);
+	$name = trim($input['name'] ?? '');
+
+	logOrganizationDebug('updateOrganizationName.attempt', $user, $organizationId, $input);
+
+	if ($organizationId <= 0 || $name === '') {
+		http_response_code(400);
+		echo json_encode(['error' => 'Organization ID and name are required']);
+		return;
+	}
+
+	if (!userCanManageOrganizationTasks($pdo, $user, $organizationId)) {
+		logOrganizationDebug('updateOrganizationName.denied_not_org_admin', $user, $organizationId, $input);
+		http_response_code(403);
+		echo json_encode(['error' => 'Only organization admins can update organization settings']);
+		return;
+	}
+
+	try {
+		$stmt = $pdo->prepare("UPDATE organizations SET name = ? WHERE id = ?");
+		$stmt->execute([$name, $organizationId]);
+
+		if ($stmt->rowCount() === 0) {
+			http_response_code(404);
+			echo json_encode(['error' => 'Organization not found']);
+			return;
+		}
+
+		logOrganizationDebug('updateOrganizationName.success', $user, $organizationId, [
+			'name' => $name,
+		]);
+
+		echo json_encode([
+			'message' => 'Organization updated successfully',
+			'organization_id' => $organizationId,
+			'name' => $name,
+		]);
+	} catch (PDOException $exception) {
+		logOrganizationDebug('updateOrganizationName.error', $user, $organizationId, [
+			'error' => $exception->getMessage(),
+		]);
+		http_response_code(500);
+		echo json_encode(['error' => 'Failed to update organization: ' . $exception->getMessage()]);
 	}
 }
