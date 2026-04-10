@@ -129,13 +129,34 @@ function initializeDatabase($pdo) {
         $pdo->exec("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS assigned_to INTEGER REFERENCES users(id) ON DELETE SET NULL");
         $pdo->exec("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS assigned_by INTEGER REFERENCES users(id) ON DELETE SET NULL");
         $pdo->exec("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'pending'");
-            $pdo->exec("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS meet_link TEXT");
+        $pdo->exec("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS meet_link TEXT");
+        $pdo->exec("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS submission_type VARCHAR(20)");
+        $pdo->exec("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS submission_url TEXT");
+        $pdo->exec("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMP");
 
         $pdo->exec("CREATE INDEX IF NOT EXISTS idx_tasks_organization_id ON tasks(organization_id)");
         $pdo->exec("CREATE INDEX IF NOT EXISTS idx_tasks_assigned_to ON tasks(assigned_to)");
         $pdo->exec("CREATE INDEX IF NOT EXISTS idx_tasks_assigned_by ON tasks(assigned_by)");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_tasks_submitted_at ON tasks(submitted_at)");
         $pdo->exec("CREATE INDEX IF NOT EXISTS idx_organization_members_user_id ON organization_members(user_id)");
         $pdo->exec("CREATE INDEX IF NOT EXISTS idx_organization_members_organization_id ON organization_members(organization_id)");
+
+        // Notifications table
+        $pdo->exec(" 
+            CREATE TABLE IF NOT EXISTS notifications (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                organization_id INTEGER REFERENCES organizations(id) ON DELETE CASCADE,
+                task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
+                message TEXT NOT NULL,
+                is_read BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ");
+
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id)");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_notifications_read_state ON notifications(user_id, is_read)");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at DESC)");
 
         // Task reflections table
         $pdo->exec("

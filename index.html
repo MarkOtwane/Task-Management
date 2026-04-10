@@ -143,7 +143,7 @@
 
 			.toggle-slider:before {
 				position: absolute;
-				content: "🌙";
+				content: "";
 				height: 22px;
 				width: 22px;
 				left: 2px;
@@ -163,7 +163,6 @@
 
 			input:checked + .toggle-slider:before {
 				transform: translateX(24px);
-				content: "☀️";
 			}
 
 			/* ===== UTILITY CLASSES ===== */
@@ -460,6 +459,122 @@
 				overflow-y: auto;
 				padding: 30px;
 				background: var(--bg-secondary);
+			}
+
+			.app-topbar {
+				display: flex;
+				justify-content: flex-end;
+				align-items: center;
+				margin-bottom: 18px;
+				position: relative;
+			}
+
+			.notification-bell {
+				position: relative;
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				width: 44px;
+				height: 44px;
+				border: 1px solid var(--border-primary);
+				border-radius: 12px;
+				background: var(--bg-card);
+				color: var(--text-primary);
+				cursor: pointer;
+			}
+
+			.notification-bell .material-icons {
+				font-size: 22px;
+			}
+
+			.notification-badge {
+				position: absolute;
+				top: -6px;
+				right: -6px;
+				min-width: 20px;
+				height: 20px;
+				padding: 0 6px;
+				border-radius: 999px;
+				background: var(--notification-error);
+				color: #fff;
+				font-size: 12px;
+				font-weight: 700;
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+			}
+
+			.notification-dropdown {
+				position: absolute;
+				right: 0;
+				top: calc(100% + 10px);
+				width: min(420px, 92vw);
+				max-height: 70vh;
+				overflow-y: auto;
+				background: var(--bg-card);
+				border: 1px solid var(--border-primary);
+				border-radius: 12px;
+				box-shadow: var(--shadow-primary);
+				z-index: 2100;
+			}
+
+			.notification-dropdown-header {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				padding: 12px 14px;
+				border-bottom: 1px solid var(--border-primary);
+			}
+
+			.notification-dropdown-list {
+				display: grid;
+				gap: 8px;
+				padding: 10px;
+			}
+
+			.notification-dropdown-item {
+				padding: 10px 12px;
+				border: 1px solid var(--border-primary);
+				border-radius: 10px;
+				background: rgba(255, 255, 255, 0.02);
+				cursor: pointer;
+			}
+
+			.notification-dropdown-item.unread {
+				border-left: 4px solid var(--text-accent);
+			}
+
+			.activity-preview-actions {
+				display: flex;
+				justify-content: flex-end;
+				margin-top: 10px;
+			}
+
+			.task-submission-form {
+				margin-top: 12px;
+				padding: 12px;
+				border: 1px dashed var(--border-primary);
+				border-radius: 12px;
+				background: rgba(255, 255, 255, 0.03);
+			}
+
+			.task-submission-form h4 {
+				margin: 0 0 8px;
+				font-size: 14px;
+			}
+
+			.submission-preview {
+				margin-top: 10px;
+				padding: 10px;
+				border: 1px solid var(--border-primary);
+				border-radius: 10px;
+				min-height: 52px;
+			}
+
+			.submission-preview img,
+			.submission-preview video {
+				max-width: 100%;
+				border-radius: 8px;
 			}
 
 			.mobile-menu-btn {
@@ -2084,15 +2199,23 @@
 					<nav class="sidebar-nav">
 						<div class="nav-section">
 							<div class="nav-section-title">Main</div>
-							<a href="#" class="nav-link active" data-section="overview"> <span class="icon"><i class="fas fa-chart-bar"></i></span> Overview </a>
-							<a href="#" class="nav-link" data-section="tasks"> <span class="icon"><i class="fas fa-check"></i></span> All Tasks </a>
-							<a href="#" class="nav-link" data-section="diary"> <span class="icon"><i class="fas fa-book-open"></i></span> My Thoughts </a>
-							<a href="#" class="nav-link" data-section="preaching"> <span class="icon"><i class="fas fa-bible"></i></span> Preaching </a>
-							<a href="#" class="nav-link" data-section="analytics"> <span class="icon"><i class="fas fa-chart-line"></i></span> Analytics </a>
+								<a href="#" class="nav-link active" data-section="overview"> <span class="icon"><span class="material-icons icon-24">dashboard</span></span> Dashboard </a>
+								<a href="#" class="nav-link" data-section="tasks"> <span class="icon"><span class="material-icons icon-24">assignment</span></span> Tasks </a>
+								<a href="#" class="nav-link" data-section="diary"> <span class="icon"><span class="material-icons icon-24">menu_book</span></span> Thoughts </a>
+								<a href="#" class="nav-link" data-section="preaching"> <span class="icon"><span class="material-icons icon-24">auto_stories</span></span> Preaching </a>
+								<a href="#" class="nav-link" data-section="analytics"> <span class="icon"><span class="material-icons icon-24">insights</span></span> Analytics </a>
 						</div>
 						<div class="nav-section">
 							<div class="nav-section-title">Plans</div>
-							<a href="#" class="nav-link" data-section="plans"> <span class="icon"><i class="fas fa-calendar-alt"></i></span> My Plans </a>
+								<a href="#" class="nav-link" data-section="plans"> <span class="icon"><span class="material-icons icon-24">calendar_month</span></span> Plans </a>
+							</div>
+							<div class="nav-section hidden" id="organizationNavGroup">
+								<div class="nav-section-title">Organization</div>
+								<a href="#" class="org-nav-link" data-org-nav="dashboard"> <span class="icon"><span class="material-icons icon-24">dashboard</span></span> Dashboard </a>
+								<a href="#" class="org-nav-link" data-org-nav="tasks"> <span class="icon"><span class="material-icons icon-24">assignment</span></span> Tasks </a>
+								<a href="#" class="org-nav-link" data-org-nav="members"> <span class="icon"><span class="material-icons icon-24">group</span></span> Members </a>
+								<a href="#" class="org-nav-link" data-org-nav="activity"> <span class="icon"><span class="material-icons icon-24">history</span></span> Activity </a>
+								<a href="#" class="org-nav-link" data-org-nav="settings"> <span class="icon"><span class="material-icons icon-24">settings</span></span> Settings </a>
 						</div>
 					</nav>
 
@@ -2117,11 +2240,14 @@
 						</div>
 						<button type="button" class="btn btn-secondary hidden" id="createOrganizationBtn" style="width: 100%; margin-bottom: 10px;">+ Create Organization</button>
 						<button type="button" class="btn btn-secondary hidden" id="addOrganizationMemberBtn" style="width: 100%; margin-bottom: 10px;">+ Add Member</button>
-						<button class="btn btn-secondary" id="logoutBtn" style="width: 100%; margin-top: 15px">🚪 Logout</button>
+						<button class="btn btn-secondary" id="logoutBtn" style="width: 100%; margin-top: 15px"><span class="material-icons icon-24" style="vertical-align: middle; margin-right: 6px;">logout</span>Logout</button>
 					</div>
 				</aside>
 				<!-- Main Content -->
 				<main class="main-content">
+					<div class="app-topbar">
+						<div id="notificationBellHost"></div>
+					</div>
 					<!-- Overview Section -->
 					<section id="overviewSection" class="content-section">
 						<div class="section-header">
@@ -2215,10 +2341,6 @@
 										<div>
 											<h3>Recent Activity</h3>
 											<div id="organizationRecentActivityList" class="organization-task-list"></div>
-										</div>
-										<div>
-											<h3>Notifications</h3>
-											<div id="organizationNotificationsList" class="organization-members-list"></div>
 										</div>
 									</div>
 								</div>
@@ -2615,7 +2737,7 @@
 			<!-- ===== RESET PASSWORD MODAL ===== -->
 			<div id="resetPasswordModal" class="modal-overlay hidden">
 				<div class="modal">
-					<h2>🔑 Set New Password</h2>
+					<h2><span class="material-icons icon-24" style="vertical-align: middle; margin-right: 6px;">key</span>Set New Password</h2>
 					<p class="modal-subtitle">Enter the reset code and your new password</p>
 					<form id="resetPasswordForm">
 							<div class="form-group">
@@ -2637,6 +2759,20 @@
 							<button type="submit" class="btn btn-primary" id="confirmResetBtn">Reset Password</button>
 						</div>
 					</form>
+				</div>
+			</div>
+			<div id="activityModal" class="modal-overlay hidden">
+				<div class="modal">
+					<h2>Organization Activity</h2>
+					<p class="modal-subtitle">Recent activity across your workspace</p>
+					<div id="activityModalList" class="organization-activity-list"></div>
+					<div class="modal-actions" style="justify-content: space-between;">
+						<div>
+							<button type="button" class="btn btn-secondary btn-small" id="activityPrevPageBtn">Previous</button>
+							<button type="button" class="btn btn-secondary btn-small" id="activityNextPageBtn">Next</button>
+						</div>
+						<button type="button" class="btn btn-secondary" id="activityCloseBtn">Close</button>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -2711,6 +2847,7 @@
 								loadTasks().catch((err) => console.warn('Failed to load tasks on init:', err));
 								loadDiaryEntries().catch((err) => console.warn('Failed to load diary on init:', err));
 								loadPreachingEntries().catch((err) => console.warn('Failed to load preaching on init:', err));
+								loadNotifications();
 							}
 						}
 			
@@ -2751,6 +2888,11 @@
 			let preachingContentSnapshot = "";
 			let editingTaskId = null;
 			let completingTaskId = null;
+			let notifications = [];
+			let notificationDropdownOpen = false;
+			let unreadNotificationCount = 0;
+			let activityModalPage = 1;
+			const activityModalPageSize = 10;
 
 			// ===== SMTP MAILER CONFIGURATION =====
 			const MAILER_API_URL = "https://task-management-bxpk.onrender.com/backend/api/mailer.php";
@@ -2927,6 +3069,7 @@
 				if (sectionName === "diary") renderDiaryHistory();
 				if (sectionName === "preaching") renderPreachingList();
 				if (sectionName === "analytics") updateAnalytics();
+				loadNotifications();
 			}
 
 			// ===== NOTIFICATION SYSTEM =====
@@ -2992,6 +3135,139 @@
 					document.body.appendChild(overlay);
 					confirmBtn.focus();
 				});
+			}
+
+			function showInputDialog({ title, fields, submitText = "Save", cancelText = "Cancel" }) {
+				return new Promise((resolve) => {
+					const overlay = document.createElement("div");
+					overlay.className = "modal-overlay";
+
+					const modal = document.createElement("div");
+					modal.className = "modal";
+					const form = document.createElement("form");
+					form.innerHTML = `
+						<h2>${title}</h2>
+						${fields
+							.map((field) => `
+								<div class="form-group">
+									<label for="dialog-${field.name}">${field.label}</label>
+									<input id="dialog-${field.name}" name="${field.name}" type="${field.type || "text"}" value="${field.value || ""}" ${field.required ? "required" : ""} />
+								</div>
+							`)
+							.join("")}
+						<div class="modal-actions">
+							<button type="button" class="btn btn-secondary" id="dialogCancelBtn">${cancelText}</button>
+							<button type="submit" class="btn btn-primary">${submitText}</button>
+						</div>
+					`;
+
+					const close = (data = null) => {
+						overlay.remove();
+						resolve(data);
+					};
+
+					form.addEventListener("submit", (event) => {
+						event.preventDefault();
+						const data = {};
+						fields.forEach((field) => {
+							const input = form.querySelector(`#dialog-${field.name}`);
+							data[field.name] = input ? input.value.trim() : "";
+						});
+						close(data);
+					});
+
+					form.querySelector("#dialogCancelBtn").addEventListener("click", () => close(null));
+					overlay.addEventListener("click", (event) => {
+						if (event.target === overlay) close(null);
+					});
+
+					modal.appendChild(form);
+					overlay.appendChild(modal);
+					document.body.appendChild(overlay);
+					const firstInput = form.querySelector("input");
+					if (firstInput) firstInput.focus();
+				});
+			}
+
+			function NotificationBell(unreadCount) {
+				const cappedCount = unreadCount > 99 ? "99+" : String(unreadCount || "");
+				return `
+					<button type="button" class="notification-bell" id="notificationBellButton" aria-label="Notifications">
+						<span class="material-icons" aria-hidden="true">notifications</span>
+						${unreadCount > 0 ? `<span class="notification-badge">${cappedCount}</span>` : ""}
+					</button>
+				`;
+			}
+
+			function NotificationDropdown(items) {
+				const list = items.length
+					? items.map((item) => {
+						const unreadClass = item.is_read || item.isRead ? "" : "unread";
+						return `
+							<div class="notification-dropdown-item ${unreadClass}" data-notification-id="${item.id}">
+								<div><strong>${item.message || item.text}</strong></div>
+								<div class="organization-member-meta">${new Date(item.created_at || item.createdAt).toLocaleString()}</div>
+							</div>
+						`;
+					}).join("")
+					: '<div class="notification-dropdown-item"><strong>No notifications</strong><div class="organization-member-meta">You are up to date.</div></div>';
+
+				return `
+					<div class="notification-dropdown" id="notificationDropdownPanel">
+						<div class="notification-dropdown-header">
+							<strong>Notifications</strong>
+							<button type="button" class="btn btn-secondary btn-small" id="markAllNotificationsReadBtn">Mark all read</button>
+						</div>
+						<div class="notification-dropdown-list">
+							${list}
+						</div>
+					</div>
+				`;
+			}
+
+			function ActivityPreview(activityItems) {
+				if (!activityItems.length) {
+					return '<div class="organization-task-item"><strong>No activity yet</strong><div class="organization-task-meta">Task updates and submissions will appear here.</div></div>';
+				}
+
+				const latest = activityItems[0];
+				return `
+					<div class="organization-activity-item">
+						<strong>${latest.message}</strong>
+						<div class="organization-member-meta">${new Date(latest.createdAt).toLocaleString()} by ${latest.userName || "System"}</div>
+					</div>
+					<div class="activity-preview-actions">
+						<button type="button" class="btn btn-secondary btn-small" id="openActivityModalBtn">Read More</button>
+					</div>
+				`;
+			}
+
+			function TaskSubmissionForm(task, contextKey = "main") {
+				return `
+					<div class="task-submission-form" data-submission-form="${task.id}" data-submission-context="${contextKey}">
+						<h4>Submit Task</h4>
+						<div class="form-group" style="margin-bottom: 10px;">
+							<label for="submissionType-${contextKey}-${task.id}">Submission Type</label>
+							<select id="submissionType-${contextKey}-${task.id}" data-submission-type data-task-id="${task.id}" data-context="${contextKey}">
+								<option value="image">Image</option>
+								<option value="video">Video</option>
+								<option value="link">Link</option>
+							</select>
+						</div>
+						<div class="form-group" id="submissionFileGroup-${contextKey}-${task.id}">
+							<label for="submissionFile-${contextKey}-${task.id}">Upload File</label>
+							<input type="file" id="submissionFile-${contextKey}-${task.id}" data-submission-file data-task-id="${task.id}" data-context="${contextKey}" accept="image/*,video/*" />
+						</div>
+						<div class="form-group hidden" id="submissionUrlGroup-${contextKey}-${task.id}">
+							<label for="submissionUrl-${contextKey}-${task.id}">Submission URL</label>
+							<input type="url" id="submissionUrl-${contextKey}-${task.id}" placeholder="https://..." data-submission-url data-task-id="${task.id}" data-context="${contextKey}" />
+						</div>
+						<div class="submission-preview" id="submissionPreview-${contextKey}-${task.id}">No preview yet.</div>
+						<button type="button" class="btn btn-success btn-small" data-submit-evidence="${task.id}" data-context="${contextKey}">
+							<span class="material-icons icon-24" style="vertical-align: middle; margin-right: 4px;">upload</span>Submit Task
+						</button>
+					</div>
+				`;
 			}
 
 			function isSuperAdminUser() {
@@ -3097,8 +3373,10 @@
 					}
 					orgData.notifications[userId].unshift({
 						id: `${Date.now()}-${Math.random()}`,
-						text,
+						message: text,
 						type,
+						userId,
+						isRead: false,
 						createdAt: Date.now(),
 					});
 					orgData.notifications[userId] = orgData.notifications[userId].slice(0, 50);
@@ -3120,6 +3398,72 @@
 				};
 			}
 
+			function renderNotificationBell() {
+				const host = document.getElementById("notificationBellHost");
+				if (!host || !currentUser) return;
+
+				host.innerHTML = NotificationBell(unreadNotificationCount) + (notificationDropdownOpen ? NotificationDropdown(notifications) : "");
+			}
+
+			async function loadNotifications() {
+				if (!api || !currentUser) {
+					notifications = [];
+					unreadNotificationCount = 0;
+					renderNotificationBell();
+					return;
+				}
+
+				try {
+					const organizationId = organizationMode === "organization" && selectedOrganizationId ? Number(selectedOrganizationId) : null;
+					const response = await api.getNotifications({ organizationId, limit: 30 });
+					notifications = Array.isArray(response.notifications) ? response.notifications : [];
+					unreadNotificationCount = Number(response.unread_count || 0);
+				} catch (error) {
+					const collabData = getCurrentOrgCollabData();
+					notifications = ((collabData?.notifications || {})[currentUser?.id] || []).slice(0, 30);
+					unreadNotificationCount = notifications.filter((item) => !(item.is_read || item.isRead)).length;
+				}
+
+				renderNotificationBell();
+			}
+
+			function renderActivityModalPage() {
+				const modal = document.getElementById("activityModal");
+				const list = document.getElementById("activityModalList");
+				if (!modal || !list) return;
+
+				const collabData = getCurrentOrgCollabData();
+				const activity = collabData?.activity || [];
+				const totalPages = Math.max(1, Math.ceil(activity.length / activityModalPageSize));
+				activityModalPage = Math.max(1, Math.min(activityModalPage, totalPages));
+
+				const start = (activityModalPage - 1) * activityModalPageSize;
+				const pageItems = activity.slice(start, start + activityModalPageSize);
+
+				list.innerHTML = pageItems.length
+					? pageItems.map((entry) => `<div class="organization-activity-item"><strong>${entry.message}</strong><div class="organization-member-meta">${new Date(entry.createdAt).toLocaleString()} • ${entry.userName || "System"}</div></div>`).join("")
+					: '<div class="organization-activity-item">No activity yet.</div>';
+
+				const prevButton = document.getElementById("activityPrevPageBtn");
+				const nextButton = document.getElementById("activityNextPageBtn");
+				if (prevButton) prevButton.disabled = activityModalPage <= 1;
+				if (nextButton) nextButton.disabled = activityModalPage >= totalPages;
+			}
+
+			function openActivityModal() {
+				const modal = document.getElementById("activityModal");
+				if (!modal) return;
+				activityModalPage = 1;
+				renderActivityModalPage();
+				modal.classList.remove("hidden");
+			}
+
+			function closeActivityModal() {
+				const modal = document.getElementById("activityModal");
+				if (!modal) return;
+				modal.classList.add("hidden");
+			}
+
 			function renderOrganizationTabs() {
 				document.querySelectorAll(".organization-tab").forEach((tab) => {
 					const isActive = tab.dataset.orgSection === organizationUIState.activeSection;
@@ -3136,7 +3480,6 @@
 			function renderOrganizationDashboard() {
 				const summaryContainer = document.getElementById("organizationSummaryCards");
 				const recentActivityList = document.getElementById("organizationRecentActivityList");
-				const notificationsList = document.getElementById("organizationNotificationsList");
 				const activeOrganization = getSelectedOrganization();
 				if (!summaryContainer || !activeOrganization) {
 					return;
@@ -3159,15 +3502,8 @@
 					<div class="org-stat-card"><div class="label">Total Members</div><div class="value">${membersCount}</div></div>
 				`;
 
-				const recentActivity = (collabData?.activity || []).slice(0, 10);
-				recentActivityList.innerHTML = recentActivity.length
-					? recentActivity.map((entry) => `<div class="organization-activity-item"><strong>${entry.message}</strong><div class="organization-member-meta">${new Date(entry.createdAt).toLocaleString()} by ${entry.userName || "System"}</div></div>`).join("")
-					: '<div class="organization-task-item"><strong>No activity yet</strong><div class="organization-task-meta">Task updates and submissions will appear here.</div></div>';
-
-				const myNotifications = ((collabData?.notifications || {})[currentUser?.id] || []).slice(0, 8);
-				notificationsList.innerHTML = myNotifications.length
-					? myNotifications.map((entry) => `<div class="organization-member-item"><strong>${entry.text}</strong><div class="organization-member-meta">${new Date(entry.createdAt).toLocaleString()}</div></div>`).join("")
-					: '<div class="organization-member-item"><strong>No notifications</strong><div class="organization-member-meta">You are up to date.</div></div>';
+				const recentActivity = (collabData?.activity || []).slice(0, 1);
+				recentActivityList.innerHTML = ActivityPreview(recentActivity);
 			}
 
 			function getOrganizationTasksForView(activeOrganization) {
@@ -3255,7 +3591,7 @@
 									<strong>${task.title}</strong>
 									<div class="organization-task-meta">Status: ${task.status || "pending"} • Assignee: ${task.assignedToName || "Unassigned"} • Priority: ${task.priority || "medium"} • Due: ${task.dueDate || "n/a"}</div>
 									<div class="task-controls">
-										${task.status !== "submitted" && task.assignedTo === currentUser.id ? `<button class="btn btn-success btn-small" type="button" data-submit-org-task="${task.id}">Submit</button>` : ""}
+										${task.status !== "submitted" && task.status !== "completed" && task.assignedTo === currentUser.id ? TaskSubmissionForm(task, "org") : ""}
 										${isCurrentUserOrganizationAdmin() && task.status === "submitted" ? `<button class="btn btn-success btn-small" type="button" data-review-org-task="${task.id}" data-review-action="approve">Approve</button><button class="btn btn-secondary btn-small" type="button" data-review-org-task="${task.id}" data-review-action="reject">Reject</button>` : ""}
 										${task.meetLink ? `<button class="btn btn-secondary btn-small" type="button" data-open-meet="${task.id}">Open Meet</button>` : ""}
 									</div>
@@ -3343,10 +3679,17 @@
 					return;
 				}
 
-				const email = window.prompt("Enter the member email");
-				if (!email) return;
-
-				const role = window.prompt("Enter role: organization_admin, member, or client", "member") || "member";
+				const dialogResult = await showInputDialog({
+					title: "Add Organization Member",
+					fields: [
+						{ name: "email", label: "Member Email", type: "email", required: true },
+						{ name: "role", label: "Role (organization_admin | member | client)", value: "member", required: true },
+					],
+					submitText: "Add Member",
+				});
+				if (!dialogResult || !dialogResult.email) return;
+				const email = dialogResult.email;
+				const role = dialogResult.role || "member";
 
 				try {
 					const response = await api.addOrganizationMember({
@@ -3364,20 +3707,53 @@
 			}
 
 			async function handleOrganizationWorkspaceClick(event) {
-				const submitButton = event.target.closest("[data-submit-org-task]");
+				const submitButton = event.target.closest("[data-submit-evidence]");
 				if (submitButton) {
-					const taskId = Number(submitButton.dataset.submitOrgTask);
+					const taskId = Number(submitButton.dataset.submitEvidence);
+					const context = submitButton.dataset.context || "org";
+					const typeSelect = document.getElementById(`submissionType-${context}-${taskId}`);
+					const fileInput = document.getElementById(`submissionFile-${context}-${taskId}`);
+					const urlInput = document.getElementById(`submissionUrl-${context}-${taskId}`);
+
+					if (!typeSelect) {
+						showNotification("Submission form is not ready", "error");
+						return;
+					}
+
+					const submissionType = typeSelect.value;
+					const submissionUrl = urlInput ? urlInput.value.trim() : "";
+					const submissionFile = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+
+					if (submissionType === "link" && !/^https?:\/\//i.test(submissionUrl)) {
+						showNotification("Enter a valid link before submitting", "error");
+						return;
+					}
+
+					if ((submissionType === "image" || submissionType === "video") && !submissionFile) {
+						showNotification("Upload a file before submitting", "error");
+						return;
+					}
+
 					try {
-						await api.submitTask(taskId);
+						const response = await api.submitTaskWithEvidence({
+							taskId,
+							submissionType,
+							submissionUrl,
+							file: submissionFile,
+						});
 						const task = tasks.find((entry) => entry.id === taskId);
 						if (task) {
 							task.status = "submitted";
 							task.completed = false;
+							task.submissionType = submissionType;
+							task.submissionUrl = response.submissionUrl || submissionUrl || "";
+							task.submittedAt = response.submittedAt || new Date().toISOString();
 							if (task.assignedBy) {
 								pushNotificationForUser(task.assignedBy, `Task submitted: ${task.title}`, "info");
 							}
 							addOrgActivity("task_submitted", `${task.title} submitted for review`, task.id);
 						}
+						await loadNotifications();
 						renderOrganizationWorkspace();
 						showNotification("Task submitted successfully", "success");
 					} catch (error) {
@@ -3390,7 +3766,13 @@
 				if (reviewButton) {
 					const taskId = Number(reviewButton.dataset.reviewOrgTask);
 					const action = reviewButton.dataset.reviewAction;
-					const feedback = window.prompt(`Optional feedback for ${action}`) || "";
+					const feedbackDialog = await showInputDialog({
+						title: `Review Task (${action})`,
+						fields: [{ name: "feedback", label: "Optional feedback", value: "" }],
+						submitText: "Submit Review",
+					});
+					if (!feedbackDialog) return;
+					const feedback = feedbackDialog.feedback || "";
 					try {
 						await api.reviewTask(taskId, action);
 						const task = tasks.find((entry) => entry.id === taskId);
@@ -3497,8 +3879,13 @@
 				if (replyButton) {
 					const taskId = Number(replyButton.dataset.taskReply);
 					const parentId = replyButton.dataset.commentId;
-					const reply = window.prompt("Reply comment");
-					if (!reply) return;
+					const replyDialog = await showInputDialog({
+						title: "Reply Comment",
+						fields: [{ name: "reply", label: "Your reply", required: true }],
+						submitText: "Reply",
+					});
+					if (!replyDialog || !replyDialog.reply) return;
+					const reply = replyDialog.reply;
 					const task = tasks.find((entry) => entry.id === taskId);
 					if (!task || !task.organizationId) return;
 
@@ -3678,6 +4065,8 @@
 				const taskMeetLinkGroup = document.getElementById("taskMeetLinkGroup");
 				const taskOrganizationSelect = document.getElementById("taskOrganizationId");
 				const taskAssignedToSelect = document.getElementById("taskAssignedTo");
+				const organizationNavGroup = document.getElementById("organizationNavGroup");
+				const defaultNavLinks = document.querySelectorAll('.nav-link[data-section="diary"], .nav-link[data-section="preaching"], .nav-link[data-section="analytics"], .nav-link[data-section="plans"]');
 
 				if (modeToggle) {
 					modeToggle.value = organizationMode;
@@ -3739,6 +4128,14 @@
 					taskAssignedToSelect.innerHTML = options || '<option value="">No members available</option>';
 				}
 
+				if (organizationNavGroup) {
+					organizationNavGroup.classList.toggle("hidden", organizationMode !== "organization");
+				}
+
+				defaultNavLinks.forEach((link) => {
+					link.classList.toggle("hidden", organizationMode === "organization");
+				});
+
 				renderOrganizationWorkspace();
 			}
 
@@ -3798,12 +4195,14 @@
 				if (organizationMode === "organization") {
 					showSection("organization");
 					loadOrganizations().catch((error) => console.warn("[org-mode] Organization fetch failed", error));
+					loadNotifications();
 					if (selectedOrganizationId) {
 						loadTasks().catch((error) => console.warn("[org-mode] Task load failed", error));
 					}
 				} else {
 					showSection("overview");
 					loadTasks().catch((error) => console.warn("[org-mode] Personal task load failed", error));
+					loadNotifications();
 				}
 			}
 
@@ -3816,11 +4215,13 @@
 				if (organizationMode === "organization") {
 					if (!selectedOrganizationId) {
 						renderOrganizationWorkspace();
+						loadNotifications();
 						return;
 					}
 
 					showSection("organization");
 					loadTasks().catch((error) => console.warn("[org-mode] Task load failed", error));
+					loadNotifications();
 				}
 			}
 
@@ -3885,6 +4286,9 @@
 							customReminder: '',
 							status: (t.status || 'pending').toLowerCase(),
 							completed: (t.status || '').toLowerCase() === 'completed',
+							submissionType: t.submission_type || "",
+							submissionUrl: t.submission_url || "",
+							submittedAt: t.submitted_at || null,
 							createdAt: (() => {
 								const createdAtDate = parseBackendTimestamp(t.created_at);
 								return createdAtDate ? createdAtDate.getTime() : Date.now();
@@ -3958,6 +4362,7 @@
 									loadDiaryEntries(); // Load diary entries from backend
 								loadPreachingEntries(); // Load preaching entries from backend
 								loadOrganizations();
+								loadNotifications();
 						showNotification("Welcome back!", "success");
 					} else {
 						showNotification("Login failed. Check credentials and try again.", "error");
@@ -4022,6 +4427,7 @@
 									loadDiaryEntries();
 								loadPreachingEntries();
 								loadOrganizations();
+								loadNotifications();
 					} else {
 						showNotification("Registration failed: " + (response.message || "Unknown error"), "error");
 						console.error('Invalid registration response:', response);
@@ -4068,6 +4474,28 @@
 			document.getElementById("resetPasswordModal").addEventListener("click", (e) => {
 				if (e.target === document.getElementById("resetPasswordModal")) {
 					document.getElementById("resetPasswordModal").classList.add("hidden");
+				}
+			});
+
+			document.addEventListener("click", (event) => {
+				const openActivityButton = event.target.closest("#openActivityModalBtn");
+				if (openActivityButton) {
+					openActivityModal();
+				}
+			});
+
+			document.getElementById("activityCloseBtn").addEventListener("click", closeActivityModal);
+			document.getElementById("activityPrevPageBtn").addEventListener("click", () => {
+				activityModalPage = Math.max(1, activityModalPage - 1);
+				renderActivityModalPage();
+			});
+			document.getElementById("activityNextPageBtn").addEventListener("click", () => {
+				activityModalPage += 1;
+				renderActivityModalPage();
+			});
+			document.getElementById("activityModal").addEventListener("click", (event) => {
+				if (event.target.id === "activityModal") {
+					closeActivityModal();
 				}
 			});
 
@@ -4242,6 +4670,9 @@
 							resetPreachingComposer();
 						// Clear the JWT token on logout
 						localStorage.removeItem('auth_token');
+						notifications = [];
+						unreadNotificationCount = 0;
+						renderNotificationBell();
 						showPage("login");
 						showNotification("Logged out successfully", "success");
 					}).catch((error) => {
@@ -4256,6 +4687,9 @@
 							resetPreachingComposer();
 						// Clear the JWT token on logout
 						localStorage.removeItem('auth_token');
+						notifications = [];
+						unreadNotificationCount = 0;
+						renderNotificationBell();
 						showPage("login");
 					});
 				} else {
@@ -4268,6 +4702,9 @@
 							resetPreachingComposer();
 					// Clear the JWT token on logout
 					localStorage.removeItem('auth_token');
+					notifications = [];
+					unreadNotificationCount = 0;
+					renderNotificationBell();
 					showPage("login");
 				}
 			});
@@ -5544,6 +5981,167 @@
 				renderOrganizationWorkspace();
 			});
 
+			document.querySelectorAll(".org-nav-link").forEach((link) => {
+				link.addEventListener("click", (event) => {
+					event.preventDefault();
+					if (organizationMode !== "organization") {
+						setOrganizationMode("organization");
+					}
+					organizationUIState.activeSection = link.dataset.orgNav;
+					showSection("organization");
+				});
+			});
+
+			document.addEventListener("click", async (event) => {
+				const submissionButton = event.target.closest("[data-submit-evidence]");
+				if (submissionButton && !event.target.closest("#organizationDashboardPanel")) {
+					const taskId = Number(submissionButton.dataset.submitEvidence);
+					const context = submissionButton.dataset.context || "task";
+					const typeSelect = document.getElementById(`submissionType-${context}-${taskId}`);
+					const fileInput = document.getElementById(`submissionFile-${context}-${taskId}`);
+					const urlInput = document.getElementById(`submissionUrl-${context}-${taskId}`);
+
+					if (!typeSelect) {
+						showNotification("Submission form is not ready", "error");
+						return;
+					}
+
+					const submissionType = typeSelect.value;
+					const submissionUrl = urlInput ? urlInput.value.trim() : "";
+					const submissionFile = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+
+					if (submissionType === "link" && !/^https?:\/\//i.test(submissionUrl)) {
+						showNotification("Enter a valid link before submitting", "error");
+						return;
+					}
+
+					if ((submissionType === "image" || submissionType === "video") && !submissionFile) {
+						showNotification("Upload a file before submitting", "error");
+						return;
+					}
+
+					try {
+						const response = await api.submitTaskWithEvidence({
+							taskId,
+							submissionType,
+							submissionUrl,
+							file: submissionFile,
+						});
+						const task = tasks.find((entry) => entry.id === taskId);
+						if (task) {
+							task.status = "submitted";
+							task.completed = false;
+							task.submissionType = submissionType;
+							task.submissionUrl = response.submissionUrl || submissionUrl || "";
+							task.submittedAt = response.submittedAt || new Date().toISOString();
+							if (task.assignedBy) {
+								pushNotificationForUser(task.assignedBy, `Task submitted: ${task.title}`, "info");
+							}
+							if (task.organizationId) {
+								addOrgActivity("task_submitted", `${task.title} submitted for review`, task.id);
+							}
+						}
+						await loadNotifications();
+						renderTasks();
+						renderOrganizationWorkspace();
+						showNotification("Task submitted successfully", "success");
+					} catch (error) {
+						showNotification("Failed to submit task: " + error.message, "error");
+					}
+					return;
+				}
+
+				const bellButton = event.target.closest("#notificationBellButton");
+				if (bellButton) {
+					notificationDropdownOpen = !notificationDropdownOpen;
+					renderNotificationBell();
+					return;
+				}
+
+				const markAllButton = event.target.closest("#markAllNotificationsReadBtn");
+				if (markAllButton) {
+					try {
+						const organizationId = organizationMode === "organization" && selectedOrganizationId ? Number(selectedOrganizationId) : null;
+						await api.markAllNotificationsRead(organizationId);
+						await loadNotifications();
+					} catch (error) {
+						showNotification("Failed to mark notifications as read", "error");
+					}
+					return;
+				}
+
+				const notificationItem = event.target.closest("[data-notification-id]");
+				if (notificationItem) {
+					const notificationId = Number(notificationItem.dataset.notificationId);
+					if (notificationId) {
+						try {
+							await api.markNotificationRead(notificationId);
+							await loadNotifications();
+						} catch (error) {
+							showNotification("Failed to mark notification as read", "error");
+						}
+					}
+					return;
+				}
+
+				if (!event.target.closest("#notificationBellHost")) {
+					notificationDropdownOpen = false;
+					renderNotificationBell();
+				}
+			});
+
+			document.addEventListener("change", (event) => {
+				const submissionType = event.target.closest("[data-submission-type]");
+				if (submissionType) {
+					const taskId = submissionType.dataset.taskId;
+					const context = submissionType.dataset.context;
+					const fileGroup = document.getElementById(`submissionFileGroup-${context}-${taskId}`);
+					const urlGroup = document.getElementById(`submissionUrlGroup-${context}-${taskId}`);
+					if (submissionType.value === "link") {
+						if (fileGroup) fileGroup.classList.add("hidden");
+						if (urlGroup) urlGroup.classList.remove("hidden");
+					} else {
+						if (fileGroup) fileGroup.classList.remove("hidden");
+						if (urlGroup) urlGroup.classList.add("hidden");
+					}
+				}
+
+				const submissionFile = event.target.closest("[data-submission-file]");
+				if (submissionFile) {
+					const taskId = submissionFile.dataset.taskId;
+					const context = submissionFile.dataset.context;
+					const preview = document.getElementById(`submissionPreview-${context}-${taskId}`);
+					const file = submissionFile.files && submissionFile.files[0] ? submissionFile.files[0] : null;
+					if (!preview) return;
+					if (!file) {
+						preview.textContent = "No preview yet.";
+						return;
+					}
+
+					const fileUrl = URL.createObjectURL(file);
+					if (file.type.startsWith("image/")) {
+						preview.innerHTML = `<img src="${fileUrl}" alt="Submission preview" />`;
+					} else if (file.type.startsWith("video/")) {
+						preview.innerHTML = `<video src="${fileUrl}" controls></video>`;
+					} else {
+						preview.textContent = file.name;
+					}
+				}
+			});
+
+			document.addEventListener("input", (event) => {
+				const submissionUrlInput = event.target.closest("[data-submission-url]");
+				if (!submissionUrlInput) return;
+				const taskId = submissionUrlInput.dataset.taskId;
+				const context = submissionUrlInput.dataset.context;
+				const preview = document.getElementById(`submissionPreview-${context}-${taskId}`);
+				if (!preview) return;
+				const url = submissionUrlInput.value.trim();
+				preview.innerHTML = url
+					? `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`
+					: "No preview yet.";
+			});
+
 			document.getElementById("organizationTaskOwnershipFilter").addEventListener("change", (event) => {
 				organizationUIState.taskOwnershipFilter = event.target.value;
 				renderOrganizationTasksPanel();
@@ -5626,10 +6224,15 @@
 					return;
 				}
 
-				const name = window.prompt("Enter organization name");
-				if (!name) {
+				const createOrganizationDialog = await showInputDialog({
+					title: "Create Organization",
+					fields: [{ name: "name", label: "Organization Name", required: true }],
+					submitText: "Create",
+				});
+				if (!createOrganizationDialog || !createOrganizationDialog.name) {
 					return;
 				}
+				const name = createOrganizationDialog.name;
 
 				try {
 					const response = await api.createOrganization(name.trim());
@@ -5757,7 +6360,7 @@
 								pushNotificationForUser(Number(taskData.assignedTo), `Task updated: ${taskData.title}`, "info");
 							}
 						}
-						showNotification("Task updated successfully! ✏️", "success");
+						showNotification("Task updated successfully", "success");
 						taskModal.classList.add("hidden");
 						renderTasks();
 						updateOverview();
@@ -5829,6 +6432,9 @@
 								reflection: null,
 								reminderSent: false,
 								deadlineSent: false,
+								submissionType: response.task.submission_type || "",
+								submissionUrl: response.task.submission_url || "",
+								submittedAt: response.task.submitted_at || null,
 							};
 						} else {
 							// Fallback to local data if backend didn't return full task
@@ -5862,6 +6468,9 @@
 								reflection: null,
 								reminderSent: false,
 								deadlineSent: false,
+								submissionType: "",
+								submissionUrl: "",
+								submittedAt: null,
 							};
 						}
 						
@@ -5871,9 +6480,10 @@
 						if (requestContext.mode === "organization" && newTask.organizationId) {
 							addOrgActivity("task_created", `Task created: ${newTask.title}`, newTask.id);
 							if (newTask.assignedTo && Number(newTask.assignedTo) !== Number(currentUser.id)) {
-								pushNotificationForUser(Number(newTask.assignedTo), `You were assigned: ${newTask.title}`, "info");
+								pushNotificationForUser(Number(newTask.assignedTo), `You have been assigned a task by ${currentUser.name}`, "info");
 							}
 						}
+						loadNotifications();
 
 						// Send meeting invitations if invitees and meeting link are provided
 						if (taskData.invitees && taskData.meetingLink) {
@@ -5888,7 +6498,7 @@
 									currentUser.name
 								).then(sent => {
 									if (sent) {
-										showNotification(`Meeting invitations sent to ${emails.length} people! 📧`, "success");
+										showNotification(`Meeting invitations sent to ${emails.length} people`, "success");
 									} else {
 										showNotification("Task created but invitations failed to send", "warning");
 									}
@@ -6094,7 +6704,7 @@
 						// Generate countdown timer HTML
 						let timerHTML = "";
 						if (task.dueDate && task.dueTime && !task.completed) {
-							timerHTML = `<div class="task-timer" id="timer-${task.id}">⏰ Loading timer...</div>`;
+							timerHTML = `<div class="task-timer" id="timer-${task.id}">Loading timer...</div>`;
 						}
 
 						// Generate reminder indicator HTML
@@ -6110,7 +6720,7 @@
 
 							const isOrganizationTask = task.organizationId != null;
 							const isAssignedToCurrentUser = currentUser && task.assignedTo === currentUser.id;
-							const canSubmitOrganizationTask = isOrganizationTask && isAssignedToCurrentUser && task.status !== "submitted" && task.status !== "completed";
+							const canSubmitTask = isAssignedToCurrentUser && task.status !== "submitted" && task.status !== "completed";
 							const canReviewOrganizationTask = isOrganizationTask && organizationAdmin && task.status === "submitted";
 							const canEditOrganizationTask = isOrganizationTask && organizationAdmin;
 							const hasMeetLink = Boolean(task.meetLink);
@@ -6119,7 +6729,7 @@
           <div class="task-card ${task.plan} ${task.completed ? "completed" : ""}" data-task-id="${task.id}">
             <div class="task-header">
               <div class="task-title">${task.title}</div>
-              ${task.completed ? '<span class="completion-badge">✓ Done</span>' : ""}
+			  ${task.completed ? '<span class="completion-badge">Done</span>' : ""}
             </div>
             <div class="task-description">${formatDescription(task.description) || "No description provided"}</div>
             ${reflectionHTML}
@@ -6144,20 +6754,20 @@
 					!task.completed && !isOrganizationTask
 					? `
                 <button class="btn btn-small btn-success" onclick="openReflectionModal('${task.id}')">
-                  ✓ Complete
+									<span class="material-icons icon-24" style="vertical-align: middle; margin-right: 4px;">check_circle</span>Complete
                 </button>
                 <button class="btn btn-small btn-primary" onclick="editTask('${task.id}')">
-                  ✏️ Edit
+									<span class="material-icons icon-24" style="vertical-align: middle; margin-right: 4px;">edit</span>Edit
                 </button>
               `
 					: ""
 			}
-				  ${canSubmitOrganizationTask ? `<button class="btn btn-small btn-success" onclick="submitTaskAction('${task.id}')">Submit Task</button>` : ""}
+				  ${canSubmitTask ? TaskSubmissionForm(task, "task") : ""}
 				  ${canReviewOrganizationTask ? `<button class="btn btn-small btn-success" onclick="reviewTaskAction('${task.id}', 'approve')">Approve</button><button class="btn btn-small btn-secondary" onclick="reviewTaskAction('${task.id}', 'reject')">Reject</button>` : ""}
-				  ${canEditOrganizationTask ? `<button class="btn btn-small btn-primary" onclick="editTask('${task.id}')">✏️ Edit</button>` : ""}
+				  ${canEditOrganizationTask ? `<button class="btn btn-small btn-primary" onclick="editTask('${task.id}')"><span class="material-icons icon-24" style="vertical-align: middle; margin-right: 4px;">edit</span>Edit</button>` : ""}
 							${hasMeetLink ? `<button class="btn btn-small btn-secondary" onclick="joinMeetLink('${task.meetLink.replace(/'/g, "\\'")}')">Join Meeting</button>` : ""}
               <button class="btn btn-small btn-danger" onclick="deleteTask('${task.id}')">
-                🗑️ Delete
+								<span class="material-icons icon-24" style="vertical-align: middle; margin-right: 4px;">delete</span>Delete
               </button>
             </div>
           </div>
@@ -6284,6 +6894,7 @@
 							}
 						}
 					}
+					loadNotifications();
 					renderTasks();
 					updateOverview();
 					updatePlans();
@@ -6301,9 +6912,17 @@
 					return;
 				}
 
-				const feedback = window.prompt(`Optional feedback for ${reviewAction}`) || "";
+				showInputDialog({
+					title: `Review Task (${reviewAction})`,
+					fields: [{ name: "feedback", label: "Optional feedback", value: "" }],
+					submitText: "Submit Review",
+				}).then((feedbackDialog) => {
+					if (!feedbackDialog) {
+						return;
+					}
+					const feedback = feedbackDialog.feedback || "";
 
-				api.reviewTask(taskId, reviewAction).then((response) => {
+					api.reviewTask(taskId, reviewAction).then((response) => {
 					const task = tasks.find((entry) => entry.id === parseFloat(taskId));
 					if (task) {
 						task.status = response.status || (reviewAction === "approve" ? "completed" : "in_progress");
@@ -6326,15 +6945,18 @@
 							}
 						}
 					}
+					loadNotifications();
 					renderTasks();
 					updateOverview();
 					updatePlans();
 					updateAnalytics();
 					renderOrganizationWorkspace();
 					showNotification(reviewAction === "approve" ? "Task approved" : "Task sent back for changes", "success");
-				}).catch((error) => {
+					}).catch((error) => {
 					showNotification("Failed to review task: " + error.message, "error");
+					});
 				});
+				return;
 			};
 
 			window.joinMeetLink = (url) => {
@@ -6451,7 +7073,7 @@
 
 			function formatTimeRemaining(timeRemaining) {
 				if (!timeRemaining) return "No due date";
-				if (timeRemaining.expired) return "⏰ EXPIRED";
+				if (timeRemaining.expired) return "EXPIRED";
 
 				const parts = [];
 				if (timeRemaining.days > 0) parts.push(`${timeRemaining.days}d`);
@@ -6512,7 +7134,7 @@
 				if ("Notification" in window && Notification.permission === "granted") {
 					new Notification(title, {
 						body: message,
-						icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">%E2%9C%85</text></svg>',
+						icon: "",
 					});
 				}
 			}
@@ -6590,6 +7212,13 @@
 
 			// Check reminders every minute
 			setInterval(checkReminders, 60000);
+
+			// Refresh notifications periodically
+			setInterval(() => {
+				if (currentUser && !pages.login.classList.contains("hidden")) {
+					loadNotifications();
+				}
+			}, 30000);
 
 			// Initialize notifications on app load
 			requestNotificationPermission();

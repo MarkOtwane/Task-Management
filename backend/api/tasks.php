@@ -28,6 +28,8 @@ if ($method === 'GET') {
 	} else {
 		getTasks($pdo, $user);
 	}
+} elseif ($method === 'POST' && $action === 'submit-evidence') {
+	submitTaskWithEvidence($pdo, $user);
 } elseif ($method === 'POST' && $action === 'meet-link') {
 	attachTaskMeetLink($pdo, $user);
 } elseif ($method === 'POST') {
@@ -104,6 +106,49 @@ function getTaskRecord($pdo, $taskId) {
 	");
 	$stmt->execute([$taskId]);
 	return $stmt->fetch();
+}
+
+function createNotificationRecord($pdo, $userId, $message, $organizationId = null, $taskId = null) {
+	if (!$userId || !$message) {
+		return;
+	}
+
+	try {
+		$stmt = $pdo->prepare(" 
+			INSERT INTO notifications (user_id, organization_id, task_id, message, is_read, created_at)
+			VALUES (?, ?, ?, ?, FALSE, CURRENT_TIMESTAMP)
+		");
+		$stmt->execute([(int) $userId, $organizationId ?: null, $taskId ?: null, $message]);
+	} catch (PDOException $exception) {
+		error_log('[tasks] createNotificationRecord.error payload=' . json_encode([
+			'user_id' => $userId,
+			'organization_id' => $organizationId,
+			'task_id' => $taskId,
+			'error' => $exception->getMessage(),
+		]));
+	}
+}
+
+function buildDisplayName($userRecord) {
+	if (!$userRecord) {
+		return 'Admin';
+	}
+
+	if (!empty($userRecord['username'])) {
+		return $userRecord['username'];
+	}
+
+	if (!empty($userRecord['email'])) {
+		return $userRecord['email'];
+	}
+
+	return 'Admin';
+}
+
+function sanitizeSubmissionFileName($name) {
+	$base = preg_replace('/[^a-zA-Z0-9._-]/', '_', $name);
+	$base = trim($base, '._-');
+	return $base !== '' ? $base : 'submission';
 }
 
 function userCanAccessTaskOrganization($pdo, $user, $organizationId) {
@@ -339,6 +384,17 @@ function createTask($pdo, $user) {
 			'status' => $status,
 		]);
 
+		if ($organizationId && $assignedTo && (int) $assignedTo !== (int) $user['id']) {
+			$adminName = buildDisplayName($user);
+			createNotificationRecord(
+				$pdo,
+				$assignedTo,
+				'You have been assigned a task by ' . $adminName,
+				$organizationId,
+				(int) $taskId
+			);
+		}
+
 		http_response_code(201);
 		echo json_encode([
 			'message' => 'Task created successfully',
@@ -370,6 +426,23 @@ function updateTask($pdo, $user) {
 		http_response_code(404);
 		echo json_encode(['error' => 'Task not found']);
 		return;
+	}
+
+	$newAssignedTo = isset($input['assigned_to']) ? (!empty($input['assigned_to']) ? (int) $input['assigned_to'] : null) : null;
+	if (
+		(int) ($task['organization_id'] ?? 0) > 0
+		&& $newAssignedTo
+		&& $newAssignedTo !== (int) ($task['assigned_to'] ?? 0)
+		&& $newAssignedTo !== (int) $user['id']
+	) {
+		$adminName = buildDisplayName($user);
+		createNotificationRecord(
+			$pdo,
+			$newAssignedTo,
+			'You have been assigned a task by ' . $adminName,
+			$task['organization_id'] ?? null,
+			(int) $taskId
+		);
 	}
 
 	if (!empty($input['action']) && $input['action'] === 'submit') {
@@ -581,8 +654,18 @@ function submitTask($pdo, $user, $task) {
 	}
 
 	try {
-		$stmt = $pdo->prepare("UPDATE tasks SET status = 'submitted', updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+		$stmt = $pdo->prepare("UPDATE tasks SET status = 'submitted', submitted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
 		$stmt->execute([$task['id']]);
+
+		if (!empty($task['assigned_by']) && (int) $task['assigned_by'] !== (int) $user['id']) {
+			createNotificationRecord(
+				$pdo,
+				(int) $task['assigned_by'],
+				'Task submitted: ' . ($task['title'] ?? ('#' . $task['id'])),
+				$task['organization_id'] ?? null,
+				(int) $task['id']
+			);
+		}
 
 		logTaskDebug('submitTask.success', $user, $task['organization_id'] ?? null, [
 			'task_id' => (int) $task['id'],
@@ -595,6 +678,142 @@ function submitTask($pdo, $user, $task) {
 			'task_id' => (int) $task['id'],
 			'error' => $exception->getMessage(),
 		]);
+		http_response_code(500);
+		echo json_encode(['error' => 'Failed to submit task: ' . $exception->getMessage()]);
+	}
+}
+
+function submitTaskWithEvidence($pdo, $user) {
+	$taskId = !empty($_POST['task_id']) ? (int) $_POST['task_id'] : 0;
+	$submissionType = strtolower(trim((string) ($_POST['submission_type'] ?? '')));
+	$submissionUrl = trim((string) ($_POST['submission_url'] ?? ''));
+
+	if ($taskId <= 0) {
+		http_response_code(400);
+		echo json_encode(['error' => 'Task ID is required']);
+		return;
+	}
+
+	if (!in_array($submissionType, ['image', 'video', 'link'], true)) {
+		http_response_code(400);
+		echo json_encode(['error' => 'submission_type must be image, video, or link']);
+		return;
+	}
+
+	$task = getTaskRecord($pdo, $taskId);
+	if (!$task) {
+		http_response_code(404);
+		echo json_encode(['error' => 'Task not found']);
+		return;
+	}
+
+	$isOrganizationTask = (int) $task['organization_id'] > 0;
+	$canSubmit = $isOrganizationTask
+		? ((int) $task['assigned_to'] === (int) $user['id'])
+		: (((int) $task['assigned_to'] === (int) $user['id']) || ((int) $task['user_id'] === (int) $user['id']));
+
+	if (!$canSubmit) {
+		http_response_code(403);
+		echo json_encode(['error' => 'Only the assigned user can submit this task']);
+		return;
+	}
+
+	$storedSubmissionUrl = null;
+
+	if ($submissionType === 'link') {
+		if (!$submissionUrl || !filter_var($submissionUrl, FILTER_VALIDATE_URL)) {
+			http_response_code(400);
+			echo json_encode(['error' => 'Link submission requires a valid URL']);
+			return;
+		}
+		$storedSubmissionUrl = $submissionUrl;
+	} else {
+		if (empty($_FILES['submission_file']) || !isset($_FILES['submission_file']['tmp_name'])) {
+			http_response_code(400);
+			echo json_encode(['error' => 'A submission file is required for image/video submissions']);
+			return;
+		}
+
+		$file = $_FILES['submission_file'];
+		if (!empty($file['error'])) {
+			http_response_code(400);
+			echo json_encode(['error' => 'File upload failed']);
+			return;
+		}
+
+		if ((int) $file['size'] > 20 * 1024 * 1024) {
+			http_response_code(400);
+			echo json_encode(['error' => 'File exceeds 20MB upload limit']);
+			return;
+		}
+
+		$allowedExtensions = $submissionType === 'image'
+			? ['jpg', 'jpeg', 'png', 'gif', 'webp']
+			: ['mp4', 'mov', 'avi', 'mkv', 'webm'];
+
+		$originalName = (string) ($file['name'] ?? 'submission');
+		$extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+		if (!$extension || !in_array($extension, $allowedExtensions, true)) {
+			http_response_code(400);
+			echo json_encode(['error' => 'Invalid file type for submission']);
+			return;
+		}
+
+		$uploadDir = realpath(__DIR__ . '/../../uploads');
+		if ($uploadDir === false) {
+			$uploadDir = __DIR__ . '/../../uploads';
+			if (!is_dir($uploadDir)) {
+				mkdir($uploadDir, 0775, true);
+			}
+		}
+
+		$submissionDir = rtrim($uploadDir, '/\\') . DIRECTORY_SEPARATOR . 'task_submissions';
+		if (!is_dir($submissionDir)) {
+			mkdir($submissionDir, 0775, true);
+		}
+
+		$safeName = sanitizeSubmissionFileName(pathinfo($originalName, PATHINFO_FILENAME));
+		$fileName = sprintf('task_%d_user_%d_%d_%s.%s', $taskId, (int) $user['id'], time(), $safeName, $extension);
+		$targetPath = $submissionDir . DIRECTORY_SEPARATOR . $fileName;
+
+		if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+			http_response_code(500);
+			echo json_encode(['error' => 'Failed to store uploaded file']);
+			return;
+		}
+
+		$storedSubmissionUrl = '/uploads/task_submissions/' . $fileName;
+	}
+
+	try {
+		$stmt = $pdo->prepare(" 
+			UPDATE tasks
+			SET status = 'submitted',
+			    submission_type = ?,
+			    submission_url = ?,
+			    submitted_at = CURRENT_TIMESTAMP,
+			    updated_at = CURRENT_TIMESTAMP
+			WHERE id = ?
+		");
+		$stmt->execute([$submissionType, $storedSubmissionUrl, $taskId]);
+
+		if (!empty($task['assigned_by']) && (int) $task['assigned_by'] !== (int) $user['id']) {
+			createNotificationRecord(
+				$pdo,
+				(int) $task['assigned_by'],
+				'Task submitted: ' . ($task['title'] ?? ('#' . $taskId)),
+				$task['organization_id'] ?? null,
+				$taskId
+			);
+		}
+
+		echo json_encode([
+			'message' => 'Task submitted successfully',
+			'submissionType' => $submissionType,
+			'submissionUrl' => $storedSubmissionUrl,
+			'submittedAt' => date('c'),
+		]);
+	} catch (PDOException $exception) {
 		http_response_code(500);
 		echo json_encode(['error' => 'Failed to submit task: ' . $exception->getMessage()]);
 	}
@@ -619,6 +838,16 @@ function reviewTask($pdo, $user, $task, $input) {
 	try {
 		$stmt = $pdo->prepare("UPDATE tasks SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
 		$stmt->execute([$status, $task['id']]);
+
+		if (!empty($task['assigned_to'])) {
+			createNotificationRecord(
+				$pdo,
+				(int) $task['assigned_to'],
+				'Task ' . ($reviewAction === 'approve' ? 'approved' : 'rejected') . ': ' . ($task['title'] ?? ('#' . $task['id'])),
+				$task['organization_id'] ?? null,
+				(int) $task['id']
+			);
+		}
 
 		logTaskDebug('reviewTask.success', $user, $task['organization_id'] ?? null, [
 			'task_id' => (int) $task['id'],

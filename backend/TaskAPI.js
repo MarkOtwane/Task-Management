@@ -273,6 +273,20 @@ class TaskAPI {
 		});
 	}
 
+	async submitTaskWithEvidence({ taskId, submissionType, submissionUrl = "", file = null }) {
+		const formData = new FormData();
+		formData.append("task_id", String(taskId));
+		formData.append("submission_type", submissionType);
+		if (submissionUrl) {
+			formData.append("submission_url", submissionUrl);
+		}
+		if (file) {
+			formData.append("submission_file", file, file.name || "submission");
+		}
+
+		return this.requestFormData("/api/tasks.php?action=submit-evidence", formData);
+	}
+
 	async reviewTask(id, reviewAction) {
 		return this.request("/api/tasks.php", {
 			method: "PUT",
@@ -340,6 +354,34 @@ class TaskAPI {
 				organization_id: organizationId,
 				name,
 			}),
+		});
+	}
+
+	// ===== NOTIFICATIONS =====
+
+	async getNotifications({ organizationId = null, limit = 20 } = {}) {
+		const query = new URLSearchParams();
+		query.set("limit", String(limit));
+		if (organizationId) {
+			query.set("organization_id", String(organizationId));
+		}
+
+		return this.request(`/api/notifications.php?${query.toString()}`, {
+			method: "GET",
+		});
+	}
+
+	async markNotificationRead(notificationId) {
+		return this.request("/api/notifications.php", {
+			method: "PUT",
+			body: JSON.stringify({ notification_id: notificationId }),
+		});
+	}
+
+	async markAllNotificationsRead(organizationId = null) {
+		return this.request("/api/notifications.php", {
+			method: "PUT",
+			body: JSON.stringify({ mark_all: true, organization_id: organizationId }),
 		});
 	}
 
