@@ -423,15 +423,25 @@ class TaskAPI {
 	}
 
 	async markAllNotificationsRead(organizationId = null) {
-		const query = new URLSearchParams();
-		query.set("action", "mark-all-read");
-		if (organizationId) {
-			query.set("organization_id", String(organizationId));
-		}
+		const body = organizationId ? JSON.stringify({ organization_id: Number(organizationId) }) : undefined;
 
-		return this.request(`/api/notifications.php?${query.toString()}`, {
-			method: "PATCH",
-		});
+		try {
+			return await this.request("/api/notifications/mark_all_read.php", {
+				method: "POST",
+				body,
+			});
+		} catch (error) {
+			// Keep backward compatibility with existing consolidated endpoint.
+			const query = new URLSearchParams();
+			query.set("action", "mark-all-read");
+			if (organizationId) {
+				query.set("organization_id", String(organizationId));
+			}
+
+			return this.request(`/api/notifications.php?${query.toString()}`, {
+				method: "PATCH",
+			});
+		}
 	}
 
 	// ===== REFLECTIONS =====

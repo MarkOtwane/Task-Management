@@ -19,6 +19,8 @@ if ($method === 'GET') {
 	getNotifications($pdo, $user);
 } elseif ($method === 'PUT') {
 	markNotificationsAsRead($pdo, $user);
+} elseif ($method === 'POST' && $action === 'mark-all-read') {
+	markAllNotificationsAsRead($pdo, $user);
 } elseif ($method === 'PATCH' && $action === 'mark-all-read') {
 	markAllNotificationsAsRead($pdo, $user);
 } else {
@@ -80,6 +82,7 @@ function markAllNotificationsAsRead($pdo, $user) {
 			'message' => 'Notifications marked as read',
 		]);
 	} catch (PDOException $exception) {
+		error_log('notifications.php markAllNotificationsAsRead error: ' . $exception->getMessage());
 		http_response_code(500);
 		echo json_encode(['error' => 'Failed to update notifications: ' . $exception->getMessage()]);
 	}
@@ -118,6 +121,7 @@ function markNotificationsAsRead($pdo, $user) {
 
 		echo json_encode(['message' => 'Notification marked as read']);
 	} catch (PDOException $exception) {
+		error_log('notifications.php markNotificationsAsRead error: ' . $exception->getMessage());
 		http_response_code(500);
 		echo json_encode(['error' => 'Failed to update notifications: ' . $exception->getMessage()]);
 	}
