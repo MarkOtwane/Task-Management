@@ -69,11 +69,7 @@ class TaskAPI {
 		// Ensure the token is sent with the request (except for auth endpoints)
 		const isAuthEndpoint = endpoint.includes("auth.php");
 		if (!token && !isAuthEndpoint) {
-			console.error("No JWT token found. Redirecting to login.");
-			if (window.location.pathname !== "/") {
-				window.location.href = "/";
-			}
-			throw new Error("No JWT token found. Please log in again.");
+			console.warn("No JWT token found in localStorage - request may fail");
 		}
 
 		console.log(`Making ${config.method} request to: ${url}`);
