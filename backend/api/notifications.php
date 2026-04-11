@@ -19,6 +19,8 @@ if ($method === 'GET') {
 	getNotifications($pdo, $user);
 } elseif ($method === 'PUT') {
 	markNotificationsAsRead($pdo, $user);
+} elseif ($method === 'POST' && $action === 'mark-read') {
+	markNotificationsAsRead($pdo, $user);
 } elseif ($method === 'POST' && $action === 'mark-all-read') {
 	markAllNotificationsAsRead($pdo, $user);
 } elseif ($method === 'PATCH' && $action === 'mark-all-read') {

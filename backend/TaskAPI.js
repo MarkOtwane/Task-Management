@@ -416,10 +416,18 @@ class TaskAPI {
 	}
 
 	async markNotificationRead(notificationId) {
-		return this.request("/api/notifications.php", {
-			method: "PUT",
-			body: JSON.stringify({ notification_id: notificationId }),
-		});
+		try {
+			return await this.request("/api/notifications.php", {
+				method: "PUT",
+				body: JSON.stringify({ notification_id: notificationId }),
+			});
+		} catch (error) {
+			// Fallback for hosts that do not reliably pass PUT requests through PHP.
+			return this.request("/api/notifications.php?action=mark-read", {
+				method: "POST",
+				body: JSON.stringify({ notification_id: notificationId }),
+			});
+		}
 	}
 
 	async markAllNotificationsRead(organizationId = null) {
