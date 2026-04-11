@@ -112,14 +112,27 @@ function markNotificationsAsRead($pdo, $user) {
 			return;
 		}
 
-		if (!$notificationId) {
+if (!$notificationId) {
 			http_response_code(400);
 			echo json_encode(['error' => 'notification_id is required']);
 			return;
 		}
 
-		$stmt = $pdo->prepare("\n			UPDATE notifications\n			SET is_read = TRUE\n			WHERE id = ? AND user_id = ?\n		");
-		$stmt->execute([$notificationId, (int) $user['id']]);
+		if ($organizationId) {
+			$stmt = $pdo->prepare("
+				UPDATE notifications
+				SET is_read = TRUE
+				WHERE id = ? AND user_id = ? AND organization_id = ?
+			");
+			$stmt->execute([$notificationId, (int) $user['id'], $organizationId]);
+		} else {
+			$stmt = $pdo->prepare("
+				UPDATE notifications
+				SET is_read = TRUE
+				WHERE id = ? AND user_id = ?
+			");
+			$stmt->execute([$notificationId, (int) $user['id']]);
+		}
 
 		echo json_encode(['message' => 'Notification marked as read']);
 	} catch (PDOException $exception) {

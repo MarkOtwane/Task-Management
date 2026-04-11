@@ -6428,9 +6428,10 @@
 					const notificationId = Number(notificationItem.dataset.notificationId);
 					const entityType = notificationItem.dataset.entityType || "task";
 					const entityId = Number(notificationItem.dataset.entityId || 0);
+					const organizationId = organizationMode === "organization" && selectedOrganizationId ? Number(selectedOrganizationId) : null;
 					if (notificationId) {
 						try {
-							await api.markNotificationRead(notificationId);
+							await api.markNotificationRead(notificationId, organizationId);
 							notifications = notifications.map((item) => item.id === notificationId ? { ...item, isRead: true, is_read: true } : item);
 							unreadNotificationCount = notifications.filter((item) => !(item.isRead || item.is_read)).length;
 							renderNotificationBell();

@@ -415,17 +415,21 @@ class TaskAPI {
 		});
 	}
 
-	async markNotificationRead(notificationId) {
+	async markNotificationRead(notificationId, organizationId = null) {
+		const body = { notification_id: notificationId };
+		if (organizationId) {
+			body.organization_id = Number(organizationId);
+		}
 		try {
 			return await this.request("/api/notifications.php", {
 				method: "PUT",
-				body: JSON.stringify({ notification_id: notificationId }),
+				body: JSON.stringify(body),
 			});
 		} catch (error) {
 			// Fallback for hosts that do not reliably pass PUT requests through PHP.
 			return this.request("/api/notifications.php?action=mark-read", {
 				method: "POST",
-				body: JSON.stringify({ notification_id: notificationId }),
+				body: JSON.stringify(body),
 			});
 		}
 	}
