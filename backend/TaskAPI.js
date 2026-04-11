@@ -675,6 +675,108 @@ class TaskAPI {
 	}
 }
 
+// ===== PROJECTS =====
+
+	/**
+	 * Get all projects for an organization
+	 */
+	async getProjects(organizationId) {
+		return this.request(`/api/projects.php?organization_id=${organizationId}`, {
+			method: "GET",
+		});
+	}
+
+	/**
+	 * Get a single project by id
+	 */
+	async getProject(id) {
+		return this.request(`/api/projects.php?id=${id}`, {
+			method: "GET",
+		});
+	}
+
+	/**
+	 * Create a new project
+	 */
+	async createProject({ organization_id, name, description = "" }) {
+		return this.request("/api/projects.php", {
+			method: "POST",
+			body: JSON.stringify({
+				organization_id,
+				name,
+				description,
+			}),
+		});
+	}
+
+	/**
+	 * Update a project
+	 */
+	async updateProject(id, { name, description }) {
+		return this.request("/api/projects.php", {
+			method: "PUT",
+			body: JSON.stringify({
+				id,
+				name,
+				description,
+			}),
+		});
+	}
+
+	/**
+	 * Delete a project
+	 */
+	async deleteProject(id) {
+		return this.request(`/api/projects.php?id=${id}`, {
+			method: "DELETE",
+		});
+	}
+
+	// ===== TASK COMMENTS =====
+
+	/**
+	 * Get comments for a task
+	 */
+	async getTaskComments(taskId) {
+		return this.request(`/api/task_comments.php?task_id=${taskId}`, {
+			method: "GET",
+		});
+	}
+
+	/**
+	 * Add a comment to a task
+	 */
+	async addTaskComment(taskId, message) {
+		return this.request("/api/task_comments.php", {
+			method: "POST",
+			body: JSON.stringify({
+				task_id: taskId,
+				message,
+			}),
+		});
+	}
+
+	/**
+	 * Delete a task comment
+	 */
+	async deleteTaskComment(commentId) {
+		return this.request(`/api/task_comments.php?id=${commentId}`, {
+			method: "DELETE",
+		});
+	}
+
+	// ===== WORKLOAD (ADMIN ONLY) =====
+
+	/**
+	 * Get member workload/tasks summary
+	 */
+	async getMemberWorkload(organizationId) {
+		return this.request(`/api/tasks.php?action=member-performance&organization_id=${organizationId}`, {
+			method: "GET",
+		});
+	}
+}
+
 // Export for Node.js/modules
 if (typeof module !== "undefined" && module.exports) {
 	module.exports = TaskAPI;

@@ -319,6 +319,42 @@ function initializeDatabase($pdo) {
         $pdo->exec("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS priority VARCHAR(20) DEFAULT 'medium'");
         $pdo->exec("UPDATE tasks SET priority = 'medium' WHERE priority IS NULL OR priority = ''");
 
+        // Projects table
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS projects (
+                id SERIAL PRIMARY KEY,
+                organization_id INTEGER REFERENCES organizations(id) ON DELETE CASCADE,
+                name VARCHAR(255) NOT NULL,
+                description TEXT,
+                created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ");
+
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_projects_organization_id ON projects(organization_id)");
+
+        // Add project_id to tasks table (nullable)
+        $pdo->exec("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_tasks_project_id ON tasks(project_id)");
+
+        // Add depends_on_task_id to tasks table (optional simple version)
+        $pdo->exec("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS depends_on_task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_tasks_depends_on_task_id ON tasks(depends_on_task_id)");
+
+        // Task comments table
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS task_comments (
+                id SERIAL PRIMARY KEY,
+                task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                message TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ");
+
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_task_comments_task_id ON task_comments(task_id)");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_task_comments_created_at ON task_comments(created_at DESC)");
+
         return true;
     } catch (PDOException $e) {
         error_log('Database initialization error: ' . $e->getMessage());

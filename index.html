@@ -1157,6 +1157,154 @@
 				color: var(--notification-error);
 			}
 
+			/* ===== PROJECTS ===== */
+			.project-detail-view {
+				background: var(--bg-card);
+				border: 1px solid var(--border-primary);
+				border-radius: 14px;
+				padding: 16px;
+				margin-top: 16px;
+			}
+
+			.project-card {
+				background: var(--bg-card);
+				border-radius: 16px;
+				padding: 20px;
+				box-shadow: var(--shadow-card);
+				transition: all 0.3s ease;
+				border-left: 5px solid var(--text-accent);
+				cursor: pointer;
+				border: 1px solid var(--border-primary);
+			}
+
+			.project-card:hover {
+				transform: translateY(-5px);
+				box-shadow: var(--shadow-hover);
+			}
+
+			.project-card h3 {
+				font-size: 18px;
+				color: var(--text-primary);
+				margin-bottom: 8px;
+			}
+
+			.project-card p {
+				color: var(--text-secondary);
+				font-size: 14px;
+				margin-bottom: 12px;
+			}
+
+			.project-stats {
+				display: flex;
+				gap: 16px;
+				font-size: 13px;
+				color: var(--text-tertiary);
+			}
+
+			.project-stat {
+				display: flex;
+				align-items: center;
+				gap: 4px;
+			}
+
+			.project-stat.completed {
+				color: var(--notification-success);
+			}
+
+			.workload-item {
+				padding: 12px 16px;
+				border: 1px solid var(--border-primary);
+				border-radius: 12px;
+				background: rgba(255, 255, 255, 0.03);
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+
+			.workload-item + .workload-item {
+				margin-top: 8px;
+			}
+
+			.workload-member {
+				font-weight: 600;
+				color: var(--text-primary);
+			}
+
+			.workload-stats {
+				display: flex;
+				gap: 12px;
+				font-size: 13px;
+			}
+
+			.workload-stat {
+				color: var(--text-secondary);
+			}
+
+			.workload-stat.overdue {
+				color: var(--notification-error);
+			}
+
+			.task-comments-section {
+				margin-top: 16px;
+				padding-top: 16px;
+				border-top: 1px dashed var(--border-primary);
+			}
+
+			.task-comments-section h4 {
+				margin-bottom: 12px;
+				color: var(--text-primary);
+			}
+
+			.comment-item {
+				padding: 10px 12px;
+				border: 1px solid var(--border-primary);
+				border-radius: 10px;
+				margin-bottom: 8px;
+				background: rgba(255, 255, 255, 0.02);
+			}
+
+			.comment-meta {
+				font-size: 12px;
+				color: var(--text-tertiary);
+				margin-bottom: 4px;
+			}
+
+			.comment-message {
+				color: var(--text-secondary);
+				font-size: 14px;
+			}
+
+			.comment-form {
+				display: flex;
+				gap: 8px;
+				margin-top: 12px;
+			}
+
+			.comment-form input {
+				flex: 1;
+				padding: 10px 14px;
+				border: 2px solid var(--border-primary);
+				border-radius: 8px;
+				font-size: 14px;
+				background: var(--bg-input);
+				color: var(--text-primary);
+			}
+
+			.comment-form input:focus {
+				outline: none;
+				border-color: var(--border-accent);
+			}
+
+			.blocked-badge {
+				background: var(--notification-warning);
+				color: white;
+				padding: 4px 10px;
+				border-radius: 20px;
+				font-size: 11px;
+				font-weight: 700;
+				text-transform: uppercase;
+			}
+
 			/* ===== CHART ===== */
 			.chart-container {
 				background: var(--bg-card);
@@ -2252,10 +2400,15 @@
 							<div class="nav-section-title">Plans</div>
 								<a href="#" class="nav-link" data-section="plans"> <span class="icon"><span class="material-icons icon-24">calendar_month</span></span> Plans </a>
 							</div>
+							<div class="nav-section hidden" id="projectNavGroup">
+								<div class="nav-section-title">Projects</div>
+								<a href="#" class="nav-link" data-section="projects"> <span class="icon"><span class="material-icons icon-24">folder</span></span> All Projects </a>
+							</div>
 							<div class="nav-section hidden" id="organizationNavGroup">
 								<div class="nav-section-title">Organization</div>
 								<a href="#" class="org-nav-link" data-org-nav="dashboard"> <span class="icon"><span class="material-icons icon-24">dashboard</span></span> Dashboard </a>
 								<a href="#" class="org-nav-link" data-org-nav="tasks"> <span class="icon"><span class="material-icons icon-24">assignment</span></span> Tasks </a>
+								<a href="#" class="org-nav-link" data-org-nav="projects"> <span class="icon"><span class="material-icons icon-24">folder</span></span> Projects </a>
 								<a href="#" class="org-nav-link hidden" data-org-nav="requests"> <span class="icon"><span class="material-icons icon-24">assignment_returned</span></span> Requests </a>
 								<a href="#" class="org-nav-link" data-org-nav="members"> <span class="icon"><span class="material-icons icon-24">group</span></span> Members </a>
 								<a href="#" class="org-nav-link" data-org-nav="activity"> <span class="icon"><span class="material-icons icon-24">history</span></span> Activity </a>
@@ -2628,6 +2781,39 @@
 						</div>
 						<div id="preachingDetailCard" class="preaching-detail-card hidden"></div>
 					</section>
+					<!-- Projects Section -->
+					<section id="projectsSection" class="content-section hidden">
+						<div class="section-header">
+							<h1>Projects</h1>
+							<p>Organize tasks into projects</p>
+						</div>
+						<div class="controls-bar" style="margin-bottom: 20px;">
+							<div class="search-box">
+								<span class="search-icon" aria-hidden="true"><i class="fas fa-search"></i></span>
+								<input type="text" id="projectsSearchInput" placeholder="Search projects..." />
+							</div>
+							<button class="btn btn-primary" id="createProjectBtn" type="button">+ Create Project</button>
+						</div>
+						<div class="plans-grid" id="projectsGrid"></div>
+						<div id="projectDetailView" class="project-detail-view hidden"></div>
+						<div id="emptyProjectsState" class="empty-state hidden">
+							<div class="empty-state-icon"><i class="fas fa-folder-open"></i></div>
+							<h3>No projects yet</h3>
+							<p>Create your first project to organize your tasks!</p>
+						</div>
+					</section>
+					<!-- Project Detail Section -->
+					<section id="projectDetailSection" class="content-section hidden">
+						<div class="section-header">
+							<h1 id="projectDetailTitle">Project Name</h1>
+							<p id="projectDetailMeta">Project details</p>
+						</div>
+						<div class="controls-bar" style="margin-bottom: 18px;">
+							<button class="btn btn-secondary" id="backToProjectsBtn" type="button"><i class="fas fa-arrow-left"></i> Back to Projects</button>
+							<button class="btn btn-danger hidden" id="deleteProjectBtn" type="button">Delete Project</button>
+						</div>
+						<div id="projectTasksList" class="organization-group-list"></div>
+					</section>
 					<!-- Analytics Section -->
 					<section id="analyticsSection" class="content-section hidden">
 						<div class="section-header">
@@ -2768,6 +2954,27 @@
 						<div class="modal-actions">
 							<button type="button" class="btn btn-secondary" id="cancelReflectionBtn">Cancel</button>
 							<button type="submit" class="btn btn-success" id="saveReflectionBtn">Complete Task</button>
+						</div>
+					</form>
+				</div>
+			</div>
+			<!-- ===== CREATE PROJECT MODAL ===== -->
+			<div id="projectModal" class="modal-overlay hidden">
+				<div class="modal">
+					<h2><i class="fas fa-folder-plus"></i> Create Project</h2>
+					<p class="modal-subtitle">Create a new project to organize tasks</p>
+					<form id="projectForm">
+						<div class="form-group">
+							<label for="projectName">Project Name *</label>
+							<input type="text" id="projectName" placeholder="Enter project name" required />
+						</div>
+						<div class="form-group">
+							<label for="projectDescription">Description</label>
+							<textarea id="projectDescription" placeholder="Describe the project..."></textarea>
+						</div>
+						<div class="modal-actions">
+							<button type="button" class="btn btn-secondary" id="cancelProjectBtn">Cancel</button>
+							<button type="submit" class="btn btn-primary" id="saveProjectBtn">Create Project</button>
 						</div>
 					</form>
 				</div>
@@ -3097,6 +3304,8 @@
 				overview: document.getElementById("overviewSection"),
 				organization: document.getElementById("organizationSection"),
 				plans: document.getElementById("plansSection"),
+				projects: document.getElementById("projectsSection"),
+				projectDetail: document.getElementById("projectDetailSection"),
 				tasks: document.getElementById("tasksSection"),
 				diary: document.getElementById("diarySection"),
 				preaching: document.getElementById("preachingSection"),
@@ -3123,6 +3332,8 @@
 				if (sectionName === "overview") updateOverview();
 				if (sectionName === "organization") renderOrganizationWorkspace();
 				if (sectionName === "plans") updatePlans();
+				if (sectionName === "projects") renderProjects();
+				if (sectionName === "projectDetail") renderProjectDetail();
 				if (sectionName === "tasks") renderTasks();
 				if (sectionName === "diary") renderDiaryHistory();
 				if (sectionName === "preaching") renderPreachingList();
@@ -3571,6 +3782,173 @@
 				} catch (error) {
 					console.warn("[org-mode] Member performance load failed", error);
 				}
+			}
+
+			// ===== PROJECTS =====
+			let projects = [];
+			let currentProjectId = null;
+
+			async function loadProjects() {
+				const activeOrganization = getSelectedOrganization();
+				if (!api || !activeOrganization) {
+					projects = [];
+					return;
+				}
+
+				try {
+					const response = await api.getProjects(activeOrganization.id);
+					projects = Array.isArray(response) ? response : [];
+				} catch (error) {
+					console.error("Error loading projects:", error);
+					projects = [];
+				}
+			}
+
+			async function renderProjects() {
+				const projectsGrid = document.getElementById("projectsGrid");
+				const emptyState = document.getElementById("emptyProjectsState");
+				if (!projectsGrid) return;
+
+				await loadProjects();
+
+				if (!projects.length) {
+					projectsGrid.classList.add("hidden");
+					emptyState.classList.remove("hidden");
+					return;
+				}
+
+				emptyState.classList.add("hidden");
+				projectsGrid.classList.remove("hidden");
+
+				const activeOrganization = getSelectedOrganization();
+				const userRole = getCurrentOrganizationRole();
+
+				projectsGrid.innerHTML = projects.map((project) => `
+					<div class="project-card" data-project-id="${project.id}">
+						<h3>${project.name || "Untitled Project"}</h3>
+						<p>${project.description || "No description"}</p>
+						<div class="project-stats">
+							<span class="project-stat">
+								<i class="fas fa-tasks"></i> ${project.total_tasks || 0} tasks
+							</span>
+							<span class="project-stat completed">
+								<i class="fas fa-check"></i> ${project.completed_tasks || 0} completed
+							</span>
+						</div>
+					</div>
+				`).join("");
+
+				projectsGrid.querySelectorAll(".project-card").forEach((card) => {
+					card.addEventListener("click", () => {
+						const projectId = Number(card.dataset.projectId);
+						showProjectDetail(projectId);
+					});
+				});
+			}
+
+			function showProjectDetail(projectId) {
+				currentProjectId = projectId;
+				const project = projects.find((p) => Number(p.id) === projectId);
+				if (!project) {
+					showNotification("Project not found", "error");
+					return;
+				}
+
+				document.getElementById("projectDetailTitle").textContent = project.name || "Project";
+				document.getElementById("projectDetailMeta").textContent = `${project.total_tasks || 0} tasks, ${project.completed_tasks || 0} completed`;
+
+				const deleteBtn = document.getElementById("deleteProjectBtn");
+				const role = getCurrentOrganizationRole();
+				if (role === "admin" || role === "owner") {
+					deleteBtn.classList.remove("hidden");
+				} else {
+					deleteBtn.classList.add("hidden");
+				}
+
+				showSection("projectDetail");
+				renderProjectDetail();
+			}
+
+			async function renderProjectDetail() {
+				if (!currentProjectId) return;
+
+				const project = projects.find((p) => Number(p.id) === currentProjectId);
+				if (!project) return;
+
+				const projectTasksList = document.getElementById("projectTasksList");
+				if (!projectTasksList) return;
+
+				const tasksInProject = tasks.filter((task) => Number(task.project_id) === currentProjectId);
+
+				if (!tasksInProject.length) {
+					projectTasksList.innerHTML = '<div class="empty-state" style="padding:24px 12px;"><p>No tasks in this project yet.</p></div>';
+					return;
+				}
+
+				projectTasksList.innerHTML = `
+					<div class="organization-task-group">
+						<h4>${project.name || "Project"} Tasks</h4>
+						${tasksInProject.map((task) => `
+							<div class="organization-task-item" data-task-id="${task.id}">
+								<strong>${task.title}</strong>
+								<div class="organization-task-meta">
+									<span class="task-badge ${task.priority}">${task.priority}</span>
+									<span class="task-badge">${task.status}</span>
+								</div>
+							</div>
+						`).join("")}
+					</div>
+				`;
+			}
+
+			async function createProject(name, description) {
+				const activeOrganization = getSelectedOrganization();
+				if (!api || !activeOrganization) {
+					throw new Error("No organization selected");
+				}
+
+				const response = await api.createProject({
+					organization_id: activeOrganization.id,
+					name,
+					description,
+				});
+
+				await loadProjects();
+				await renderProjects();
+				return response;
+			}
+
+			async function deleteProject(projectId) {
+				if (!api) return;
+
+				await api.deleteProject(projectId);
+				await loadProjects();
+				await renderProjects();
+			}
+
+			// ===== TASK COMMENTS =====
+			let taskComments = [];
+
+			async function loadTaskComments(taskId) {
+				if (!api || !taskId) {
+					taskComments = [];
+					return;
+				}
+
+				try {
+					taskComments = await api.getTaskComments(taskId);
+				} catch (error) {
+					console.error("Error loading task comments:", error);
+					taskComments = [];
+				}
+			}
+
+			async function addComment(taskId, message) {
+				if (!api || !taskId || !message) return;
+
+				const response = await api.addTaskComment(taskId, message);
+				await loadTaskComments(taskId);
+				return response;
 			}
 
 			let taskTimelineData = [];
@@ -4479,11 +4857,17 @@
 					organizationNavGroup.classList.toggle("hidden", organizationMode !== "organization");
 				}
 
+				const projectNavGroup = document.getElementById("projectNavGroup");
+				if (projectNavGroup) {
+					projectNavGroup.classList.toggle("hidden", organizationMode !== "organization");
+				}
+
 				sidebarOrgLinks.forEach((link) => {
 					const section = link.dataset.orgNav;
 					const isVisible = section === "dashboard"
 						|| section === "activity"
 						|| (section === "tasks" && currentRole !== "client")
+						|| (section === "projects" && currentRole !== "client")
 						|| (section === "members" && currentRole !== "client")
 						|| (section === "requests" && (currentRole === "client" || currentRole === "organization_admin"))
 						|| (section === "settings" && currentRole === "organization_admin");
@@ -6298,6 +6682,78 @@
 				taskModal.classList.remove("hidden");
 			});
 
+			// ===== PROJECT MODAL =====
+			const projectModal = document.getElementById("projectModal");
+			const projectForm = document.getElementById("projectForm");
+
+			document.getElementById("createProjectBtn")?.addEventListener("click", () => {
+				const activeOrganization = getSelectedOrganization();
+				if (!activeOrganization) {
+					showNotification("Please select an organization first", "warning");
+					return;
+				}
+				document.getElementById("projectName").value = "";
+				document.getElementById("projectDescription").value = "";
+				projectModal.classList.remove("hidden");
+			});
+
+			document.getElementById("cancelProjectBtn")?.addEventListener("click", () => {
+				projectModal.classList.add("hidden");
+			});
+
+			projectModal?.addEventListener("click", (e) => {
+				if (e.target === projectModal) {
+					projectModal.classList.add("hidden");
+				}
+			});
+
+			projectForm?.addEventListener("submit", async (e) => {
+				e.preventDefault();
+				const name = document.getElementById("projectName").value.trim();
+				const description = document.getElementById("projectDescription").value.trim();
+
+				if (!name) {
+					showNotification("Project name is required", "error");
+					return;
+				}
+
+				const saveBtn = document.getElementById("saveProjectBtn");
+				saveBtn.classList.add("loading");
+				saveBtn.textContent = "Creating...";
+
+				try {
+					await createProject(name, description);
+					showNotification("Project created successfully", "success");
+					projectModal.classList.add("hidden");
+				} catch (error) {
+					showNotification("Failed to create project: " + error.message, "error");
+				} finally {
+					saveBtn.classList.remove("loading");
+					saveBtn.textContent = "Create Project";
+				}
+			});
+
+			document.getElementById("backToProjectsBtn")?.addEventListener("click", () => {
+				currentProjectId = null;
+				showSection("projects");
+			});
+
+			document.getElementById("deleteProjectBtn")?.addEventListener("click", async () => {
+				if (!currentProjectId) return;
+				
+				const shouldDelete = await showConfirmMessage("Delete this project? Tasks will become unassigned but not deleted.", "Delete", "Cancel");
+				if (!shouldDelete) return;
+				
+				try {
+					await deleteProject(currentProjectId);
+					showNotification("Project deleted", "success");
+					currentProjectId = null;
+					showSection("projects");
+				} catch (error) {
+					showNotification("Failed to delete project: " + error.message, "error");
+				}
+			});
+
 			document.getElementById("cancelTaskBtn").addEventListener("click", () => {
 				taskModal.classList.add("hidden");
 			});
@@ -7104,6 +7560,29 @@
 					console.error("Reflection error:", error);
 				});
 			});
+
+			// ===== SOFT DEADLINE DISPLAY =====
+			function formatDueDate(dueDate) {
+				if (!dueDate) return "";
+				
+				const now = new Date();
+				const due = new Date(dueDate);
+				const diffTime = due - now;
+				const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+				
+				if (diffDays < 0) {
+					const overdueDays = Math.abs(diffDays);
+					return `Overdue by ${overdueDays} day${overdueDays === 1 ? "" : "s"}`;
+				} else if (diffDays === 0) {
+					return "Due today";
+				} else if (diffDays === 1) {
+					return "Due tomorrow";
+				} else if (diffDays <= 7) {
+					return `Due in ${diffDays} days`;
+				} else {
+					return `Due ${due.toLocaleDateString()}`;
+				}
+			}
 
 			// ===== RENDER TASKS =====
 			function renderTasks() {

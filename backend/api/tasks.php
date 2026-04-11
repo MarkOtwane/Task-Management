@@ -428,6 +428,9 @@ function createTask($pdo, $user) {
 			$assignmentMessage = 'Task assigned to ' . ($assignee['username'] ?? 'user');
 		}
 
+	$projectId = !empty($input['project_id']) ? (int) $input['project_id'] : null;
+	$dependsOnTaskId = !empty($input['depends_on_task_id']) ? (int) $input['depends_on_task_id'] : null;
+
 	try {
 		$stmt = $pdo->prepare("
 			INSERT INTO tasks (
@@ -441,8 +444,10 @@ function createTask($pdo, $user) {
 				priority,
 				status,
 				due_date,
-				meet_link
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				meet_link,
+				project_id,
+				depends_on_task_id
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		");
 		$stmt->execute([
 			$user['id'],
@@ -456,6 +461,8 @@ function createTask($pdo, $user) {
 			$status,
 			$dueDate,
 			$meetLink,
+			$projectId,
+			$dependsOnTaskId,
 		]);
 
 		$taskId = $pdo->lastInsertId();
@@ -562,7 +569,7 @@ function updateTask($pdo, $user) {
 
 		if ((int) $task['organization_id'] > 0) {
 			if (userCanManageOrganizationTasks($pdo, $user, $task['organization_id'])) {
-				$allowedFields = ['title', 'description', 'category', 'priority', 'status', 'due_date', 'assigned_to', 'meet_link'];
+				$allowedFields = ['title', 'description', 'category', 'priority', 'status', 'due_date', 'assigned_to', 'meet_link', 'project_id', 'depends_on_task_id'];
 				foreach ($allowedFields as $field) {
 					if (array_key_exists($field, $input)) {
 						if ($field === 'due_date') {
