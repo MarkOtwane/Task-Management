@@ -17,6 +17,31 @@ function logTaskDebug($event, $user, $organizationId = null, $payload = null) {
 	error_log('[tasks] ' . $event . ' userId=' . ($user['id'] ?? 'unknown') . ' role=' . ($user['role'] ?? 'unknown') . ' orgId=' . ($organizationId ?? 'null') . ' payload=' . json_encode($payload));
 }
 
+function logTaskTimeline($pdo, $taskId, $userId, $action, $message = null) {
+	if (!$taskId || !$action) {
+		return;
+	}
+	try {
+		$stmt = $pdo->prepare("
+			INSERT INTO task_timeline (task_id, user_id, action, message, created_at)
+			VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+		");
+		$stmt->execute([
+			(int) $taskId,
+			$userId ? (int) $userId : null,
+			$action,
+			$message,
+		]);
+	} catch (PDOException $exception) {
+		error_log('[tasks] logTaskTimeline.error payload=' . json_encode([
+			'task_id' => $taskId,
+			'user_id' => $userId,
+			'action' => $action,
+			'error' => $exception->getMessage(),
+		]));
+	}
+}
+
 logTaskDebug('request', $user, $_GET['organization_id'] ?? null, [
 	'method' => $method,
 	'action' => $action,
@@ -39,6 +64,10 @@ if ($method === 'GET') {
 	updateTask($pdo, $user);
 } elseif ($method === 'DELETE') {
 	deleteTask($pdo, $user);
+} elseif ($method === 'GET' && $action === 'timeline') {
+	getTaskTimeline($pdo, $user);
+} elseif ($method === 'GET' && $action === 'member-performance') {
+	getMemberPerformance($pdo, $user);
 } else {
 	http_response_code(405);
 	echo json_encode(['error' => 'Method not allowed']);
@@ -385,12 +414,19 @@ function createTask($pdo, $user) {
 
 			$assignedTo = (int) $user['id'];
 		}
-	} else {
-		$organizationId = null;
-		$assignedTo = (int) $user['id'];
-		$assignedBy = (int) $user['id'];
-		$meetLink = null;
-	}
+} else {
+			$assignedTo = (int) $user['id'];
+			$assignedBy = (int) $user['id'];
+			$meetLink = null;
+		}
+
+		$assignmentMessage = null;
+		if ($assignedTo && (int) $assignedTo !== (int) $user['id']) {
+			$assigneeStmt = $pdo->prepare("SELECT username FROM users WHERE id = ?");
+			$assigneeStmt->execute([$assignedTo]);
+			$assignee = $assigneeStmt->fetch();
+			$assignmentMessage = 'Task assigned to ' . ($assignee['username'] ?? 'user');
+		}
 
 	try {
 		$stmt = $pdo->prepare("
@@ -424,6 +460,11 @@ function createTask($pdo, $user) {
 
 		$taskId = $pdo->lastInsertId();
 		$task = getTaskRecord($pdo, $taskId);
+
+		logTaskTimeline($pdo, $taskId, (int) $user['id'], 'created', 'Task created');
+		if ($assignmentMessage) {
+			logTaskTimeline($pdo, $taskId, (int) $user['id'], 'assigned', $assignmentMessage);
+		}
 
 		logTaskDebug('createTask.success', $user, $organizationId, [
 			'task_id' => (int) $taskId,
@@ -619,6 +660,17 @@ function updateTask($pdo, $user) {
 		$stmt = $pdo->prepare($sql);
 		$stmt->execute($values);
 
+		$oldAssignedTo = $task['assigned_to'] ?? null;
+		$newAssignedTo = $input['assigned_to'] ?? $oldAssignedTo;
+		if ($newAssignedTo && (int) $newAssignedTo !== (int) $oldAssignedTo) {
+			$assigneeStmt = $pdo->prepare("SELECT username FROM users WHERE id = ?");
+			$assigneeStmt->execute([$newAssignedTo]);
+			$assignee = $assigneeStmt->fetch();
+			logTaskTimeline($pdo, (int) $taskId, (int) $user['id'], 'assigned', 'Task assigned to ' . ($assignee['username'] ?? 'user'));
+		} else {
+			logTaskTimeline($pdo, (int) $taskId, (int) $user['id'], 'updated', 'Task updated');
+		}
+
 		if ((int) $task['organization_id'] > 0) {
 			$activityRecipients = [(int) $user['id']];
 			if (!empty($task['assigned_to']) && (int) $task['assigned_to'] !== (int) $user['id']) {
@@ -762,6 +814,8 @@ function submitTask($pdo, $user, $task) {
 				(int) $task['id']
 			);
 		}
+
+		logTaskTimeline($pdo, (int) $task['id'], (int) $user['id'], 'submitted', buildDisplayName($user) . ' submitted work');
 
 		logTaskDebug('submitTask.success', $user, $task['organization_id'] ?? null, [
 			'task_id' => (int) $task['id'],
@@ -1018,6 +1072,8 @@ function reviewTask($pdo, $user, $task, $input) {
 			'feedback' => $feedback,
 		]);
 
+		logTaskTimeline($pdo, (int) $task['id'], (int) $user['id'], $reviewAction === 'approve' ? 'approved' : 'rejected', buildDisplayName($user) . ' ' . $reviewAction . 'd the task');
+
 		logTaskDebug('reviewTask.success', $user, $task['organization_id'] ?? null, [
 			'task_id' => (int) $task['id'],
 			'review_action' => $reviewAction,
@@ -1079,5 +1135,86 @@ function deleteTask($pdo, $user) {
 	} catch (PDOException $exception) {
 		http_response_code(500);
 		echo json_encode(['error' => 'Failed to delete task: ' . $exception->getMessage()]);
+	}
+}
+
+function getTaskTimeline($pdo, $user) {
+	$taskId = $_GET['task_id'] ?? null;
+
+	if (!$taskId) {
+		http_response_code(400);
+		echo json_encode(['error' => 'Task ID is required']);
+		return;
+	}
+
+	$task = getTaskRecord($pdo, $taskId);
+	if (!$task) {
+		http_response_code(404);
+		echo json_encode(['error' => 'Task not found']);
+		return;
+	}
+
+	if (!canUserViewTask($pdo, $user, $task)) {
+		http_response_code(403);
+		echo json_encode(['error' => 'Unauthorized']);
+		return;
+	}
+
+	try {
+		$stmt = $pdo->prepare("
+			SELECT tl.*, u.username, u.email
+			FROM task_timeline tl
+			LEFT JOIN users u ON u.id = tl.user_id
+			WHERE tl.task_id = ?
+			ORDER BY tl.created_at DESC
+			LIMIT 50
+		");
+		$stmt->execute([$taskId]);
+		$timeline = $stmt->fetchAll();
+
+		echo json_encode($timeline);
+	} catch (PDOException $exception) {
+		http_response_code(500);
+		echo json_encode(['error' => 'Failed to fetch timeline: ' . $exception->getMessage()]);
+	}
+}
+
+function getMemberPerformance($pdo, $user) {
+	$organizationId = $_GET['organization_id'] ?? null;
+
+	if (!$organizationId) {
+		http_response_code(400);
+		echo json_encode(['error' => 'Organization ID is required']);
+		return;
+	}
+
+	if (!userCanManageOrganizationTasks($pdo, $user, $organizationId)) {
+		http_response_code(403);
+		echo json_encode(['error' => 'Unauthorized']);
+		return;
+	}
+
+	try {
+		$stmt = $pdo->prepare("
+			SELECT 
+				u.id,
+				u.username,
+				u.email,
+				COUNT(t.id) AS total_assigned_tasks,
+				COUNT(CASE WHEN t.status = 'completed' THEN 1 END) AS completed_tasks,
+				COUNT(CASE WHEN t.status != 'completed' AND t.due_date < CURRENT_TIMESTAMP THEN 1 END) AS overdue_tasks
+			FROM users u
+			INNER JOIN organization_members om ON om.user_id = u.id AND om.organization_id = ?
+			LEFT JOIN tasks t ON t.assigned_to = u.id AND t.organization_id = ?
+			GROUP BY u.id, u.username, u.email
+			ORDER BY total_assigned_tasks DESC
+		");
+		$stmt->execute([$organizationId, $organizationId]);
+		$members = $stmt->fetchAll();
+
+		echo json_encode($members);
+	} catch (PDOException $exception) {
+		http_response_code(500);
+		echo json_encode(['error' => 'Failed to fetch member performance: ' . $exception->getMessage()]);
 	}
 }

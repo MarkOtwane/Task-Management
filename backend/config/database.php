@@ -300,6 +300,25 @@ function initializeDatabase($pdo) {
             )
         ");
 
+        // Task timeline table for tracking all task actions
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS task_timeline (
+                id SERIAL PRIMARY KEY,
+                task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
+                user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+                action VARCHAR(50) NOT NULL,
+                message TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ");
+
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_task_timeline_task_id ON task_timeline(task_id)");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_task_timeline_created_at ON task_timeline(created_at DESC)");
+
+        // Add priority column if not exists (for existing data)
+        $pdo->exec("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS priority VARCHAR(20) DEFAULT 'medium'");
+        $pdo->exec("UPDATE tasks SET priority = 'medium' WHERE priority IS NULL OR priority = ''");
+
         return true;
     } catch (PDOException $e) {
         error_log('Database initialization error: ' . $e->getMessage());

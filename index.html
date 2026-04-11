@@ -963,6 +963,27 @@
 				color: white;
 			}
 
+			.task-badge.priority-high {
+				background: #fee2e2;
+				color: #dc2626;
+			}
+
+			.task-badge.priority-medium {
+				background: #fef3c7;
+				color: #d97706;
+			}
+
+			.task-badge.priority-low {
+				background: #d1fae5;
+				color: #059640;
+			}
+
+			.task-badge.overdue {
+				background: #fee2e2;
+				color: #dc2626;
+				animation: pulse 2s infinite;
+			}
+
 			.task-actions {
 				display: flex;
 				gap: 8px;
@@ -2465,6 +2486,9 @@
 								<option value="all">All Status</option>
 								<option value="active">Active</option>
 								<option value="completed">Completed</option>
+								<option value="my_tasks">My Tasks</option>
+								<option value="high_priority">High Priority</option>
+								<option value="overdue">Overdue</option>
 							</select>
 							<button class="btn btn-primary" id="addTaskBtn">+ Add Task</button>
 						</div>
@@ -2897,6 +2921,7 @@
 				selectedOrganizationId,
 				organizations,
 				loading: false,
+				memberPerformance: [],
 			};
 			const organizationUIState = {
 				activeSection: "dashboard",
@@ -3523,7 +3548,53 @@
 				}
 			}
 
-			function renderTaskDetailView(task) {
+			async function loadMemberPerformance() {
+				const activeOrganization = getSelectedOrganization();
+				if (!api || !currentUser || !activeOrganization) {
+					return;
+				}
+
+				const role = getCurrentOrganizationRole();
+				if (role !== "admin" && role !== "owner") {
+					organizationState.memberPerformance = [];
+					return;
+				}
+
+				try {
+					const response = await fetch(`${apiBaseUrl}/api/tasks.php?action=member-performance&organization_id=${activeOrganization.id}`, {
+						headers: { "Authorization": `Bearer ${authToken}` },
+					});
+					if (response.ok) {
+						const data = await response.json();
+						organizationState.memberPerformance = Array.isArray(data) ? data : [];
+					}
+				} catch (error) {
+					console.warn("[org-mode] Member performance load failed", error);
+				}
+			}
+
+			let taskTimelineData = [];
+			async function loadTaskTimeline(taskId) {
+				if (!api || !taskId) {
+					taskTimelineData = [];
+					return;
+				}
+
+				try {
+					const response = await fetch(`${apiBaseUrl}/api/tasks.php?action=timeline&task_id=${taskId}`, {
+						headers: { "Authorization": `Bearer ${authToken}` },
+					});
+					if (response.ok) {
+						const data = await response.json();
+						taskTimelineData = Array.isArray(data) ? data : [];
+					}
+				} catch (error) {
+					console.warn("[task] Timeline load failed", error);
+					taskTimelineData = [];
+				}
+			}
+
+			async function renderTaskDetailView(task) {
 				const detailContainer = document.getElementById("taskDetailView");
 				if (!detailContainer || !task) {
 					return;
@@ -3534,6 +3605,22 @@
 				const submittedBy = task.submittedByName || task.submitted_by_name || task.assignedToName || "Unknown";
 				const submittedAt = task.submittedAt || task.submitted_at;
 				const reviewFeedback = task.reviewFeedback || task.review_feedback || "";
+
+				await loadTaskTimeline(task.id);
+				const timelineHtml = taskTimelineData.length
+					? `<div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border-primary);">
+							<strong style="font-size: 12px; color: var(--text-tertiary);">TIMELINE</strong>
+							<div style="margin-top: 8px; max-height: 200px; overflow-y: auto;">
+								${taskTimelineData.map((entry) => `
+									<div class="organization-activity-item" style="margin-bottom: 6px; padding: 6px 8px;">
+										<div style="font-size: 11px; color: var(--text-tertiary);">${new Date(entry.created_at).toLocaleString()}</div>
+										<div style="font-size: 13px;"><strong>${entry.action?.toUpperCase()}</strong>${entry.message ? `- ${entry.message}` : ""}</div>
+										<div style="font-size: 12px; color: var(--text-secondary);">${entry.username || "Unknown"}</div>
+									</div>
+								`).join("")}
+							</div>
+						</div>`
+					: "";
 
 				detailContainer.innerHTML = `
 					<div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px;">
@@ -3555,6 +3642,7 @@
 						`).join("") : "<div class='submission-file-item'>No files uploaded</div>"}
 					</div>
 					${reviewFeedback ? `<div style="margin-top: 10px;"><strong>Review feedback</strong><div>${reviewFeedback}</div></div>` : ""}
+					${timelineHtml}
 				`;
 				detailContainer.classList.remove("hidden");
 
@@ -3682,14 +3770,36 @@
 				const recentActivity = organizationActivities.slice(0, 1);
 				const requestCount = clientRequests.length;
 
+				const isAdmin = role === "admin" || role === "owner";
+				const overdueCount = orgTasks.filter((task) => task.status !== "completed" && task.dueDate && new Date(task.dueDate) < new Date()).length;
+				const highPriorityCount = orgTasks.filter((task) => task.priority === "high" && task.status !== "completed").length;
+
 				summaryContainer.innerHTML = `
 					<div class="org-stat-card"><div class="label">Total tasks</div><div class="value">${orgTasks.length}</div></div>
 					<div class="org-stat-card"><div class="label">Pending</div><div class="value">${statusCounts.pending}</div></div>
 					<div class="org-stat-card"><div class="label">In Progress</div><div class="value">${statusCounts.in_progress}</div></div>
 					<div class="org-stat-card"><div class="label">Completed</div><div class="value">${statusCounts.completed}</div></div>
+					<div class="org-stat-card"><div class="label">High Priority</div><div class="value">${highPriorityCount}</div></div>
+					<div class="org-stat-card"><div class="label">Overdue</div><div class="value" style="color: ${overdueCount > 0 ? '#dc2626' : 'inherit'}">${overdueCount}</div></div>
 					<div class="org-stat-card"><div class="label">Total Members</div><div class="value">${membersCount}</div></div>
 					${role === "client" ? `<div class="org-stat-card"><div class="label">My Requests</div><div class="value">${requestCount}</div></div>` : ""}
 				`;
+
+				if (isAdmin && organizationState.memberPerformance) {
+					const perfHtml = organizationState.memberPerformance
+						.map((m) => {
+							const total = Number(m.total_assigned_tasks) || 0;
+							const completed = Number(m.completed_tasks) || 0;
+							const overdue = Number(m.overdue_tasks) || 0;
+							return `
+								<div class="org-stat-card" style="margin-top: 8px;">
+									<div class="label">${m.username || m.email}</div>
+									<div class="value" style="font-size: 16px;">${completed}/${total} done ${overdue > 0 ? `• <span style="color: #dc2626;">${overdue} overdue</span>` : ""}</div>
+								</div>
+							`;
+						}).join("");
+					summaryContainer.innerHTML += `<div style="margin-top: 16px;"><strong style="font-size: 12px; color: var(--text-tertiary);">MEMBER PERFORMANCE</strong>${perfHtml}</div>`;
+				}
 
 				recentActivityList.innerHTML = ActivityPreview(recentActivity);
 			}
@@ -4482,6 +4592,7 @@
 					}
 					loadNotifications();
 					loadOrganizationActivities().catch((error) => console.warn("[org-mode] Activity load failed", error));
+					loadMemberPerformance().catch((error) => console.warn("[org-mode] Member performance load failed", error));
 					loadClientRequests().catch((error) => console.warn("[org-mode] Request load failed", error));
 				}
 			}
@@ -7005,7 +7116,15 @@
 				let filteredTasks = userTasks.filter((task) => {
 					const matchesSearch = task.title.toLowerCase().includes(searchTerm) || task.description.toLowerCase().includes(searchTerm);
 					const matchesPlan = filterPlan === "all" || task.plan === filterPlan;
-					const matchesStatus = filterStatus === "all" || (filterStatus === "active" && !task.completed) || (filterStatus === "completed" && task.completed);
+					const isOverdueTask = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== "completed";
+					const isMyTask = task.assignedTo === currentUser?.id;
+					const isHighPriority = task.priority === "high";
+					const matchesStatus = filterStatus === "all" || 
+						(filterStatus === "active" && !task.completed) || 
+						(filterStatus === "completed" && task.completed) ||
+						(filterStatus === "my_tasks" && isMyTask) ||
+						(filterStatus === "high_priority" && isHighPriority) ||
+						(filterStatus === "overdue" && isOverdueTask);
 					return matchesSearch && matchesPlan && matchesStatus;
 				});
 
@@ -7100,7 +7219,7 @@
             <div class="task-meta">
               <span class="task-badge ${task.plan}">${planIcons[task.plan]} ${task.plan.toUpperCase()}</span>
 							${task.status ? `<span class="task-badge"><i class="fas fa-circle-info"></i> ${task.status.replace(/_/g, " ").toUpperCase()}</span>` : ""}
-							${task.priority ? `<span class="task-badge"><i class="fas fa-flag"></i> ${task.priority.toUpperCase()}</span>` : ""}
+							${task.priority ? `<span class="task-badge priority-${task.priority.toLowerCase()}"><i class="fas fa-flag"></i> ${task.priority.toUpperCase()}</span>` : ""}
 							${task.organizationName ? `<span class="task-badge"><i class="fas fa-building"></i> ${task.organizationName}</span>` : ""}
               ${
 				task.dueDate
