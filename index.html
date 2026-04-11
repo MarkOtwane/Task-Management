@@ -2333,9 +2333,12 @@
 			script.id = 'taskApiScript';
 			script.src = taskApiUrl;
 			script.onload = function() {
-				console.log('TaskAPI.js loaded');
+				console.log('TaskAPI.js loaded from CDN');
 				window.taskApiLoaded = true;
-				if (typeof initializeAPI === 'function') initializeAPI();
+				// Call initialize if it exists, otherwise it will be called by DOMContentLoaded
+				if (window.initializeAPI) {
+					window.initializeAPI();
+				}
 			};
 			script.onerror = function() {
 				console.error('Failed to load TaskAPI.js at', taskApiUrl);
@@ -3066,9 +3069,17 @@
 						let api = null;
 			
 						// Initialize API after TaskAPI loads
-						function initializeAPI() {
+						window.initializeAPI = function() {
 							if (typeof TaskAPI === 'undefined') {
-								console.warn("TaskAPI not yet loaded, retrying...");
+								// Wait for TaskAPI to load - check up to 10 times
+								if (!window.taskApiLoadAttempts) window.taskApiLoadAttempts = 0;
+								window.taskApiLoadAttempts++;
+								if (window.taskApiLoadAttempts > 10) {
+									console.error("TaskAPI failed to load after 10 attempts");
+									showNotification("Failed to load API. Please refresh.", "error");
+									return;
+								}
+								console.warn("TaskAPI not yet loaded, attempt " + window.taskApiLoadAttempts + "...");
 								setTimeout(initializeAPI, 500);
 								return;
 							}
