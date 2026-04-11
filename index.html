@@ -3067,13 +3067,18 @@
 			
 						// Initialize API after TaskAPI loads
 						function initializeAPI() {
-							if (typeof TaskAPI !== 'undefined') {
+							if (typeof TaskAPI === 'undefined') {
+								console.warn("TaskAPI not yet loaded, retrying...");
+								setTimeout(initializeAPI, 500);
+								return;
+							}
+							
+							try {
 								api = new TaskAPI(API_URL);
 								console.log("Backend API initialized successfully");
-							} else {
-								console.error("TaskAPI library not loaded");
-								window.taskApiLoaded = false;
-								// Defer initialization until the TaskAPI script finishes loading
+							} catch (e) {
+								console.error("Failed to initialize API:", e);
+								setTimeout(initializeAPI, 500);
 								return;
 							}
 							
