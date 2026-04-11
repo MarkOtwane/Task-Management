@@ -669,9 +669,8 @@ class TaskAPI {
 			}),
 		});
 	}
-}
 
-// ===== PROJECTS =====
+	// ===== PROJECTS =====
 
 	/**
 	 * Get all projects for an organization
