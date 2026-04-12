@@ -65,7 +65,9 @@ function registerUser($pdo, $input) {
     
     // Hash password
     $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
-    $role = ($email === 'autonemac003@gmail.com') ? 'super_admin' : 'member';
+    // Determine role based on environment variable or hardcoded admin email
+    $adminEmail = getenv('ADMIN_EMAIL') ?: 'autonemac003@gmail.com';
+    $role = ($email === $adminEmail) ? 'super_admin' : 'member';
     
     // Insert user
     try {

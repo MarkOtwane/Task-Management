@@ -46,9 +46,6 @@ class TaskAPI {
 		const token = localStorage.getItem("auth_token");
 		if (token) {
 			headers["Authorization"] = `Bearer ${token}`;
-			console.log("Using auth token:", token.substring(0, 20) + "...");
-		} else {
-			console.log("No auth token found in localStorage");
 		}
 
 		const config = {
@@ -57,23 +54,6 @@ class TaskAPI {
 			credentials: "include", // Include cookies for session
 			...options,
 		};
-
-		// Log the full request details for debugging
-		console.log("Request details:", {
-			method: config.method,
-			url: url,
-			headers: headers,
-			body: options.body ? JSON.parse(options.body) : null,
-		});
-
-		// Ensure the token is sent with the request (except for auth endpoints)
-		const isAuthEndpoint = endpoint.includes("auth.php");
-		if (!token && !isAuthEndpoint) {
-			console.warn("No JWT token found in localStorage - request may fail");
-		}
-
-		console.log(`Making ${config.method} request to: ${url}`);
-		console.log("Request headers:", headers);
 
 		try {
 			const response = await fetch(url, config);
@@ -88,15 +68,11 @@ class TaskAPI {
 				data = await response.text();
 			}
 
-			console.log("Response status:", response.status);
-			console.log("Response data:", data);
-
 			if (!response.ok) {
 				const error = typeof data === "object" ? data.error : data;
 
 				// Handle specific authentication errors
 				if (response.status === 401) {
-					console.error("Authentication failed - clearing token");
 					localStorage.removeItem("auth_token");
 				}
 

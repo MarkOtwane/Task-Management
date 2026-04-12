@@ -3086,27 +3086,15 @@
 								api = new TaskAPI(API_URL);
 								console.log("Backend API initialized successfully");
 							} catch (e) {
-								console.error("Failed to initialize API:", e);
-								setTimeout(initializeAPI, 500);
-								return;
-							}
-							
-							// Check for existing JWT token
-							const token = localStorage.getItem('auth_token');
-							if (token) {
-								console.log('Found existing JWT token:', token.substring(0, 20) + '...');
-							} else {
-								console.log('No existing JWT token found');
-								// Redirect to login page if no token is found
-								if (window.location.pathname !== '/') {
-									window.location.href = "/";
+									setTimeout(initializeAPI, 500);
+									return;
 								}
-							}
-							
-							// Ensure the API is initialized before making any requests
-							if (!api) {
-								console.error("API not initialized");
-								return;
+								
+								// Check for existing JWT token
+								const token = localStorage.getItem('auth_token');
+								
+								// Ensure the API is initialized before making any requests
+								if (!api) {
 							}
 
 							// If there's a logged-in user stored locally, load their tasks from backend
@@ -5112,15 +5100,11 @@
 				// Clear any existing token before login
 				localStorage.removeItem('auth_token');
 
-				console.log('Attempting login for:', email);
-				
 				api.login(email, password).then((response) => {
-					console.log('Login response:', response);
 					
 					if (response && response.user_id && response.token) {
 						// Store the JWT token
 						localStorage.setItem('auth_token', response.token);
-						console.log('JWT token stored:', response.token.substring(0, 20) + '...');
 						
 						currentUser = {
 							id: response.user_id,
@@ -5140,13 +5124,11 @@
 						showNotification("Welcome back!", "success");
 					} else {
 						showNotification("Login failed. Check credentials and try again.", "error");
-						console.error('Invalid login response:', response);
 						// Clear any existing token on login failure
 						localStorage.removeItem('auth_token');
 					}
 				}).catch((error) => {
 					showNotification("Login error: " + error.message, "error");
-					console.error("Login error:", error);
 					
 					// Clear any existing token on login failure
 					localStorage.removeItem('auth_token');
