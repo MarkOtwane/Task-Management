@@ -4,9 +4,9 @@
  * Add a new contact for the authenticated user
  */
 
-require_once '../../config/cors.php';
-require_once '../../config/database.php';
-require_once '../../middleware/auth.php';
+require_once __DIR__ . '/../../config/cors.php';
+require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../middleware/auth.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 $user = getCurrentUser($pdo);
@@ -102,24 +102,6 @@ function ensureContactsTableExists($pdo) {
         $pdo->exec("CREATE INDEX IF NOT EXISTS idx_contacts_user_name ON contacts(user_id, name)");
     } catch (PDOException $e) {
         error_log('[contacts.create_table] Error: ' . $e->getMessage());
-    }
-}
-
-/**
- * Get current user from JWT or session
- */
-function getCurrentUser($pdo) {
-    $userId = verifyAuth();
-    if (!$userId) {
-        return null;
-    }
-    
-    try {
-        $stmt = $pdo->prepare("SELECT id, email, role FROM users WHERE id = ?");
-        $stmt->execute([$userId]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        return null;
     }
 }
 ?>

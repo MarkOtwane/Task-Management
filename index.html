@@ -8552,14 +8552,28 @@
 						credentials: "include",
 						body: JSON.stringify(body)
 					});
+					const responseText = await response.text();
+					const parseResponse = () => {
+						try {
+							return JSON.parse(responseText);
+						} catch (parseError) {
+							return null;
+						}
+					};
+					const getErrorMessage = (fallbackMessage) => {
+						const parsed = parseResponse();
+						if (parsed && (parsed.error || parsed.message)) {
+							return parsed.error || parsed.message;
+						}
+						return responseText.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim() || fallbackMessage;
+					};
 
 					if (!response.ok) {
-						const error = await response.json();
-						showNotification(error.error || "Failed to save contact", "error");
+						showNotification(getErrorMessage("Failed to save contact"), "error");
 						return;
 					}
 
-					const data = await response.json();
+					const data = parseResponse();
 					if (data.success) {
 						if (editingContactId) {
 							// Update existing contact
@@ -8607,14 +8621,28 @@
 						credentials: "include",
 						body: JSON.stringify({ id: contactId })
 					});
+					const responseText = await response.text();
+					const parseResponse = () => {
+						try {
+							return JSON.parse(responseText);
+						} catch (parseError) {
+							return null;
+						}
+					};
+					const getErrorMessage = (fallbackMessage) => {
+						const parsed = parseResponse();
+						if (parsed && (parsed.error || parsed.message)) {
+							return parsed.error || parsed.message;
+						}
+						return responseText.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim() || fallbackMessage;
+					};
 
 					if (!response.ok) {
-						const error = await response.json();
-						showNotification(error.error || "Failed to delete contact", "error");
+						showNotification(getErrorMessage("Failed to delete contact"), "error");
 						return;
 					}
 
-					const data = await response.json();
+					const data = parseResponse();
 					if (data.success) {
 						contacts = contacts.filter((c) => c.id !== contactId);
 						saveContactsLocally(contacts);
