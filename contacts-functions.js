@@ -1,5 +1,5 @@
 // ===== PERSONAL CONTACTS MANAGEMENT (Personal Mode Only) =====
-let contacts = [];
+let contacts = JSON.parse(localStorage.getItem("contacts")) || [];
 
 /**
  * Get contacts from localStorage
@@ -125,6 +125,15 @@ function renderContacts() {
 			}
 		});
 	});
+}
+
+// Backward-compatible aliases for simpler contact manager implementations.
+function addContact(name, phone) {
+	return addOrUpdateContact(name, phone);
+}
+
+function displayContacts() {
+	renderContacts();
 }
 
 /**
@@ -297,3 +306,12 @@ document.addEventListener("DOMContentLoaded", () => {
 		});
 	}
 });
+
+const existingOnload = window.onload;
+window.onload = function (event) {
+	if (typeof existingOnload === "function") {
+		existingOnload(event);
+	}
+	contacts = JSON.parse(localStorage.getItem("contacts")) || [];
+	displayContacts();
+};
