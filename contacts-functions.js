@@ -79,22 +79,22 @@ function renderContacts() {
 	list.innerHTML = contacts
 		.map(
 			(contact, index) => `
-						<div class="contact-item" style="background: var(--bg-secondary); border-radius: 8px; padding: 14px; margin-bottom: 10px; border-left: 4px solid var(--text-accent);">
-							<div style="display: flex; justify-content: space-between; align-items: start;">
-								<div style="flex: 1;">
-									<div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">
-										<span style="color: var(--text-tertiary); margin-right: 8px;">${index + 1}.</span>${contact.name}
+						<div class="contact-item">
+							<div class="contact-item-main">
+								<div class="contact-meta">
+									<div class="contact-name">
+										<span class="contact-index">${index + 1}.</span>${contact.name}
 									</div>
-									<div style="color: var(--text-secondary); font-size: 14px; display: flex; align-items: center;">
-										<span class="material-icons" style="font-size: 16px; margin-right: 6px; vertical-align: middle;">phone</span>${contact.phone}
+									<div class="contact-phone">
+										<span class="material-icons">phone</span>${contact.phone}
 									</div>
 								</div>
-								<div style="display: flex; gap: 8px;">
-									<button type="button" class="btn btn-secondary btn-small edit-contact-btn" data-contact-id="${contact.id}" style="padding: 6px 12px; font-size: 13px;">
-										<span class="material-icons" style="font-size: 16px;">edit</span>
+								<div class="contact-actions">
+									<button type="button" class="btn btn-secondary btn-small edit-contact-btn" data-contact-id="${contact.id}">
+										<span class="material-icons">edit</span>
 									</button>
-									<button type="button" class="btn btn-danger btn-small delete-contact-btn" data-contact-id="${contact.id}" style="padding: 6px 12px; font-size: 13px;">
-										<span class="material-icons" style="font-size: 16px;">delete</span>
+									<button type="button" class="btn btn-danger btn-small delete-contact-btn" data-contact-id="${contact.id}">
+										<span class="material-icons">delete</span>
 									</button>
 								</div>
 							</div>
