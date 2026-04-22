@@ -7712,19 +7712,28 @@
 					return;
 				}
 				
-				api.request('/api/reflections.php', {
-					method: 'POST',
-					body: JSON.stringify({ task_id: completingTaskId, reflection_text: reflectionPayload })
-				}).then((response) => {
+				Promise.all([
+					api.request('/api/reflections.php', {
+						method: 'POST',
+						body: JSON.stringify({ task_id: completingTaskId, reflection_text: reflectionPayload })
+					}),
+					api.updateTask(completingTaskId, { status: "completed" })
+				]).then(() => {
 					// Update local task
 					const task = tasks.find((t) => t.id === completingTaskId);
 					if (task) {
+						task.status = "completed";
 						task.completed = true;
 						task.completedAt = Date.now();
 						task.reflection = {
 							learning,
 							experience,
 						};
+						try {
+							storage.saveTasks(tasks);
+						} catch (error) {
+							console.warn("Could not save completed task state", error);
+						}
 					}
 
 					reflectionModal.classList.add("hidden");
