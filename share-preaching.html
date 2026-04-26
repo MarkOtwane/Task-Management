@@ -262,7 +262,25 @@
 		</div>
 
 		<script>
-			const API_BASE = window.location.origin;
+			// Determine the API base URL based on the current location
+			const determineAPIBase = () => {
+				const origin = window.location.origin;
+				
+				// For production on Render.com
+				if (origin.includes('onrender.com')) {
+					return 'https://task-management-bxpk.onrender.com/backend';
+				}
+				
+				// For localhost development
+				if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+					return 'http://localhost:8000/backend';
+				}
+				
+				// Fallback: assume backend is in the /backend directory
+				return `${origin}/backend`;
+			};
+
+			const API_BASE = determineAPIBase();
 
 			async function loadSharedPreaching() {
 				const urlParams = new URLSearchParams(window.location.search);
@@ -274,7 +292,7 @@
 				}
 
 				try {
-					const response = await fetch(`${API_BASE}/backend/api/preaching.php?share_token=${encodeURIComponent(token)}`);
+					const response = await fetch(`${API_BASE}/api/preaching.php?share_token=${encodeURIComponent(token)}`);
 					if (!response.ok) {
 						if (response.status === 404) {
 							showError("Preaching not found or link has been revoked");
