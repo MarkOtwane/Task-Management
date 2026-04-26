@@ -266,14 +266,21 @@
 			const determineAPIBase = () => {
 				const origin = window.location.origin;
 
-				// For production on Render.com
-				if (origin.includes("onrender.com")) {
-					return "https://task-management-bxpk.onrender.com/backend";
-				}
+				// Map of frontend URLs to backend URLs
+				const urlMappings = {
+					'task-management-fawn-six.vercel.app': 'https://task-management-bxpk.onrender.com/backend',
+					'vercel.app': 'https://task-management-bxpk.onrender.com/backend',
+					'onrender.com': 'https://task-management-bxpk.onrender.com/backend',
+					'localhost:3000': 'http://localhost:8000/backend',
+					'localhost': 'http://localhost:8000/backend',
+					'127.0.0.1': 'http://localhost:8000/backend'
+				};
 
-				// For localhost development
-				if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
-					return "http://localhost:8000/backend";
+				// Try to find a matching backend URL
+				for (const [frontendDomain, backendUrl] of Object.entries(urlMappings)) {
+					if (origin.includes(frontendDomain)) {
+						return backendUrl;
+					}
 				}
 
 				// Fallback: assume backend is in the /backend directory
