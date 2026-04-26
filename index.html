@@ -6344,6 +6344,8 @@
 						const readToggleMarkup = isLongContent
 							? `<button class="preaching-read-toggle preaching-toggle-btn" data-entry-id="${entry.id}" type="button">${isExpanded ? "Read less" : "Read more"}</button>`
 							: "";
+						const shareButtonText = entry.is_shared ? "Unshare" : "Share";
+						const shareButtonClass = entry.is_shared ? "preaching-unshare-btn" : "preaching-share-btn";
 						return `
 							<div class="preaching-item ${isActive}" data-entry-id="${entry.id}">
 								<div class="preaching-item-title">${entry.title || "Untitled preaching"}</div>
@@ -6353,6 +6355,7 @@
 								${tagMarkup}
 								<div class="diary-item-actions" style="margin-top: 12px;">
 									<button class="btn btn-secondary btn-small preaching-edit-btn" data-entry-id="${entry.id}" type="button">Edit</button>
+									<button class="btn btn-secondary btn-small ${shareButtonClass}" data-entry-id="${entry.id}" type="button">${shareButtonText}</button>
 									<button class="btn btn-secondary btn-small preaching-delete-btn" data-entry-id="${entry.id}" type="button">Delete</button>
 								</div>
 							</div>
@@ -6374,6 +6377,22 @@
 						if (entry) {
 							loadPreachingIntoEditor(entry);
 						}
+					});
+				});
+
+				listContainer.querySelectorAll(".preaching-share-btn").forEach((button) => {
+					button.addEventListener("click", (event) => {
+						event.stopPropagation();
+						const entryId = Number(button.dataset.entryId);
+						sharePreachingEntry(entryId);
+					});
+				});
+
+				listContainer.querySelectorAll(".preaching-unshare-btn").forEach((button) => {
+					button.addEventListener("click", (event) => {
+						event.stopPropagation();
+						const entryId = Number(button.dataset.entryId);
+						unsharePreachingEntry(entryId);
 					});
 				});
 
@@ -6623,6 +6642,88 @@
 				} catch (error) {
 					console.error("Failed to delete preaching entry", error);
 					showNotification("Failed to delete preaching entry: " + error.message, "error");
+				}
+			}
+
+			async function sharePreachingEntry(entryId) {
+				if (!api || !currentUser || !entryId) return;
+
+				try {
+					const response = await api.sharePreachingEntry(entryId);
+					if (response.entry) {
+						const idx = preachingEntries.findIndex((e) => Number(e.id) === Number(entryId));
+						if (idx !== -1) {
+							preachingEntries[idx] = response.entry;
+						}
+					}
+
+					const shareLink = response.share_link
+						? new URL(response.share_link, window.location.origin).href
+						: `${window.location.origin}/share-preaching.html?token=${encodeURIComponent(response.entry.share_token)}`;
+
+					// Create modal with share link
+					const modal = document.createElement("div");
+					modal.className = "modal-overlay";
+					modal.innerHTML = `
+						<div class="modal-content" style="max-width: 500px;">
+							<div class="modal-header">
+								<h3>Share Preaching</h3>
+								<button class="modal-close" type="button">&times;</button>
+							</div>
+							<div class="modal-body">
+								<p style="margin-bottom: 12px;">Share this preaching with others using this link:</p>
+								<div style="display: flex; gap: 8px; margin-bottom: 12px;">
+									<input type="text" value="${shareLink}" readonly style="flex: 1; padding: 8px; border: 1px solid var(--border-primary); border-radius: 4px; background: var(--bg-input); color: var(--text-primary);" />
+									<button class="btn btn-primary copy-share-link-btn" type="button">Copy Link</button>
+								</div>
+								<p style="font-size: 12px; color: var(--text-secondary);">Recipients can view this preaching as read-only without signing in.</p>
+							</div>
+							<div class="modal-footer">
+								<button class="btn btn-secondary close-modal-btn" type="button">Close</button>
+							</div>
+						</div>
+					`;
+					document.body.appendChild(modal);
+
+					const closeBtn = modal.querySelector(".modal-close");
+					const closeModalBtn = modal.querySelector(".close-modal-btn");
+					const copyBtn = modal.querySelector(".copy-share-link-btn");
+
+					closeBtn.addEventListener("click", () => modal.remove());
+					closeModalBtn.addEventListener("click", () => modal.remove());
+					modal.addEventListener("click", (e) => {
+						if (e.target === modal) modal.remove();
+					});
+
+					copyBtn.addEventListener("click", () => {
+						navigator.clipboard.writeText(shareLink);
+						showNotification("Link copied to clipboard", "success");
+					});
+
+					renderPreachingList();
+					showNotification("Preaching entry shared successfully", "success");
+				} catch (error) {
+					console.error("Failed to share preaching entry", error);
+					showNotification("Failed to share preaching entry: " + error.message, "error");
+				}
+			}
+
+			async function unsharePreachingEntry(entryId) {
+				if (!api || !currentUser || !entryId) return;
+
+				try {
+					const response = await api.unsharePreachingEntry(entryId);
+					if (response.entry) {
+						const idx = preachingEntries.findIndex((e) => Number(e.id) === Number(entryId));
+						if (idx !== -1) {
+							preachingEntries[idx] = response.entry;
+						}
+					}
+					renderPreachingList();
+					showNotification("Preaching entry share revoked", "success");
+				} catch (error) {
+					console.error("Failed to revoke preaching share", error);
+					showNotification("Failed to revoke preaching share: " + error.message, "error");
 				}
 			}
 

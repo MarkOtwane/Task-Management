@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Shared Preaching - Task Manager Pro</title>
+		<link rel="preload" href="assets/fonts/material-icons/material-icons.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+		<link rel="stylesheet" href="assets/styles/material-icons.css" />
+		<link rel="stylesheet" href="assets/vendor/fontawesome/css/all.min.css" />
+		<style>
+			:root {
+				--bg-primary: #1a1a1a;
+				--bg-secondary: #2d2d2d;
+				--bg-tertiary: #3d3d3d;
+				--bg-card: #252525;
+				--bg-input: #3d3d3d;
+				--bg-overlay: rgba(0, 0, 0, 0.8);
+
+				--text-primary: #ffffff;
+				--text-secondary: #b3b3b3;
+				--text-tertiary: #888888;
+				--text-accent: #667eea;
+
+				--border-primary: #404040;
+				--border-secondary: #555555;
+				--border-accent: #667eea;
+
+				--shadow-primary: 0 4px 12px rgba(0, 0, 0, 0.3);
+				--shadow-card: 0 2px 10px rgba(0, 0, 0, 0.4);
+				--shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.5);
+
+				--gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				--gradient-bg: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+
+				--notification-success: #10b981;
+				--notification-error: #ef4444;
+				--notification-warning: #f59e0b;
+			}
+
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+
+			body {
+				font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+				background: var(--gradient-bg);
+				color: var(--text-primary);
+				min-height: 100vh;
+			}
+
+			.container {
+				max-width: 900px;
+				margin: 0 auto;
+				padding: 20px;
+			}
+
+			.header {
+				padding: 20px 0 30px;
+				border-bottom: 1px solid var(--border-primary);
+				margin-bottom: 30px;
+			}
+
+			.header h1 {
+				font-size: 28px;
+				margin-bottom: 10px;
+			}
+
+			.header p {
+				color: var(--text-secondary);
+				font-size: 14px;
+			}
+
+			.preaching-view {
+				background: var(--bg-card);
+				border: 1px solid var(--border-primary);
+				border-radius: 8px;
+				padding: 30px;
+				box-shadow: var(--shadow-card);
+			}
+
+			.preaching-title {
+				font-size: 32px;
+				margin-bottom: 10px;
+				color: var(--text-primary);
+			}
+
+			.preaching-meta {
+				display: flex;
+				gap: 20px;
+				margin-bottom: 20px;
+				padding-bottom: 20px;
+				border-bottom: 1px solid var(--border-primary);
+				color: var(--text-secondary);
+				font-size: 14px;
+			}
+
+			.preaching-meta-item {
+				display: flex;
+				align-items: center;
+				gap: 8px;
+			}
+
+			.preaching-tags {
+				display: flex;
+				gap: 8px;
+				flex-wrap: wrap;
+				margin-bottom: 20px;
+			}
+
+			.preaching-tag {
+				display: inline-block;
+				background: var(--bg-tertiary);
+				color: var(--text-accent);
+				padding: 4px 12px;
+				border-radius: 16px;
+				font-size: 12px;
+				border: 1px solid var(--border-secondary);
+			}
+
+			.preaching-content {
+				line-height: 1.8;
+				font-size: 16px;
+				color: var(--text-primary);
+			}
+
+			.preaching-content h1,
+			.preaching-content h2,
+			.preaching-content h3 {
+				margin-top: 20px;
+				margin-bottom: 10px;
+			}
+
+			.preaching-content h1 {
+				font-size: 24px;
+			}
+
+			.preaching-content h2 {
+				font-size: 20px;
+			}
+
+			.preaching-content h3 {
+				font-size: 18px;
+			}
+
+			.preaching-content p {
+				margin-bottom: 12px;
+			}
+
+			.preaching-content ol,
+			.preaching-content ul {
+				margin-left: 20px;
+				margin-bottom: 12px;
+			}
+
+			.preaching-content li {
+				margin-bottom: 6px;
+			}
+
+			.preaching-content blockquote {
+				border-left: 4px solid var(--text-accent);
+				padding-left: 16px;
+				margin: 12px 0;
+				color: var(--text-secondary);
+				font-style: italic;
+			}
+
+			.preaching-content a {
+				color: var(--text-accent);
+				text-decoration: none;
+			}
+
+			.preaching-content a:hover {
+				text-decoration: underline;
+			}
+
+			.error-message {
+				background: var(--notification-error);
+				color: white;
+				padding: 20px;
+				border-radius: 8px;
+				text-align: center;
+			}
+
+			.loading {
+				text-align: center;
+				padding: 40px;
+				color: var(--text-secondary);
+			}
+
+			.spinner {
+				display: inline-block;
+				width: 20px;
+				height: 20px;
+				border: 3px solid var(--border-secondary);
+				border-top-color: var(--text-accent);
+				border-radius: 50%;
+				animation: spin 0.8s linear infinite;
+			}
+
+			@keyframes spin {
+				to {
+					transform: rotate(360deg);
+				}
+			}
+
+			.footer {
+				margin-top: 30px;
+				padding-top: 20px;
+				border-top: 1px solid var(--border-primary);
+				text-align: center;
+				color: var(--text-secondary);
+				font-size: 12px;
+			}
+
+			@media (prefers-color-scheme: light) {
+				:root {
+					--bg-primary: #ffffff;
+					--bg-secondary: #f8f9fa;
+					--bg-tertiary: #e9ecef;
+					--bg-card: #ffffff;
+					--bg-input: #ffffff;
+					--bg-overlay: rgba(0, 0, 0, 0.6);
+
+					--text-primary: #1a1a1a;
+					--text-secondary: #666666;
+					--text-tertiary: #999999;
+					--text-accent: #667eea;
+
+					--border-primary: #e0e0e0;
+					--border-secondary: #d0d0d0;
+					--border-accent: #667eea;
+
+					--shadow-primary: 0 4px 12px rgba(0, 0, 0, 0.1);
+					--shadow-card: 0 2px 10px rgba(0, 0, 0, 0.08);
+					--shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.15);
+
+					--gradient-bg: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<div class="header">
+				<h1>Shared Preaching</h1>
+				<p>A preaching note shared with you</p>
+			</div>
+
+			<div id="loadingContainer" class="loading">
+				<div class="spinner"></div>
+				<p style="margin-top: 12px">Loading preaching...</p>
+			</div>
+
+			<div id="errorContainer" style="display: none"></div>
+			<div id="preachingContainer" style="display: none"></div>
+
+			<div class="footer">
+				<p>This is a read-only view. Learn more at <a href="https://taskmanagerpro.example.com" style="color: inherit">Task Manager Pro</a></p>
+			</div>
+		</div>
+
+		<script>
+			const API_BASE = window.location.origin;
+
+			async function loadSharedPreaching() {
+				const urlParams = new URLSearchParams(window.location.search);
+				const token = urlParams.get("token");
+
+				if (!token) {
+					showError("No share token provided");
+					return;
+				}
+
+				try {
+					const response = await fetch(`${API_BASE}/backend/api/preaching.php?share_token=${encodeURIComponent(token)}`);
+					if (!response.ok) {
+						if (response.status === 404) {
+							showError("Preaching not found or link has been revoked");
+						} else {
+							showError("Failed to load preaching");
+						}
+						return;
+					}
+
+					const preaching = await response.json();
+					displayPreaching(preaching);
+				} catch (error) {
+					console.error("Error loading shared preaching:", error);
+					showError("Failed to load preaching: " + error.message);
+				}
+			}
+
+			function displayPreaching(preaching) {
+				const container = document.getElementById("preachingContainer");
+				const loadingContainer = document.getElementById("loadingContainer");
+
+				// Parse tags
+				const tags = (preaching.tags || "")
+					.split(",")
+					.map((tag) => tag.trim())
+					.filter(Boolean);
+
+				// Format date
+				const date = new Date(preaching.created_at || preaching.updated_at);
+				const formattedDate = date.toLocaleDateString("en-US", {
+					year: "numeric",
+					month: "long",
+					day: "numeric",
+				});
+
+				// Build tags HTML
+				const tagsHtml = tags.length ? `<div class="preaching-tags">${tags.map((tag) => `<span class="preaching-tag">${escapeHtml(tag)}</span>`).join("")}</div>` : "";
+
+				// Build HTML
+				container.innerHTML = `
+				<div class="preaching-view">
+					<h1 class="preaching-title">${escapeHtml(preaching.title || "Untitled Preaching")}</h1>
+					<div class="preaching-meta">
+						<div class="preaching-meta-item">
+							<span class="material-icons">person</span>
+							<span>${escapeHtml(preaching.preacher || "Unknown Preacher")}</span>
+						</div>
+						<div class="preaching-meta-item">
+							<span class="material-icons">calendar_today</span>
+							<span>${formattedDate}</span>
+						</div>
+					</div>
+					${tagsHtml}
+					<div class="preaching-content">
+						${preaching.content}
+					</div>
+				</div>
+			`;
+
+				loadingContainer.style.display = "none";
+				container.style.display = "block";
+			}
+
+			function showError(message) {
+				const container = document.getElementById("errorContainer");
+				const loadingContainer = document.getElementById("loadingContainer");
+
+				container.innerHTML = `<div class="error-message">${escapeHtml(message)}</div>`;
+				loadingContainer.style.display = "none";
+				container.style.display = "block";
+			}
+
+			function escapeHtml(text) {
+				const map = {
+					"&": "&amp;",
+					"<": "&lt;",
+					">": "&gt;",
+					'"': "&quot;",
+					"'": "&#039;",
+				};
+				return text.replace(/[&<>"']/g, (m) => map[m]);
+			}
+
+			// Load preaching on page load
+			document.addEventListener("DOMContentLoaded", loadSharedPreaching);
+		</script>
+	</body>
+</html>

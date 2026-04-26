@@ -611,6 +611,33 @@ class TaskAPI {
 		});
 	}
 
+	/**
+	 * Share a preaching entry by generating a share token
+	 */
+	async sharePreachingEntry(id) {
+		return this.request(`/api/preaching.php?share=1&id=${id}`, {
+			method: "POST",
+		});
+	}
+
+	/**
+	 * Revoke sharing for a preaching entry
+	 */
+	async unsharePreachingEntry(id) {
+		return this.request(`/api/preaching.php?share=0&id=${id}`, {
+			method: "POST",
+		});
+	}
+
+	/**
+	 * Get a shared preaching entry by token (no auth required)
+	 */
+	async getSharedPreachingEntry(token) {
+		return this.request(`/api/preaching.php?share_token=${encodeURIComponent(token)}`, {
+			method: "GET",
+		});
+	}
+
 	// ===== PASSWORD RESET =====
 
 	/**

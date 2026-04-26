@@ -274,6 +274,8 @@ function initializeDatabase($pdo) {
                 preacher VARCHAR(255) NOT NULL,
                 content TEXT NOT NULL,
                 tags TEXT,
+                share_token VARCHAR(64) UNIQUE,
+                is_shared BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -288,6 +290,16 @@ function initializeDatabase($pdo) {
             CREATE INDEX IF NOT EXISTS idx_preaching_entries_user_title
             ON preaching_entries(user_id, title)
         ");
+
+        $pdo->exec("
+            CREATE INDEX IF NOT EXISTS idx_preaching_entries_share_token
+            ON preaching_entries(share_token)
+        ");
+
+        // Add columns to existing preaching_entries table if they don't exist
+        $pdo->exec("ALTER TABLE preaching_entries ADD COLUMN IF NOT EXISTS share_token VARCHAR(64) UNIQUE");
+        $pdo->exec("ALTER TABLE preaching_entries ADD COLUMN IF NOT EXISTS is_shared BOOLEAN DEFAULT FALSE");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_preaching_entries_share_token ON preaching_entries(share_token)");
 
         // Password reset tokens table
         $pdo->exec("
