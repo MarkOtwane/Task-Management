@@ -17,6 +17,9 @@ require_once '../config/cors.php';
 require_once '../config/database.php';
 require_once '../middleware/auth.php';
 
+// Set JSON response header for all responses
+header('Content-Type: application/json; charset=utf-8');
+
 $method = $_SERVER['REQUEST_METHOD'];
 
 // Handle public shared preaching endpoint (no authentication required)
