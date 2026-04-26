@@ -52,13 +52,33 @@ function getPreachingEntries($pdo, $userId) {
 
     try {
         if ($entryId > 0) {
+            // Try with share columns first, fallback to basic columns if they don't exist
             $stmt = $pdo->prepare(
-                'SELECT id, user_id, title, preacher, content, tags, share_token, is_shared, created_at, updated_at
+                'SELECT id, user_id, title, preacher, content, tags, 
+                        COALESCE(share_token, NULL) as share_token, 
+                        COALESCE(is_shared, FALSE) as is_shared, 
+                        created_at, updated_at
                  FROM preaching_entries
                  WHERE id = ? AND user_id = ?'
             );
-            $stmt->execute([$entryId, $userId]);
-            $entry = $stmt->fetch();
+            
+            try {
+                $stmt->execute([$entryId, $userId]);
+                $entry = $stmt->fetch();
+            } catch (PDOException $e) {
+                // Fallback: columns might not exist, try without them
+                $stmt = $pdo->prepare(
+                    'SELECT id, user_id, title, preacher, content, tags, created_at, updated_at
+                     FROM preaching_entries
+                     WHERE id = ? AND user_id = ?'
+                );
+                $stmt->execute([$entryId, $userId]);
+                $entry = $stmt->fetch();
+                if ($entry) {
+                    $entry['share_token'] = null;
+                    $entry['is_shared'] = false;
+                }
+            }
 
             if (!$entry) {
                 http_response_code(404);
@@ -70,7 +90,10 @@ function getPreachingEntries($pdo, $userId) {
             return;
         }
 
-        $sql = 'SELECT id, user_id, title, preacher, content, tags, share_token, is_shared, created_at, updated_at
+        $sql = 'SELECT id, user_id, title, preacher, content, tags, 
+                        COALESCE(share_token, NULL) as share_token, 
+                        COALESCE(is_shared, FALSE) as is_shared, 
+                        created_at, updated_at
                 FROM preaching_entries
                 WHERE user_id = ?';
         $params = [$userId];
@@ -91,8 +114,41 @@ function getPreachingEntries($pdo, $userId) {
         $sql .= ' ORDER BY updated_at DESC, created_at DESC';
 
         $stmt = $pdo->prepare($sql);
-        $stmt->execute($params);
-        $entries = $stmt->fetchAll();
+        try {
+            $stmt->execute($params);
+            $entries = $stmt->fetchAll();
+        } catch (PDOException $e) {
+            // Fallback: columns might not exist, try without them
+            $sql = 'SELECT id, user_id, title, preacher, content, tags, created_at, updated_at
+                    FROM preaching_entries
+                    WHERE user_id = ?';
+            $params = [$userId];
+
+            if ($searchTerm !== '') {
+                $sql .= " AND (title ILIKE ? OR preacher ILIKE ? OR COALESCE(tags, '') ILIKE ?)";
+                $searchLike = '%' . $searchTerm . '%';
+                $params[] = $searchLike;
+                $params[] = $searchLike;
+                $params[] = $searchLike;
+            }
+
+            if ($tagFilter !== '') {
+                $sql .= " AND COALESCE(tags, '') ILIKE ?";
+                $params[] = '%' . $tagFilter . '%';
+            }
+
+            $sql .= ' ORDER BY updated_at DESC, created_at DESC';
+
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            $entries = $stmt->fetchAll();
+            
+            // Add share columns to entries
+            foreach ($entries as &$entry) {
+                $entry['share_token'] = null;
+                $entry['is_shared'] = false;
+            }
+        }
 
         echo json_encode($entries);
     } catch (PDOException $e) {
@@ -262,13 +318,32 @@ function deletePreachingEntry($pdo, $userId) {
 }
 
 function fetchPreachingEntry($pdo, $entryId, $userId) {
-    $fetchStmt = $pdo->prepare(
-        'SELECT id, user_id, title, preacher, content, tags, share_token, is_shared, created_at, updated_at
-         FROM preaching_entries
-         WHERE id = ? AND user_id = ?'
-    );
-    $fetchStmt->execute([$entryId, $userId]);
-    return $fetchStmt->fetch();
+    try {
+        $fetchStmt = $pdo->prepare(
+            'SELECT id, user_id, title, preacher, content, tags, 
+                    COALESCE(share_token, NULL) as share_token, 
+                    COALESCE(is_shared, FALSE) as is_shared, 
+                    created_at, updated_at
+             FROM preaching_entries
+             WHERE id = ? AND user_id = ?'
+        );
+        $fetchStmt->execute([$entryId, $userId]);
+        return $fetchStmt->fetch();
+    } catch (PDOException $e) {
+        // Fallback if columns don't exist
+        $fetchStmt = $pdo->prepare(
+            'SELECT id, user_id, title, preacher, content, tags, created_at, updated_at
+             FROM preaching_entries
+             WHERE id = ? AND user_id = ?'
+        );
+        $fetchStmt->execute([$entryId, $userId]);
+        $entry = $fetchStmt->fetch();
+        if ($entry) {
+            $entry['share_token'] = null;
+            $entry['is_shared'] = false;
+        }
+        return $entry;
+    }
 }
 
 function getSharedPreachingEntry($pdo, $shareToken) {
@@ -280,13 +355,23 @@ function getSharedPreachingEntry($pdo, $shareToken) {
             return;
         }
 
-        $stmt = $pdo->prepare(
-            'SELECT id, user_id, title, preacher, content, tags, share_token, is_shared, created_at, updated_at
-             FROM preaching_entries
-             WHERE share_token = ? AND is_shared = TRUE'
-        );
-        $stmt->execute([$shareToken]);
-        $entry = $stmt->fetch();
+        try {
+            $stmt = $pdo->prepare(
+                'SELECT id, user_id, title, preacher, content, tags, 
+                        COALESCE(share_token, NULL) as share_token, 
+                        COALESCE(is_shared, FALSE) as is_shared, 
+                        created_at, updated_at
+                 FROM preaching_entries
+                 WHERE share_token = ? AND is_shared = TRUE'
+            );
+            $stmt->execute([$shareToken]);
+            $entry = $stmt->fetch();
+        } catch (PDOException $e) {
+            // Fallback if columns don't exist - but if columns don't exist, nothing can be shared
+            http_response_code(404);
+            echo json_encode(['error' => 'Shared preaching not found']);
+            return;
+        }
 
         if (!$entry) {
             http_response_code(404);
@@ -324,15 +409,30 @@ function toggleSharePreaching($pdo, $userId) {
             return;
         }
 
+        // Ensure share columns exist
+        try {
+            $pdo->exec("ALTER TABLE preaching_entries ADD COLUMN IF NOT EXISTS share_token VARCHAR(64) UNIQUE");
+            $pdo->exec("ALTER TABLE preaching_entries ADD COLUMN IF NOT EXISTS is_shared BOOLEAN DEFAULT FALSE");
+        } catch (PDOException $e) {
+            // Columns might already exist, continue
+        }
+
         if ($share === 1) {
             // Generate share token
             $shareToken = bin2hex(random_bytes(32));
-            $updateStmt = $pdo->prepare(
-                'UPDATE preaching_entries
-                 SET share_token = ?, is_shared = TRUE, updated_at = CURRENT_TIMESTAMP
-                 WHERE id = ? AND user_id = ?'
-            );
-            $updateStmt->execute([$shareToken, $entryId, $userId]);
+            try {
+                $updateStmt = $pdo->prepare(
+                    'UPDATE preaching_entries
+                     SET share_token = ?, is_shared = TRUE, updated_at = CURRENT_TIMESTAMP
+                     WHERE id = ? AND user_id = ?'
+                );
+                $updateStmt->execute([$shareToken, $entryId, $userId]);
+            } catch (PDOException $e) {
+                // If columns still don't exist, return error
+                http_response_code(500);
+                echo json_encode(['error' => 'Share feature not available yet. Please refresh and try again.']);
+                return;
+            }
 
             // Get the updated entry
             $entry = fetchPreachingEntry($pdo, $entryId, $userId);
@@ -344,12 +444,23 @@ function toggleSharePreaching($pdo, $userId) {
             ]);
         } else {
             // Revoke share
-            $updateStmt = $pdo->prepare(
-                'UPDATE preaching_entries
-                 SET share_token = NULL, is_shared = FALSE, updated_at = CURRENT_TIMESTAMP
-                 WHERE id = ? AND user_id = ?'
-            );
-            $updateStmt->execute([$entryId, $userId]);
+            try {
+                $updateStmt = $pdo->prepare(
+                    'UPDATE preaching_entries
+                     SET share_token = NULL, is_shared = FALSE, updated_at = CURRENT_TIMESTAMP
+                     WHERE id = ? AND user_id = ?'
+                );
+                $updateStmt->execute([$entryId, $userId]);
+            } catch (PDOException $e) {
+                // If columns don't exist, it's okay - nothing was shared anyway
+                http_response_code(200);
+                $entry = fetchPreachingEntry($pdo, $entryId, $userId);
+                echo json_encode([
+                    'message' => 'Preaching entry already not shared',
+                    'entry' => $entry,
+                ]);
+                return;
+            }
 
             // Get the updated entry
             $entry = fetchPreachingEntry($pdo, $entryId, $userId);
